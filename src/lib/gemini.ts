@@ -1,9 +1,10 @@
 import { GoogleGenAI, Type } from "@google/genai";
 
 const API_KEY = process.env.GEMINI_API_KEY ?? "";
-const CHAT_MODEL = process.env.GEMINI_MODEL ?? "gemini-2.5-flash";
-// Default to flash: gemini-2.5-pro is not available on the Gemini free tier.
-const MARK_MODEL = process.env.GEMINI_MARKING_MODEL ?? "gemini-2.5-flash";
+// Use the "-latest" alias so a retired version (e.g. gemini-2.5-flash was
+// pulled for new keys) never breaks the app. Override per env when on billing.
+const CHAT_MODEL = process.env.GEMINI_MODEL ?? "gemini-flash-latest";
+const MARK_MODEL = process.env.GEMINI_MARKING_MODEL ?? "gemini-flash-latest";
 
 export const isGeminiConfigured = API_KEY.length > 0;
 
@@ -14,13 +15,19 @@ function client() {
 /** Turn a raw Gemini SDK error into a short, human message. */
 export function friendlyGeminiError(e: unknown): string {
   const msg = e instanceof Error ? e.message : String(e);
+  // Always log the full error server-side for debugging.
+  console.error("[gemini] call failed:", msg);
   if (/RESOURCE_EXHAUSTED|quota|429|rate.?limit/i.test(msg)) {
-    return "The AI is rate-limited on Gemini's free tier right now. Wait a minute and try again — or add billing / use gemini-2.5-flash to raise the limit.";
+    return "Gemini is rate-limited on the free tier right now. Wait a minute and try again — or add billing to raise the limit.";
   }
-  if (/API key|401|403|PERMISSION_DENIED|invalid/i.test(msg)) {
-    return "Gemini rejected the API key. Check GEMINI_API_KEY in .env.local (it should start with 'AIza').";
+  if (/API[_ ]?key|401|403|PERMISSION_DENIED|API_KEY_INVALID|unregistered/i.test(msg)) {
+    return "Gemini rejected the API key. Create a key at aistudio.google.com/apikey (it should start with 'AIza') and put it in .env.local as GEMINI_API_KEY.";
   }
-  return "The AI hit an unexpected error. Please try again in a moment.";
+  if (/404|not found|NOT_FOUND|is not found for API version|not supported/i.test(msg)) {
+    return `Gemini couldn't find that model. Set GEMINI_MODEL / GEMINI_MARKING_MODEL to a valid id like 'gemini-2.5-flash'. (${msg.slice(0, 160)})`;
+  }
+  // Surface the real cause so it can be diagnosed instead of a dead-end message.
+  return `The AI call failed: ${msg.slice(0, 240)}`;
 }
 
 const TUTOR_SYSTEM = `You are Atlas, a warm but rigorous Biology & Chemistry tutor for Singapore secondary-school students sitting SEAB (Singapore-Cambridge) examinations.
