@@ -528,3 +528,33 @@ insert into question_outcomes (question_id, learning_outcome_id, weight) values
   (pg_temp.aid('q:acid:indicator'),  pg_temp.aid('lo:chem:5.1:b'),   1),
   (pg_temp.aid('q:redox:define'),    pg_temp.aid('lo:chem:7.1:b'),   1)
 on conflict (question_id, learning_outcome_id) do nothing;
+
+-- ════════════════════════════════════════════════════════════════════════════
+--  Curated flashcards (created_by null = shared). Requires 0007_flashcards.sql.
+-- ════════════════════════════════════════════════════════════════════════════
+insert into flashcards (id, subtopic_id, topic_id, front, back, created_by) values
+  (pg_temp.aid('fc:osmosis:def'), pg_temp.aid('st:bio:2:osmosis'), pg_temp.aid('t:bio:2'),
+   'Define osmosis.',
+   'The net movement of water molecules from a region of higher water potential to a region of lower water potential, through a partially permeable membrane.', null),
+  (pg_temp.aid('fc:osmosis:plant'), pg_temp.aid('st:bio:2:osmosis'), pg_temp.aid('t:bio:2'),
+   'What happens to a plant cell in a concentrated (low water potential) solution?',
+   'Water leaves by osmosis; the cell loses turgor, becomes flaccid and eventually plasmolysed.', null),
+  (pg_temp.aid('fc:diffusion:def'), pg_temp.aid('st:bio:2:diffusion'), pg_temp.aid('t:bio:2'),
+   'Define diffusion.',
+   'The net movement of particles from a region of higher concentration to a region of lower concentration, down a concentration gradient.', null),
+  (pg_temp.aid('fc:enzyme:temp'), pg_temp.aid('st:bio:3:enzymes'), pg_temp.aid('t:bio:3'),
+   'Why does enzyme activity fall above the optimum temperature?',
+   'High temperature denatures the enzyme: the active site changes shape, so substrate no longer fits and fewer enzyme-substrate complexes form.', null),
+  (pg_temp.aid('fc:enzyme:lock'), pg_temp.aid('st:bio:3:enzymes'), pg_temp.aid('t:bio:3'),
+   'State the lock-and-key hypothesis.',
+   'Each enzyme has a specific active site complementary in shape to its substrate; the substrate fits like a key into a lock to form an enzyme-substrate complex.', null),
+  (pg_temp.aid('fc:acid:ph'), pg_temp.aid('st:chem:5:acids'), pg_temp.aid('t:chem:5'),
+   'What ion do all acids produce in aqueous solution, and what is their pH range?',
+   'Acids produce hydrogen ions ($\\ce{H+}$). pH below 7.', null),
+  (pg_temp.aid('fc:mole:def'), pg_temp.aid('st:chem:4:mole'), pg_temp.aid('t:chem:4'),
+   'What is the mole, and how many particles is it?',
+   'The amount of substance containing the Avogadro number of particles, $6.02 \times 10^{23}$.', null),
+  (pg_temp.aid('fc:redox:oil'), pg_temp.aid('st:chem:7:redox'), pg_temp.aid('t:chem:7'),
+   'Define oxidation and reduction in terms of electrons (OIL RIG).',
+   'Oxidation Is Loss of electrons; Reduction Is Gain of electrons.', null)
+on conflict (id) do update set front = excluded.front, back = excluded.back;

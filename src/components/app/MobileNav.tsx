@@ -6,6 +6,7 @@ import {
   BarChart3,
   BookOpen,
   Home,
+  Layers,
   Library,
   MessageCircle,
   PenLine,
@@ -43,6 +44,7 @@ export function MobileNav({
         : [
             { href: "/learn", label: "Home", icon: Home },
             { href: "/practice", label: "Practice", icon: PenLine },
+            { href: "/cards", label: "Cards", icon: Layers },
             { href: "/tutor", label: "Tutor", icon: MessageCircle },
             { href: "/plan", label: "Plan", icon: BookOpen },
           ];

@@ -56,7 +56,8 @@ setup message) so you can browse the UI. Add the keys below to make it live.
    4. `supabase/migrations/0004_classrooms_visibility.sql` (classrooms + resource visibility)
    5. `supabase/migrations/0005_extracted_questions.sql` (OCR output table)
    6. `supabase/migrations/0006_assignments.sql` (assignments + join-class RPC)
-   7. `supabase/seed.sql` (SEAB Biology 6093 + Chemistry 6092 content)
+   7. `supabase/migrations/0007_flashcards.sql` (flashcards + spaced repetition)
+   8. `supabase/seed.sql` (SEAB Biology 6093 + Chemistry 6092 content + flashcards)
 4. **Auth → Providers → Email**: for easy testing, turn **off** "Confirm email"
    so signup logs you straight in.
 

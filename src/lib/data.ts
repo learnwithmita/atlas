@@ -84,6 +84,108 @@ export async function getTutorClassrooms(): Promise<Classroom[]> {
 }
 
 // ── Question bank ────────────────────────────────────────────────────────────
+// ── Flashcards ───────────────────────────────────────────────────────────────
+export type FlashcardDeck = {
+  subtopicId: string;
+  subtopicName: string;
+  topic: string;
+  subject: string;
+  total: number;
+  due: number;
+};
+
+export async function getFlashcardDecks(): Promise<FlashcardDeck[]> {
+  if (!isSupabaseConfigured) return [];
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const { data: cards } = await supabase
+    .from("flashcards")
+    .select("id, subtopic:subtopics(id, name, topic:topics(name, subject:subjects(name)))");
+
+  const dueByCard = new Map<string, boolean>();
+  if (user) {
+    const { data: reviews } = await supabase
+      .from("flashcard_reviews")
+      .select("flashcard_id, due_at")
+      .eq("student_id", user.id);
+    const now = Date.now();
+    for (const r of reviews ?? [])
+      dueByCard.set(r.flashcard_id, new Date(r.due_at).getTime() <= now);
+  }
+
+  const decks = new Map<string, FlashcardDeck>();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  for (const c of (cards ?? []) as any[]) {
+    const st = c.subtopic;
+    if (!st) continue;
+    const d =
+      decks.get(st.id) ??
+      ({
+        subtopicId: st.id,
+        subtopicName: st.name,
+        topic: st.topic?.name ?? "",
+        subject: st.topic?.subject?.name ?? "",
+        total: 0,
+        due: 0,
+      } as FlashcardDeck);
+    d.total += 1;
+    // New (no review row) counts as due.
+    if (!dueByCard.has(c.id) || dueByCard.get(c.id)) d.due += 1;
+    decks.set(st.id, d);
+  }
+  return [...decks.values()].sort((a, b) => b.due - a.due);
+}
+
+export type StudyCard = { id: string; front: string; back: string; isNew: boolean; due: boolean };
+
+export async function getStudyCards(
+  subtopicId: string
+): Promise<{ subtopicName: string; cards: StudyCard[] }> {
+  if (!isSupabaseConfigured) return { subtopicName: "", cards: [] };
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const { data: st } = await supabase
+    .from("subtopics")
+    .select("name")
+    .eq("id", subtopicId)
+    .single();
+
+  const { data: cards } = await supabase
+    .from("flashcards")
+    .select("id, front, back")
+    .eq("subtopic_id", subtopicId);
+
+  const reviewByCard = new Map<string, number>();
+  if (user) {
+    const { data: reviews } = await supabase
+      .from("flashcard_reviews")
+      .select("flashcard_id, due_at")
+      .eq("student_id", user.id);
+    for (const r of reviews ?? [])
+      reviewByCard.set(r.flashcard_id, new Date(r.due_at).getTime());
+  }
+  const now = Date.now();
+  const mapped: StudyCard[] = (cards ?? []).map((c) => {
+    const has = reviewByCard.has(c.id);
+    return {
+      id: c.id,
+      front: c.front,
+      back: c.back,
+      isNew: !has,
+      due: !has || (reviewByCard.get(c.id) ?? 0) <= now,
+    };
+  });
+  // Due/new first.
+  mapped.sort((a, b) => Number(b.due) - Number(a.due));
+  return { subtopicName: st?.name ?? "", cards: mapped };
+}
+
 export type BankTopic = {
   topicId: string;
   topicName: string;
@@ -778,6 +880,59 @@ export async function getPracticeQuestions(
         a.label.localeCompare(b.label)
       ),
   }));
+}
+
+/** Randomised question set drawn from the given topics (for a custom paper). */
+export async function getQuestionsForTopics(
+  topicIds: string[],
+  limit = 10
+): Promise<PracticeQuestion[]> {
+  if (!isSupabaseConfigured || topicIds.length === 0) return [];
+  const supabase = await createClient();
+  const { data: subs } = await supabase
+    .from("subtopics")
+    .select("id")
+    .in("topic_id", topicIds);
+  const subIds = (subs ?? []).map((s) => s.id);
+  if (subIds.length === 0) return [];
+
+  const { data } = await supabase
+    .from("questions")
+    .select(
+      `id, stem, type, marks, command_words,
+       subtopic:subtopics ( name ),
+       question_options ( label, text, is_correct, distractor_rationale )`
+    )
+    .in("subtopic_id", subIds)
+    .limit(100);
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const mapped: PracticeQuestion[] = (data ?? []).map((q: any) => ({
+    id: q.id,
+    stem: q.stem,
+    type: q.type,
+    marks: q.marks,
+    commandWords: q.command_words ?? [],
+    subtopic: q.subtopic?.name ?? "",
+    options: (q.question_options ?? [])
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .map((o: any) => ({
+        label: o.label,
+        text: o.text,
+        isCorrect: o.is_correct,
+        rationale: o.distractor_rationale,
+      }))
+      .sort((a: { label: string }, b: { label: string }) =>
+        a.label.localeCompare(b.label)
+      ),
+  }));
+
+  // Shuffle then take `limit`.
+  for (let i = mapped.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [mapped[i], mapped[j]] = [mapped[j], mapped[i]];
+  }
+  return mapped.slice(0, limit);
 }
 
 /** Current authenticated user's profile (or null). */

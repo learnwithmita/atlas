@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { ArrowUp, FileText, Sparkles } from "lucide-react";
 import { LogoMark } from "@/components/Logo";
+import { MathText } from "@/components/ui/MathText";
 import { cn } from "@/lib/utils";
 
 type Msg = { role: "user" | "model"; text: string; grounded?: boolean };
@@ -93,7 +94,7 @@ export function TutorChat({ topic }: { topic?: string }) {
                       : "bg-surface border border-hairline text-ink rounded-bl-md"
                   )}
                 >
-                  {m.text}
+                  {m.role === "model" ? <MathText>{m.text}</MathText> : m.text}
                 </div>
                 {m.role === "model" && m.grounded && (
                   <div className="mt-2 flex items-center gap-1.5 text-xs text-ink-3">

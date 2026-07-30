@@ -38,6 +38,7 @@ Rules:
 - Reward examiner technique (keywords, phrasing) as much as concepts.
 - If you are not confident the answer is in the syllabus, say so plainly rather than inventing facts.
 - Keep replies concise and warm. Use British spelling. Never give dangerous chemistry procedures (explosives, weapons, drugs) even if framed as curriculum.
+- Write any maths in LaTeX: inline as $...$ and block as $$...$$. Write chemical formulae/equations with mhchem, e.g. $\\ce{H2O}$, $\\ce{2H2 + O2 -> 2H2O}$.
 - If asked something outside Biology/Chemistry or general study skills, gently redirect.`;
 
 export type ChatMessage = { role: "user" | "model"; text: string };
@@ -130,6 +131,53 @@ Return only questions actually present in the document. Do not invent questions.
       topic: String(q.topic ?? "Unknown"),
       confidence: Number(q.confidence) || 0,
     }));
+  } catch {
+    return [];
+  }
+}
+
+export type GeneratedCard = { front: string; back: string };
+
+/** Generate flashcards for a topic/subtopic (Lumi-style AI decks). */
+export async function generateFlashcards(
+  subtopicName: string,
+  outcomes: string[],
+  count = 8
+): Promise<GeneratedCard[]> {
+  if (!isGeminiConfigured) throw new Error("GEMINI_API_KEY missing");
+
+  const prompt = `Create ${count} concise exam-revision flashcards for the SEAB O-Level topic "${subtopicName}".
+${outcomes.length ? `Cover these learning outcomes:\n${outcomes.map((o) => `- ${o}`).join("\n")}` : ""}
+
+Rules: front = a short recall question or key term; back = the precise SEAB-keyword answer a student must know. Use British spelling. Write any maths/chemistry in LaTeX ($...$, and $\\ce{...}$ for formulae).`;
+
+  const res = await client().models.generateContent({
+    model: CHAT_MODEL,
+    contents: prompt,
+    config: {
+      temperature: 0.4,
+      responseMimeType: "application/json",
+      responseSchema: {
+        type: Type.ARRAY,
+        items: {
+          type: Type.OBJECT,
+          properties: {
+            front: { type: Type.STRING },
+            back: { type: Type.STRING },
+          },
+          required: ["front", "back"],
+        },
+      },
+    },
+  });
+
+  try {
+    const parsed = JSON.parse(res.text ?? "[]");
+    if (!Array.isArray(parsed)) return [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return parsed
+      .map((c: any) => ({ front: String(c.front ?? ""), back: String(c.back ?? "") }))
+      .filter((c: GeneratedCard) => c.front && c.back);
   } catch {
     return [];
   }

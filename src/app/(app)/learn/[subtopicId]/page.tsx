@@ -12,6 +12,7 @@ import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { Card, CardEyebrow } from "@/components/ui/Card";
 import { LinkButton } from "@/components/ui/Button";
+import { MathText } from "@/components/ui/MathText";
 
 export const dynamic = "force-dynamic";
 
@@ -70,13 +71,13 @@ export default async function LessonPage({
 
           <Section title="In simple terms">
             <p className="text-ink-2 leading-relaxed">
-              {lesson.simple_explanation}
+              <MathText>{lesson.simple_explanation ?? ""}</MathText>
             </p>
           </Section>
 
           <Section title="The full picture">
             <p className="text-ink-2 leading-relaxed">
-              {lesson.detailed_explanation}
+              <MathText>{lesson.detailed_explanation ?? ""}</MathText>
             </p>
           </Section>
 

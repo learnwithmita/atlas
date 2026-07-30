@@ -7,6 +7,7 @@ import {
   BookOpen,
   GraduationCap,
   Home,
+  Layers,
   Library,
   MessageCircle,
   PenLine,
@@ -25,6 +26,7 @@ type NavItem = { href: string; label: string; icon: React.ElementType };
 const studentNav: NavItem[] = [
   { href: "/learn", label: "Home", icon: Home },
   { href: "/practice", label: "Practice", icon: PenLine },
+  { href: "/cards", label: "Flashcards", icon: Layers },
   { href: "/tutor", label: "AI Tutor", icon: MessageCircle },
   { href: "/plan", label: "Study Plan", icon: BookOpen },
 ];

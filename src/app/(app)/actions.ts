@@ -56,6 +56,65 @@ export async function submitAssignment(
   return { ok: true };
 }
 
+/** Spaced-repetition review (SM-2 lite). grade: again | hard | good | easy. */
+export async function reviewFlashcard(
+  flashcardId: string,
+  grade: "again" | "hard" | "good" | "easy"
+): Promise<{ error?: string; ok?: boolean }> {
+  if (!isSupabaseConfigured) return { error: "Supabase not connected." };
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not signed in." };
+
+  const { data: existing } = await supabase
+    .from("flashcard_reviews")
+    .select("ease, interval_days, reps")
+    .eq("student_id", user.id)
+    .eq("flashcard_id", flashcardId)
+    .maybeSingle();
+
+  let ease = Number(existing?.ease ?? 2.5);
+  let interval = Number(existing?.interval_days ?? 0);
+  let reps = Number(existing?.reps ?? 0);
+
+  switch (grade) {
+    case "again":
+      reps = 0;
+      interval = 0;
+      ease = Math.max(1.3, ease - 0.2);
+      break;
+    case "hard":
+      reps += 1;
+      interval = interval < 1 ? 1 : Math.round(interval * 1.2);
+      ease = Math.max(1.3, ease - 0.15);
+      break;
+    case "good":
+      reps += 1;
+      interval = reps === 1 ? 1 : reps === 2 ? 3 : Math.round(interval * ease);
+      break;
+    case "easy":
+      reps += 1;
+      interval = reps === 1 ? 3 : Math.round(interval * ease * 1.3);
+      ease += 0.15;
+      break;
+  }
+  const dueAt = new Date(Date.now() + interval * 86400000).toISOString();
+
+  const { error } = await supabase.from("flashcard_reviews").upsert({
+    student_id: user.id,
+    flashcard_id: flashcardId,
+    ease,
+    interval_days: interval,
+    reps,
+    due_at: dueAt,
+    last_reviewed: new Date().toISOString(),
+  });
+  if (error) return { error: error.message };
+  return { ok: true };
+}
+
 /** Records a study action toward today's streak + XP. */
 export async function recordActivity(xp = 10, minutes = 1) {
   if (!isSupabaseConfigured) return { error: "Supabase not connected." };

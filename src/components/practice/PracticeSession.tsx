@@ -12,6 +12,7 @@ import type { PracticeQuestion } from "@/lib/data";
 import type { MarkResult } from "@/lib/gemini";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
+import { MathText } from "@/components/ui/MathText";
 import { cn } from "@/lib/utils";
 
 const errorTone: Record<string, string> = {
@@ -150,7 +151,7 @@ function QuestionCard({
       </div>
 
       <h1 className="text-2xl font-semibold text-ink leading-snug mb-6">
-        {q.stem}
+        <MathText>{q.stem}</MathText>
       </h1>
 
       {/* MCQ */}
@@ -332,7 +333,7 @@ function MarkingPanel({
                 <Sparkles size={12} /> Your answer, improved
               </p>
               <p className="text-sm text-ink leading-relaxed">
-                {result.improvedAnswer}
+                <MathText>{result.improvedAnswer}</MathText>
               </p>
             </div>
           )}
@@ -342,7 +343,7 @@ function MarkingPanel({
                 Model answer
               </p>
               <p className="text-sm text-ink-2 leading-relaxed">
-                {result.modelAnswer}
+                <MathText>{result.modelAnswer}</MathText>
               </p>
             </div>
           )}

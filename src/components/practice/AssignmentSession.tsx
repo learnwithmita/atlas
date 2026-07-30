@@ -7,6 +7,7 @@ import type { AssignmentDetail } from "@/lib/data";
 import type { MarkResult } from "@/lib/gemini";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
+import { MathText } from "@/components/ui/MathText";
 import { submitAssignment } from "@/app/(app)/actions";
 import { cn } from "@/lib/utils";
 
@@ -109,7 +110,9 @@ export function AssignmentSession({ assignment }: { assignment: AssignmentDetail
                 </span>
               ) : null}
             </div>
-            <p className="text-[15px] text-ink mb-3">{q.stem}</p>
+            <p className="text-[15px] text-ink mb-3">
+              <MathText>{q.stem}</MathText>
+            </p>
 
             <textarea
               value={st.answer}

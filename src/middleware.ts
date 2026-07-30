@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { SUPABASE_ANON_KEY, SUPABASE_URL, isSupabaseConfigured } from "@/lib/supabase/config";
 
-const PROTECTED = ["/learn", "/practice", "/tutor", "/plan", "/admin", "/account", "/teach"];
+const PROTECTED = ["/learn", "/practice", "/tutor", "/plan", "/admin", "/account", "/teach", "/cards"];
 const AUTH_PAGES = ["/login", "/signup"];
 
 export async function middleware(request: NextRequest) {
