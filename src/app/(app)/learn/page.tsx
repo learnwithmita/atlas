@@ -105,7 +105,7 @@ export default async function LearnHome() {
             </h2>
             <p className="text-sm text-ink-3 mb-5">Picked for you</p>
             <Link
-              href="/learn/c0000002-0000-0000-0000-000000000002"
+              href="/learn/bf832a31-5917-58bf-90b5-ec31d443a699"
               className="group rounded-[16px] border border-hairline p-4 hover:border-accent transition-colors"
             >
               <div className="h-10 w-10 rounded-[12px] bg-accent-soft grid place-items-center mb-3">

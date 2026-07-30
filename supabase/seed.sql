@@ -1,108 +1,530 @@
 -- ============================================================================
--- Atlas — seed content (G3 Biology + Chemistry). Safe to re-run.
+-- Atlas — seed content from the OFFICIAL SEAB 2026 syllabuses
+--   Biology  6093  (© MOE & Cambridge University Press & Assessment 2024)
+--   Chemistry 6092 (© MOE & Cambridge University Press & Assessment 2024)
+--
+-- Full curriculum spine: subjects → topics → subtopics → learning_outcomes,
+-- with syllabus codes preserved. Plus a worked lesson + sample marked
+-- questions remapped onto the real subtopics.
+--
+-- Idempotent: ids are derived deterministically (uuid_generate_v5) from a
+-- session-local helper, so re-running upserts instead of duplicating.
 -- Run AFTER 0001_init.sql. Content only — no user data.
 -- ============================================================================
 
--- Subjects -------------------------------------------------------------------
+-- Deterministic id helper (auto-dropped at end of session) -------------------
+create or replace function pg_temp.aid(k text) returns uuid
+language sql immutable as $$
+  select uuid_generate_v5('6ba7b811-9dad-11d1-80b4-00c04fd430c8'::uuid, 'atlas:' || k);
+$$;
+
+-- ── Subjects ────────────────────────────────────────────────────────────────
 insert into subjects (id, name, exam_body, syllabus_code, icon, sort_order) values
-  ('11111111-1111-1111-1111-111111111111', 'Biology',   'SEAB', '6093', 'leaf',  1),
-  ('22222222-2222-2222-2222-222222222222', 'Chemistry', 'SEAB', '6092', 'flask', 2)
-on conflict (id) do nothing;
+  (pg_temp.aid('subj:6093'), 'Biology',   'SEAB', '6093', 'leaf',  1),
+  (pg_temp.aid('subj:6092'), 'Chemistry', 'SEAB', '6092', 'flask', 2)
+on conflict (id) do update set name = excluded.name, syllabus_code = excluded.syllabus_code, icon = excluded.icon;
 
--- Topics ---------------------------------------------------------------------
+-- ════════════════════════════════════════════════════════════════════════════
+--  BIOLOGY 6093
+-- ════════════════════════════════════════════════════════════════════════════
 insert into topics (id, subject_id, name, sort_order) values
-  ('a0000001-0000-0000-0000-000000000001', '11111111-1111-1111-1111-111111111111', 'Movement of Substances', 1),
-  ('a0000002-0000-0000-0000-000000000002', '11111111-1111-1111-1111-111111111111', 'Enzymes', 2),
-  ('a0000003-0000-0000-0000-000000000003', '11111111-1111-1111-1111-111111111111', 'Nutrition in Humans', 3),
-  ('b0000001-0000-0000-0000-000000000001', '22222222-2222-2222-2222-222222222222', 'Acids, Bases and Salts', 1),
-  ('b0000002-0000-0000-0000-000000000002', '22222222-2222-2222-2222-222222222222', 'The Particulate Nature of Matter', 2)
-on conflict (id) do nothing;
+  (pg_temp.aid('t:bio:1'),  pg_temp.aid('subj:6093'), 'Cell Structure and Organisation', 1),
+  (pg_temp.aid('t:bio:2'),  pg_temp.aid('subj:6093'), 'Movement of Substances', 2),
+  (pg_temp.aid('t:bio:3'),  pg_temp.aid('subj:6093'), 'Biological Molecules', 3),
+  (pg_temp.aid('t:bio:4'),  pg_temp.aid('subj:6093'), 'Nutrition in Humans', 4),
+  (pg_temp.aid('t:bio:5'),  pg_temp.aid('subj:6093'), 'Transport in Humans', 5),
+  (pg_temp.aid('t:bio:6'),  pg_temp.aid('subj:6093'), 'Respiration in Humans', 6),
+  (pg_temp.aid('t:bio:7'),  pg_temp.aid('subj:6093'), 'Excretion in Humans', 7),
+  (pg_temp.aid('t:bio:8'),  pg_temp.aid('subj:6093'), 'Homeostasis, Co-ordination and Response in Humans', 8),
+  (pg_temp.aid('t:bio:9'),  pg_temp.aid('subj:6093'), 'Infectious Diseases in Humans', 9),
+  (pg_temp.aid('t:bio:10'), pg_temp.aid('subj:6093'), 'Nutrition and Transport in Flowering Plants', 10),
+  (pg_temp.aid('t:bio:11'), pg_temp.aid('subj:6093'), 'Organisms and their Environment', 11),
+  (pg_temp.aid('t:bio:12'), pg_temp.aid('subj:6093'), 'Molecular Genetics', 12),
+  (pg_temp.aid('t:bio:13'), pg_temp.aid('subj:6093'), 'Reproduction', 13),
+  (pg_temp.aid('t:bio:14'), pg_temp.aid('subj:6093'), 'Inheritance', 14)
+on conflict (id) do update set name = excluded.name, sort_order = excluded.sort_order;
 
--- Subtopics ------------------------------------------------------------------
 insert into subtopics (id, topic_id, name, sort_order) values
-  ('c0000001-0000-0000-0000-000000000001', 'a0000001-0000-0000-0000-000000000001', 'Diffusion', 1),
-  ('c0000002-0000-0000-0000-000000000002', 'a0000001-0000-0000-0000-000000000001', 'Osmosis', 2),
-  ('c0000003-0000-0000-0000-000000000003', 'a0000001-0000-0000-0000-000000000001', 'Active Transport', 3),
-  ('c0000004-0000-0000-0000-000000000004', 'a0000002-0000-0000-0000-000000000002', 'Enzyme Action & Factors', 1),
-  ('c0000005-0000-0000-0000-000000000005', 'a0000003-0000-0000-0000-000000000003', 'Enzymic Digestion', 1),
-  ('d0000001-0000-0000-0000-000000000001', 'b0000001-0000-0000-0000-000000000001', 'The pH Scale', 1),
-  ('d0000002-0000-0000-0000-000000000002', 'b0000001-0000-0000-0000-000000000001', 'Preparation of Salts', 2),
-  ('d0000003-0000-0000-0000-000000000003', 'b0000002-0000-0000-0000-000000000002', 'States of Matter', 1)
-on conflict (id) do nothing;
+  (pg_temp.aid('st:bio:1:cells'),      pg_temp.aid('t:bio:1'), 'Plant and Animal Cells', 1),
+  (pg_temp.aid('st:bio:1:special'),    pg_temp.aid('t:bio:1'), 'Cell Specialisation', 2),
+  (pg_temp.aid('st:bio:2:diffusion'),  pg_temp.aid('t:bio:2'), 'Diffusion', 1),
+  (pg_temp.aid('st:bio:2:osmosis'),    pg_temp.aid('t:bio:2'), 'Osmosis', 2),
+  (pg_temp.aid('st:bio:2:active'),     pg_temp.aid('t:bio:2'), 'Active Transport', 3),
+  (pg_temp.aid('st:bio:3:molecules'),  pg_temp.aid('t:bio:3'), 'Carbohydrates, Fats and Proteins', 1),
+  (pg_temp.aid('st:bio:3:enzymes'),    pg_temp.aid('t:bio:3'), 'Enzymes', 2),
+  (pg_temp.aid('st:bio:4:digestive'),  pg_temp.aid('t:bio:4'), 'Human Digestive System', 1),
+  (pg_temp.aid('st:bio:4:digestion'),  pg_temp.aid('t:bio:4'), 'Physical and Chemical Digestion', 2),
+  (pg_temp.aid('st:bio:4:absorption'), pg_temp.aid('t:bio:4'), 'Absorption and Assimilation', 3),
+  (pg_temp.aid('st:bio:5:circ'),       pg_temp.aid('t:bio:5'), 'Parts and Functions of the Circulatory System', 1),
+  (pg_temp.aid('st:bio:5:blood'),      pg_temp.aid('t:bio:5'), 'Blood', 2),
+  (pg_temp.aid('st:bio:5:heart'),      pg_temp.aid('t:bio:5'), 'Heart and Cardiac Cycle', 3),
+  (pg_temp.aid('st:bio:5:chd'),        pg_temp.aid('t:bio:5'), 'Coronary Heart Disease', 4),
+  (pg_temp.aid('st:bio:6:gas'),        pg_temp.aid('t:bio:6'), 'Human Gas Exchange', 1),
+  (pg_temp.aid('st:bio:6:cellresp'),   pg_temp.aid('t:bio:6'), 'Cellular Respiration', 2),
+  (pg_temp.aid('st:bio:7:kidneys'),    pg_temp.aid('t:bio:7'), 'Structure and Function of Kidneys', 1),
+  (pg_temp.aid('st:bio:7:dialysis'),   pg_temp.aid('t:bio:7'), 'Kidney Dialysis', 2),
+  (pg_temp.aid('st:bio:8:principles'), pg_temp.aid('t:bio:8'), 'Principles of Homeostasis', 1),
+  (pg_temp.aid('st:bio:8:hormonal'),   pg_temp.aid('t:bio:8'), 'Hormonal Control', 2),
+  (pg_temp.aid('st:bio:8:nervous'),    pg_temp.aid('t:bio:8'), 'Nervous Control', 3),
+  (pg_temp.aid('st:bio:9:organisms'),  pg_temp.aid('t:bio:9'), 'Organisms affecting Human Health', 1),
+  (pg_temp.aid('st:bio:9:influenza'),  pg_temp.aid('t:bio:9'), 'Influenza and Pneumococcal Disease', 2),
+  (pg_temp.aid('st:bio:9:prevention'), pg_temp.aid('t:bio:9'), 'Prevention and Treatment of Infectious Diseases', 3),
+  (pg_temp.aid('st:bio:10:structure'), pg_temp.aid('t:bio:10'), 'Plant Structure', 1),
+  (pg_temp.aid('st:bio:10:photo'),     pg_temp.aid('t:bio:10'), 'Photosynthesis', 2),
+  (pg_temp.aid('st:bio:10:transp'),    pg_temp.aid('t:bio:10'), 'Transpiration', 3),
+  (pg_temp.aid('st:bio:10:translo'),   pg_temp.aid('t:bio:10'), 'Translocation', 4),
+  (pg_temp.aid('st:bio:11:energy'),    pg_temp.aid('t:bio:11'), 'Energy Flow', 1),
+  (pg_temp.aid('st:bio:11:food'),      pg_temp.aid('t:bio:11'), 'Food Chains and Food Webs', 2),
+  (pg_temp.aid('st:bio:11:carbon'),    pg_temp.aid('t:bio:11'), 'Carbon Cycle and Global Warming', 3),
+  (pg_temp.aid('st:bio:11:maneco'),    pg_temp.aid('t:bio:11'), 'Effects of Man on the Ecosystem', 4),
+  (pg_temp.aid('st:bio:11:conserv'),   pg_temp.aid('t:bio:11'), 'Conservation', 5),
+  (pg_temp.aid('st:bio:12:dna'),       pg_temp.aid('t:bio:12'), 'The Structure of DNA', 1),
+  (pg_temp.aid('st:bio:12:proteins'),  pg_temp.aid('t:bio:12'), 'From DNA to Proteins', 2),
+  (pg_temp.aid('st:bio:12:genetic'),   pg_temp.aid('t:bio:12'), 'Genetic Engineering', 3),
+  (pg_temp.aid('st:bio:13:asexual'),   pg_temp.aid('t:bio:13'), 'Asexual Reproduction', 1),
+  (pg_temp.aid('st:bio:13:division'),  pg_temp.aid('t:bio:13'), 'Cell Division', 2),
+  (pg_temp.aid('st:bio:13:plants'),    pg_temp.aid('t:bio:13'), 'Sexual Reproduction in Flowering Plants', 3),
+  (pg_temp.aid('st:bio:13:humans'),    pg_temp.aid('t:bio:13'), 'Sexual Reproduction in Humans', 4),
+  (pg_temp.aid('st:bio:13:std'),       pg_temp.aid('t:bio:13'), 'Sexually Transmitted Diseases', 5),
+  (pg_temp.aid('st:bio:14:passage'),   pg_temp.aid('t:bio:14'), 'Passage of Genetic Information from Parent to Offspring', 1),
+  (pg_temp.aid('st:bio:14:mono'),      pg_temp.aid('t:bio:14'), 'Monohybrid Crosses', 2),
+  (pg_temp.aid('st:bio:14:variation'), pg_temp.aid('t:bio:14'), 'Variation', 3),
+  (pg_temp.aid('st:bio:14:natsel'),    pg_temp.aid('t:bio:14'), 'Natural Selection', 4)
+on conflict (id) do update set name = excluded.name, sort_order = excluded.sort_order;
 
--- Learning outcomes (frequency_score 1..5) -----------------------------------
 insert into learning_outcomes (id, subtopic_id, code, statement, frequency_score) values
-  ('e0000001-0000-0000-0000-000000000001', 'c0000002-0000-0000-0000-000000000002', 'B1.2a', 'Define osmosis as the net movement of water molecules from a region of higher water potential to a region of lower water potential, through a partially permeable membrane', 5),
-  ('e0000002-0000-0000-0000-000000000002', 'c0000002-0000-0000-0000-000000000002', 'B1.2b', 'Explain the effects of immersing plant and animal cells in solutions of different concentrations', 5),
-  ('e0000003-0000-0000-0000-000000000003', 'c0000001-0000-0000-0000-000000000001', 'B1.1a', 'Define diffusion and describe its role in the movement of substances', 4),
-  ('e0000004-0000-0000-0000-000000000004', 'c0000003-0000-0000-0000-000000000003', 'B1.3a', 'Explain active transport as movement of ions against a concentration gradient using energy from respiration', 3),
-  ('e0000005-0000-0000-0000-000000000005', 'c0000004-0000-0000-0000-000000000004', 'B2.1a', 'Explain the effect of temperature and pH on enzyme activity', 5),
-  ('e0000006-0000-0000-0000-000000000006', 'c0000005-0000-0000-0000-000000000005', 'B3.1a', 'Describe the enzymic digestion of starch, protein and fats', 4),
-  ('f0000001-0000-0000-0000-000000000001', 'd0000001-0000-0000-0000-000000000001', 'C1.1a', 'Describe the use of universal indicator and pH to measure acidity/alkalinity', 4),
-  ('f0000002-0000-0000-0000-000000000002', 'd0000002-0000-0000-0000-000000000002', 'C1.2a', 'Describe the preparation of soluble and insoluble salts', 5),
-  ('f0000003-0000-0000-0000-000000000003', 'd0000003-0000-0000-0000-000000000003', 'C2.1a', 'Describe the changes of state in terms of the kinetic particle theory', 3)
-on conflict (id) do nothing;
+  -- 1. Cell Structure and Organisation
+  (pg_temp.aid('lo:bio:1:a'), pg_temp.aid('st:bio:1:cells'),   '1(a)', 'Identify and state the functions of cell structures of typical plant and animal cells (cell wall, cell membrane, cytoplasm, nucleus, vacuoles, chloroplasts) from diagrams, light micrographs and prepared/fresh slides', 4),
+  (pg_temp.aid('lo:bio:1:b'), pg_temp.aid('st:bio:1:cells'),   '1(b)', 'Identify and state the functions of membrane systems and organelles (endoplasmic reticulum, Golgi body, mitochondria, ribosomes) from diagrams and electron micrographs', 3),
+  (pg_temp.aid('lo:bio:1:c'), pg_temp.aid('st:bio:1:cells'),   '1(c)', 'Compare the structure of typical animal and plant cells', 4),
+  (pg_temp.aid('lo:bio:1:d'), pg_temp.aid('st:bio:1:special'), '1(d)', 'Explain how the structures of specialised cells (e.g. muscle, root hair, red blood cell) are adapted to their functions', 4),
+  -- 2. Movement of Substances
+  (pg_temp.aid('lo:bio:2:a'), pg_temp.aid('st:bio:2:diffusion'), '2(a)', 'Define diffusion and describe its role in nutrient uptake and gaseous exchange in plants and humans', 4),
+  (pg_temp.aid('lo:bio:2:b'), pg_temp.aid('st:bio:2:osmosis'),   '2(b)', 'Define osmosis; investigate and describe the effects of osmosis on plant and animal tissues', 5),
+  (pg_temp.aid('lo:bio:2:c'), pg_temp.aid('st:bio:2:active'),    '2(c)', 'Define active transport and discuss it as an energy-consuming process moving substances against a concentration gradient (ion uptake by root hairs, glucose uptake in villi)', 4),
+  -- 3. Biological Molecules
+  (pg_temp.aid('lo:bio:3:a'), pg_temp.aid('st:bio:3:molecules'), '3(a)', 'List the chemical elements that make up carbohydrates, fats and proteins', 3),
+  (pg_temp.aid('lo:bio:3:b'), pg_temp.aid('st:bio:3:molecules'), '3(b)', 'State the main roles of carbohydrates (energy), fats (insulation, long-term energy) and proteins (growth and repair)', 3),
+  (pg_temp.aid('lo:bio:3:c'), pg_temp.aid('st:bio:3:molecules'), '3(c)', 'Describe and carry out food tests: starch (iodine), reducing sugars (Benedict''s), protein (biuret), fats (ethanol)', 5),
+  (pg_temp.aid('lo:bio:3:d'), pg_temp.aid('st:bio:3:molecules'), '3(d)', 'State that large molecules are synthesised from smaller units (starch/glycogen/cellulose from glucose; proteins from amino acids; fats from glycerol and fatty acids)', 3),
+  (pg_temp.aid('lo:bio:3:e'), pg_temp.aid('st:bio:3:enzymes'),   '3(e)', 'Explain enzyme action in terms of active site, enzyme-substrate complex, lowering of activation energy and specificity using the lock-and-key hypothesis', 5),
+  (pg_temp.aid('lo:bio:3:f'), pg_temp.aid('st:bio:3:enzymes'),   '3(f)', 'Investigate and explain the effects of temperature and pH on the rate of enzyme-catalysed reactions', 5),
+  -- 4. Nutrition in Humans
+  (pg_temp.aid('lo:bio:4:a'), pg_temp.aid('st:bio:4:digestive'),  '4(a)', 'Describe the functions of the parts of the digestive system in ingestion, digestion, absorption, assimilation and egestion', 4),
+  (pg_temp.aid('lo:bio:4:b'), pg_temp.aid('st:bio:4:digestive'),  '4(b)', 'Describe peristalsis as rhythmic wave-like muscle contractions that mix and propel contents of the alimentary canal', 3),
+  (pg_temp.aid('lo:bio:4:c'), pg_temp.aid('st:bio:4:digestion'),  '4(c)', 'Describe the functions of digestive enzymes (amylase, maltase, protease, lipase), listing substrates and end-products', 5),
+  (pg_temp.aid('lo:bio:4:d'), pg_temp.aid('st:bio:4:absorption'), '4(d)', 'Explain how the structure of a villus (capillaries and lacteal) is suited for absorption', 4),
+  (pg_temp.aid('lo:bio:4:e'), pg_temp.aid('st:bio:4:absorption'), '4(e)', 'State the function of the hepatic portal vein in transporting nutrient-rich blood from the small intestine to the liver', 3),
+  (pg_temp.aid('lo:bio:4:f'), pg_temp.aid('st:bio:4:absorption'), '4(f)', 'State the role of the liver in glucose/glycogen conversion, fat digestion, amino acid metabolism and urea formation, and breakdown of alcohol and hormones', 4),
+  (pg_temp.aid('lo:bio:4:g'), pg_temp.aid('st:bio:4:absorption'), '4(g)', 'Outline the effects of alcohol on the brain, the long-term effects of excessive consumption and the social implications', 2),
+  -- 5. Transport in Humans
+  (pg_temp.aid('lo:bio:5:a'), pg_temp.aid('st:bio:5:circ'),  '5(a)', 'Identify the main blood vessels to and from the heart, lungs, liver and kidney', 3),
+  (pg_temp.aid('lo:bio:5:b'), pg_temp.aid('st:bio:5:circ'),  '5(b)', 'Relate the structures of arteries, veins and capillaries to their functions', 4),
+  (pg_temp.aid('lo:bio:5:c'), pg_temp.aid('st:bio:5:circ'),  '5(c)', 'Describe the transfer of materials between capillaries and tissue fluid', 4),
+  (pg_temp.aid('lo:bio:5:d'), pg_temp.aid('st:bio:5:blood'), '5(d)', 'State the components of blood and their roles in transport and defence (red cells, plasma, white cells, platelets)', 4),
+  (pg_temp.aid('lo:bio:5:e'), pg_temp.aid('st:bio:5:blood'), '5(e)', 'List the ABO blood groups and describe donor-recipient combinations in blood transfusions', 3),
+  (pg_temp.aid('lo:bio:5:f'), pg_temp.aid('st:bio:5:heart'), '5(f)', 'Describe the structure and function of the heart in terms of muscular contraction and the working of valves', 4),
+  (pg_temp.aid('lo:bio:5:g'), pg_temp.aid('st:bio:5:heart'), '5(g)', 'Outline the cardiac cycle in terms of what happens during systole and diastole', 4),
+  (pg_temp.aid('lo:bio:5:h'), pg_temp.aid('st:bio:5:chd'),   '5(h)', 'Describe coronary heart disease as occlusion of coronary arteries; list causes and preventative measures', 3),
+  -- 6. Respiration in Humans
+  (pg_temp.aid('lo:bio:6:a'), pg_temp.aid('st:bio:6:gas'),      '6(a)', 'Identify the larynx, trachea, bronchi, bronchioles, alveoli and associated capillaries and state their functions in gaseous exchange', 3),
+  (pg_temp.aid('lo:bio:6:b'), pg_temp.aid('st:bio:6:gas'),      '6(b)', 'Describe breathing and the role of cilia, diaphragm, ribs and intercostal muscles', 4),
+  (pg_temp.aid('lo:bio:6:c'), pg_temp.aid('st:bio:6:gas'),      '6(c)', 'Explain how the structure of an alveolus is suited for gaseous exchange', 4),
+  (pg_temp.aid('lo:bio:6:d'), pg_temp.aid('st:bio:6:gas'),      '6(d)', 'State the major toxic components of tobacco smoke (nicotine, tar, carbon monoxide) and their effects on health', 3),
+  (pg_temp.aid('lo:bio:6:e'), pg_temp.aid('st:bio:6:cellresp'), '6(e)', 'Define aerobic respiration and state the word and symbol equations', 4),
+  (pg_temp.aid('lo:bio:6:f'), pg_temp.aid('st:bio:6:cellresp'), '6(f)', 'Define anaerobic respiration in human cells and state the word equation', 4),
+  (pg_temp.aid('lo:bio:6:g'), pg_temp.aid('st:bio:6:cellresp'), '6(g)', 'Explain why cells respire anaerobically during vigorous exercise, resulting in an oxygen debt removed by rapid deep breathing', 4),
+  -- 7. Excretion in Humans
+  (pg_temp.aid('lo:bio:7:a'), pg_temp.aid('st:bio:7:kidneys'),  '7(a)', 'Define excretion and explain the importance of removing nitrogenous and other compounds from the body', 3),
+  (pg_temp.aid('lo:bio:7:b'), pg_temp.aid('st:bio:7:kidneys'),  '7(b)', 'Identify the kidneys, ureter, bladder and urethra and state their functions in excretion', 3),
+  (pg_temp.aid('lo:bio:7:c'), pg_temp.aid('st:bio:7:kidneys'),  '7(c)', 'Outline the function of the nephron with reference to ultra-filtration and selective reabsorption in urine production', 4),
+  (pg_temp.aid('lo:bio:7:d'), pg_temp.aid('st:bio:7:dialysis'), '7(d)', 'Outline the mechanism of dialysis in the case of kidney failure', 3),
+  -- 8. Homeostasis, Co-ordination and Response
+  (pg_temp.aid('lo:bio:8:a'), pg_temp.aid('st:bio:8:principles'), '8(a)', 'Define homeostasis as the maintenance of a constant internal environment', 4),
+  (pg_temp.aid('lo:bio:8:b'), pg_temp.aid('st:bio:8:principles'), '8(b)', 'Explain the basic principles of homeostasis in terms of stimulus, corrective mechanism and negative feedback', 5),
+  (pg_temp.aid('lo:bio:8:c'), pg_temp.aid('st:bio:8:principles'), '8(c)', 'Describe the maintenance of a constant body temperature (temperature receptors, sweating, shivering, blood flow, hypothalamus)', 4),
+  (pg_temp.aid('lo:bio:8:d'), pg_temp.aid('st:bio:8:hormonal'),   '8(d)', 'Define a hormone as a chemical produced by a gland, carried by the blood, altering the activity of target organs', 4),
+  (pg_temp.aid('lo:bio:8:e'), pg_temp.aid('st:bio:8:hormonal'),   '8(e)', 'Explain what is meant by an endocrine gland, with reference to the islets of Langerhans', 3),
+  (pg_temp.aid('lo:bio:8:f'), pg_temp.aid('st:bio:8:hormonal'),   '8(f)', 'Explain how blood glucose concentration is regulated by insulin and glucagon as a homeostatic mechanism', 5),
+  (pg_temp.aid('lo:bio:8:g'), pg_temp.aid('st:bio:8:hormonal'),   '8(g)', 'Describe type 2 diabetes mellitus in terms of persistently high blood glucose due to insulin resistance or insufficient insulin', 4),
+  (pg_temp.aid('lo:bio:8:h'), pg_temp.aid('st:bio:8:hormonal'),   '8(h)', 'Identify risk factors of and ways to manage type 2 diabetes mellitus', 3),
+  (pg_temp.aid('lo:bio:8:i'), pg_temp.aid('st:bio:8:hormonal'),   '8(i)', 'Outline the role of anti-diuretic hormone (ADH) in osmoregulation', 3),
+  (pg_temp.aid('lo:bio:8:j'), pg_temp.aid('st:bio:8:nervous'),    '8(j)', 'State that the nervous system (brain, spinal cord, nerves) co-ordinates and regulates bodily functions', 3),
+  (pg_temp.aid('lo:bio:8:k'), pg_temp.aid('st:bio:8:nervous'),    '8(k)', 'Outline how receptors, sensory, relay and motor neurones and effectors produce a co-ordinated response in a reflex action', 4),
+  (pg_temp.aid('lo:bio:8:l'), pg_temp.aid('st:bio:8:nervous'),    '8(l)', 'Describe the structure of the eye in front view and horizontal section', 3),
+  (pg_temp.aid('lo:bio:8:m'), pg_temp.aid('st:bio:8:nervous'),    '8(m)', 'State the principal functions of parts of the eye in producing a focused image of near and distant objects', 3),
+  (pg_temp.aid('lo:bio:8:n'), pg_temp.aid('st:bio:8:nervous'),    '8(n)', 'Describe the pupil reflex in response to bright and dim light', 3),
+  -- 9. Infectious Diseases
+  (pg_temp.aid('lo:bio:9:a'), pg_temp.aid('st:bio:9:organisms'),  '9(a)', 'State that infectious diseases can spread from person to person whereas non-infectious cannot; give examples of each', 2),
+  (pg_temp.aid('lo:bio:9:b'), pg_temp.aid('st:bio:9:organisms'),  '9(b)', 'Explain that infectious diseases are caused by pathogens (bacteria, viruses) spread through body fluids, food and water', 3),
+  (pg_temp.aid('lo:bio:9:c'), pg_temp.aid('st:bio:9:organisms'),  '9(c)', 'State that a typical virus has a protein coat enclosing genetic material and reproduces only in living host cells', 3),
+  (pg_temp.aid('lo:bio:9:d'), pg_temp.aid('st:bio:9:organisms'),  '9(d)', 'State that a typical bacterium has a cell wall and DNA without a nucleus; some pathogenic, some non-pathogenic', 3),
+  (pg_temp.aid('lo:bio:9:e'), pg_temp.aid('st:bio:9:influenza'),  '9(e)', 'State the signs and symptoms of influenza (influenza virus) and pneumococcal disease (pneumococcus)', 2),
+  (pg_temp.aid('lo:bio:9:f'), pg_temp.aid('st:bio:9:influenza'),  '9(f)', 'Describe the transmission and methods to reduce transmission of influenza virus and pneumococcus', 3),
+  (pg_temp.aid('lo:bio:9:g'), pg_temp.aid('st:bio:9:prevention'), '9(g)', 'State that vaccines contain an agent resembling a pathogen and stimulate white blood cells to produce antibodies quickly', 4),
+  (pg_temp.aid('lo:bio:9:h'), pg_temp.aid('st:bio:9:prevention'), '9(h)', 'Explain that antibiotics target bacteria by preventing synthesis of cellular structures but are ineffective against viruses', 4),
+  (pg_temp.aid('lo:bio:9:i'), pg_temp.aid('st:bio:9:prevention'), '9(i)', 'Discuss how misuse and overuse of antibiotics may accelerate emergence of antibiotic-resistant bacteria', 3),
+  -- 10. Nutrition and Transport in Flowering Plants
+  (pg_temp.aid('lo:bio:10:a'), pg_temp.aid('st:bio:10:structure'), '10(a)', 'Identify the cellular/tissue structure of a dicotyledonous leaf in TS and describe the significance of these features', 4),
+  (pg_temp.aid('lo:bio:10:b'), pg_temp.aid('st:bio:10:structure'), '10(b)', 'Identify positions and explain functions of xylem and phloem in a dicotyledonous leaf and stem under the light microscope', 4),
+  (pg_temp.aid('lo:bio:10:c'), pg_temp.aid('st:bio:10:structure'), '10(c)', 'Explain how the structure of a root hair cell is suited for water and ion uptake', 4),
+  (pg_temp.aid('lo:bio:10:d'), pg_temp.aid('st:bio:10:photo'),     '10(d)', 'State that chlorophyll absorbs light energy and converts it to chemical energy for carbohydrate formation', 3),
+  (pg_temp.aid('lo:bio:10:e'), pg_temp.aid('st:bio:10:photo'),     '10(e)', 'Briefly explain why most forms of life are completely dependent on photosynthesis', 3),
+  (pg_temp.aid('lo:bio:10:f'), pg_temp.aid('st:bio:10:photo'),     '10(f)', 'State the word and symbol equations for photosynthesis', 4),
+  (pg_temp.aid('lo:bio:10:g'), pg_temp.aid('st:bio:10:photo'),     '10(g)', 'Describe how carbon dioxide reaches mesophyll cells in a leaf', 3),
+  (pg_temp.aid('lo:bio:10:h'), pg_temp.aid('st:bio:10:photo'),     '10(h)', 'Investigate and discuss the effects of light intensity, CO2 concentration and temperature on the rate of photosynthesis', 5),
+  (pg_temp.aid('lo:bio:10:i'), pg_temp.aid('st:bio:10:photo'),     '10(i)', 'Discuss light intensity, CO2 concentration and temperature as limiting factors on photosynthesis', 5),
+  (pg_temp.aid('lo:bio:10:j'), pg_temp.aid('st:bio:10:transp'),    '10(j)', 'Define transpiration and explain that it is a consequence of gaseous exchange in plants', 4),
+  (pg_temp.aid('lo:bio:10:k'), pg_temp.aid('st:bio:10:transp'),    '10(k)', 'Explain the movement of water between plant cells and the environment in terms of water potential', 4),
+  (pg_temp.aid('lo:bio:10:l'), pg_temp.aid('st:bio:10:transp'),    '10(l)', 'Outline the pathway of water transport from roots through xylem to leaves by transpiration pull', 4),
+  (pg_temp.aid('lo:bio:10:m'), pg_temp.aid('st:bio:10:transp'),    '10(m)', 'Investigate and explain effects of air movement, temperature, humidity and light on transpiration rate, and how wilting occurs', 4),
+  (pg_temp.aid('lo:bio:10:n'), pg_temp.aid('st:bio:10:translo'),   '10(n)', 'Define translocation as the transport of food (mainly sucrose) in phloem and illustrate through translocation studies', 3),
+  -- 11. Organisms and their Environment
+  (pg_temp.aid('lo:bio:11:a'), pg_temp.aid('st:bio:11:energy'),  '11(a)', 'Describe the non-cyclical nature of energy flow', 3),
+  (pg_temp.aid('lo:bio:11:b'), pg_temp.aid('st:bio:11:food'),    '11(b)', 'Describe the roles of producers, consumers and decomposers in food chains and food webs', 4),
+  (pg_temp.aid('lo:bio:11:c'), pg_temp.aid('st:bio:11:food'),    '11(c)', 'Explain how energy losses occur along food chains and discuss efficiency of energy transfer between trophic levels', 4),
+  (pg_temp.aid('lo:bio:11:d'), pg_temp.aid('st:bio:11:food'),    '11(d)', 'Describe and interpret pyramids of numbers and biomass', 3),
+  (pg_temp.aid('lo:bio:11:e'), pg_temp.aid('st:bio:11:carbon'),  '11(e)', 'Describe how carbon is cycled within an ecosystem and outline the role of forests and oceans as carbon sinks', 4),
+  (pg_temp.aid('lo:bio:11:f'), pg_temp.aid('st:bio:11:carbon'),  '11(f)', 'Describe how human activities (deforestation, fossil fuels) increase atmospheric CO2, leading to global warming', 4),
+  (pg_temp.aid('lo:bio:11:g'), pg_temp.aid('st:bio:11:carbon'),  '11(g)', 'Discuss how human actions can reduce the effects of global warming', 3),
+  (pg_temp.aid('lo:bio:11:h'), pg_temp.aid('st:bio:11:maneco'),  '11(h)', 'Describe the effects of pollution by sewage, plastic waste and insecticides (biomagnification)', 3),
+  (pg_temp.aid('lo:bio:11:i'), pg_temp.aid('st:bio:11:conserv'), '11(i)', 'Discuss how conservation of species and sustainable use of resources maintain biodiversity and a balanced ecosystem', 3),
+  -- 12. Molecular Genetics
+  (pg_temp.aid('lo:bio:12:a'), pg_temp.aid('st:bio:12:dna'),      '12(a)', 'Outline the relationships among DNA, genes and chromosomes', 4),
+  (pg_temp.aid('lo:bio:12:b'), pg_temp.aid('st:bio:12:dna'),      '12(b)', 'State that DNA is a double helix of two nucleotide strands, each nucleotide a sugar, phosphate and one of four bases', 3),
+  (pg_temp.aid('lo:bio:12:c'), pg_temp.aid('st:bio:12:dna'),      '12(c)', 'State the rule of complementary base pairing', 3),
+  (pg_temp.aid('lo:bio:12:d'), pg_temp.aid('st:bio:12:proteins'), '12(d)', 'State that each gene is a sequence of nucleotides that codes for one polypeptide and is a unit of inheritance', 4),
+  (pg_temp.aid('lo:bio:12:e'), pg_temp.aid('st:bio:12:proteins'), '12(e)', 'State that DNA carries the genetic code used to synthesise specific polypeptides', 3),
+  (pg_temp.aid('lo:bio:12:f'), pg_temp.aid('st:bio:12:genetic'),  '12(f)', 'State that genes may be transferred from one organism to another to form transgenic organisms', 3),
+  (pg_temp.aid('lo:bio:12:g'), pg_temp.aid('st:bio:12:genetic'),  '12(g)', 'Briefly explain how a human insulin gene can be inserted into bacterial DNA to produce human insulin', 4),
+  (pg_temp.aid('lo:bio:12:h'), pg_temp.aid('st:bio:12:genetic'),  '12(h)', 'Discuss the benefits and ethical considerations of genetic engineering in medicine and agriculture', 3),
+  -- 13. Reproduction
+  (pg_temp.aid('lo:bio:13:a'), pg_temp.aid('st:bio:13:asexual'),  '13(a)', 'Define asexual reproduction as producing genetically identical offspring from one parent', 3),
+  (pg_temp.aid('lo:bio:13:b'), pg_temp.aid('st:bio:13:division'), '13(b)', 'State that mitosis gives genetically identical cells with the chromosome number maintained', 4),
+  (pg_temp.aid('lo:bio:13:c'), pg_temp.aid('st:bio:13:division'), '13(c)', 'State the importance of mitosis in growth, repair and asexual reproduction', 3),
+  (pg_temp.aid('lo:bio:13:d'), pg_temp.aid('st:bio:13:division'), '13(d)', 'Define sexual reproduction as fusion of male and female gamete nuclei to form a zygote, producing genetically dissimilar offspring', 4),
+  (pg_temp.aid('lo:bio:13:e'), pg_temp.aid('st:bio:13:division'), '13(e)', 'Define haploid and diploid and explain the need for reduction division before fertilisation', 4),
+  (pg_temp.aid('lo:bio:13:f'), pg_temp.aid('st:bio:13:division'), '13(f)', 'State what is meant by homologous pairs of chromosomes', 3),
+  (pg_temp.aid('lo:bio:13:g'), pg_temp.aid('st:bio:13:division'), '13(g)', 'State that meiosis gives genetically dissimilar cells with the chromosome number halved', 4),
+  (pg_temp.aid('lo:bio:13:h'), pg_temp.aid('st:bio:13:division'), '13(h)', 'State that meiosis is used in the formation of gametes', 3),
+  (pg_temp.aid('lo:bio:13:i'), pg_temp.aid('st:bio:13:plants'),   '13(i)', 'Identify sepals, petals, stamens and carpels of insect-pollinated flowers and examine pollen grains', 3),
+  (pg_temp.aid('lo:bio:13:j'), pg_temp.aid('st:bio:13:plants'),   '13(j)', 'State the functions of sepals, petals, anthers and carpels', 3),
+  (pg_temp.aid('lo:bio:13:k'), pg_temp.aid('st:bio:13:plants'),   '13(k)', 'Identify stamens and stigmas of wind-pollinated flowers and examine pollen grains', 2),
+  (pg_temp.aid('lo:bio:13:l'), pg_temp.aid('st:bio:13:plants'),   '13(l)', 'Outline pollination and distinguish between self- and cross-pollination', 3),
+  (pg_temp.aid('lo:bio:13:m'), pg_temp.aid('st:bio:13:plants'),   '13(m)', 'Compare insect-pollinated and wind-pollinated flowers and explain their differences', 3),
+  (pg_temp.aid('lo:bio:13:n'), pg_temp.aid('st:bio:13:plants'),   '13(n)', 'Outline the growth of the pollen tube and its entry into the ovule followed by fertilisation', 3),
+  (pg_temp.aid('lo:bio:13:o'), pg_temp.aid('st:bio:13:humans'),   '13(o)', 'Identify the male reproductive system and state functions of testes, scrotum, sperm ducts, prostate, urethra and penis', 3),
+  (pg_temp.aid('lo:bio:13:p'), pg_temp.aid('st:bio:13:humans'),   '13(p)', 'Identify the female reproductive system and state functions of ovaries, oviducts, uterus, cervix and vagina', 3),
+  (pg_temp.aid('lo:bio:13:q'), pg_temp.aid('st:bio:13:humans'),   '13(q)', 'Outline the menstrual cycle (menstruation, ovulation, fertile/infertile phases, roles of progesterone and oestrogen)', 4),
+  (pg_temp.aid('lo:bio:13:r'), pg_temp.aid('st:bio:13:humans'),   '13(r)', 'Describe fertilisation and early development as a ball of cells implanting in the uterus wall', 3),
+  (pg_temp.aid('lo:bio:13:s'), pg_temp.aid('st:bio:13:humans'),   '13(s)', 'State the functions of the amniotic sac and amniotic fluid', 3),
+  (pg_temp.aid('lo:bio:13:t'), pg_temp.aid('st:bio:13:humans'),   '13(t)', 'Describe the function of the placenta and umbilical cord in exchange of nutrients, gases and excretory products', 4),
+  (pg_temp.aid('lo:bio:13:u'), pg_temp.aid('st:bio:13:std'),      '13(u)', 'Discuss the transmission of HIV and methods to reduce transmission', 3),
+  -- 14. Inheritance
+  (pg_temp.aid('lo:bio:14:a'), pg_temp.aid('st:bio:14:passage'),   '14(a)', 'Distinguish between the terms gene and allele', 4),
+  (pg_temp.aid('lo:bio:14:b'), pg_temp.aid('st:bio:14:passage'),   '14(b)', 'Explain dominant, recessive, codominant, homozygous, heterozygous, phenotype and genotype', 5),
+  (pg_temp.aid('lo:bio:14:c'), pg_temp.aid('st:bio:14:mono'),      '14(c)', 'Predict results of simple crosses with expected 3:1 and 1:1 ratios using correct terms', 5),
+  (pg_temp.aid('lo:bio:14:d'), pg_temp.aid('st:bio:14:mono'),      '14(d)', 'Explain why observed ratios often differ from expected ratios, especially with small numbers of progeny', 4),
+  (pg_temp.aid('lo:bio:14:e'), pg_temp.aid('st:bio:14:mono'),      '14(e)', 'Use genetic diagrams to solve problems involving monohybrid inheritance', 5),
+  (pg_temp.aid('lo:bio:14:f'), pg_temp.aid('st:bio:14:mono'),      '14(f)', 'Explain co-dominance and multiple alleles with reference to the ABO blood group phenotypes and alleles', 4),
+  (pg_temp.aid('lo:bio:14:g'), pg_temp.aid('st:bio:14:mono'),      '14(g)', 'Describe the determination of sex in humans (XX and XY chromosomes)', 3),
+  (pg_temp.aid('lo:bio:14:h'), pg_temp.aid('st:bio:14:variation'), '14(h)', 'Describe mutation as a change in gene sequence (e.g. sickle cell) or chromosome number (e.g. Down syndrome)', 4),
+  (pg_temp.aid('lo:bio:14:i'), pg_temp.aid('st:bio:14:variation'), '14(i)', 'Name ionising radiation and chemical mutagens as factors that may increase the rate of mutation', 2),
+  (pg_temp.aid('lo:bio:14:j'), pg_temp.aid('st:bio:14:variation'), '14(j)', 'Distinguish between continuous and discontinuous variation and give examples of each', 3),
+  (pg_temp.aid('lo:bio:14:k'), pg_temp.aid('st:bio:14:natsel'),    '14(k)', 'State that variation and competition lead to differential survival and reproduction of best-fitted organisms', 4),
+  (pg_temp.aid('lo:bio:14:l'), pg_temp.aid('st:bio:14:natsel'),    '14(l)', 'Give examples of environmental factors that act as forces of natural selection', 3),
+  (pg_temp.aid('lo:bio:14:m'), pg_temp.aid('st:bio:14:natsel'),    '14(m)', 'Explain the role of natural selection as a possible mechanism for evolution', 4)
+on conflict (id) do update set statement = excluded.statement, code = excluded.code, frequency_score = excluded.frequency_score;
 
--- A worked lesson: Osmosis ---------------------------------------------------
+-- ════════════════════════════════════════════════════════════════════════════
+--  CHEMISTRY 6092
+-- ════════════════════════════════════════════════════════════════════════════
+insert into topics (id, subject_id, name, sort_order) values
+  (pg_temp.aid('t:chem:1'),  pg_temp.aid('subj:6092'), 'Experimental Chemistry', 1),
+  (pg_temp.aid('t:chem:2'),  pg_temp.aid('subj:6092'), 'The Particulate Nature of Matter', 2),
+  (pg_temp.aid('t:chem:3'),  pg_temp.aid('subj:6092'), 'Chemical Bonding and Structure', 3),
+  (pg_temp.aid('t:chem:4'),  pg_temp.aid('subj:6092'), 'Chemical Calculations', 4),
+  (pg_temp.aid('t:chem:5'),  pg_temp.aid('subj:6092'), 'Acid-Base Chemistry', 5),
+  (pg_temp.aid('t:chem:6'),  pg_temp.aid('subj:6092'), 'Qualitative Analysis', 6),
+  (pg_temp.aid('t:chem:7'),  pg_temp.aid('subj:6092'), 'Redox Chemistry', 7),
+  (pg_temp.aid('t:chem:8'),  pg_temp.aid('subj:6092'), 'Patterns in the Periodic Table', 8),
+  (pg_temp.aid('t:chem:9'),  pg_temp.aid('subj:6092'), 'Chemical Energetics', 9),
+  (pg_temp.aid('t:chem:10'), pg_temp.aid('subj:6092'), 'Rate of Reactions', 10),
+  (pg_temp.aid('t:chem:11'), pg_temp.aid('subj:6092'), 'Organic Chemistry', 11),
+  (pg_temp.aid('t:chem:12'), pg_temp.aid('subj:6092'), 'Maintaining Air Quality', 12)
+on conflict (id) do update set name = excluded.name, sort_order = excluded.sort_order;
+
+insert into subtopics (id, topic_id, name, sort_order) values
+  (pg_temp.aid('st:chem:1:design'),  pg_temp.aid('t:chem:1'), 'Experimental Design', 1),
+  (pg_temp.aid('st:chem:1:purif'),   pg_temp.aid('t:chem:1'), 'Methods of Purification and Analysis', 2),
+  (pg_temp.aid('st:chem:2:kinetic'), pg_temp.aid('t:chem:2'), 'Kinetic Particle Theory', 1),
+  (pg_temp.aid('st:chem:2:atomic'),  pg_temp.aid('t:chem:2'), 'Atomic Structure', 2),
+  (pg_temp.aid('st:chem:3:ionic'),   pg_temp.aid('t:chem:3'), 'Ionic Bonding', 1),
+  (pg_temp.aid('st:chem:3:covalent'),pg_temp.aid('t:chem:3'), 'Covalent Bonding', 2),
+  (pg_temp.aid('st:chem:3:metallic'),pg_temp.aid('t:chem:3'), 'Metallic Bonding', 3),
+  (pg_temp.aid('st:chem:3:materials'),pg_temp.aid('t:chem:3'), 'Structure and Properties of Materials', 4),
+  (pg_temp.aid('st:chem:4:formulae'),pg_temp.aid('t:chem:4'), 'Formulae and Equation Writing', 1),
+  (pg_temp.aid('st:chem:4:mole'),    pg_temp.aid('t:chem:4'), 'The Mole Concept and Stoichiometry', 2),
+  (pg_temp.aid('st:chem:5:acids'),   pg_temp.aid('t:chem:5'), 'Acids and Bases', 1),
+  (pg_temp.aid('st:chem:5:salts'),   pg_temp.aid('t:chem:5'), 'Salts', 2),
+  (pg_temp.aid('st:chem:5:ammonia'), pg_temp.aid('t:chem:5'), 'Ammonia', 3),
+  (pg_temp.aid('st:chem:6:qa'),      pg_temp.aid('t:chem:6'), 'Qualitative Analysis', 1),
+  (pg_temp.aid('st:chem:7:redox'),   pg_temp.aid('t:chem:7'), 'Oxidation and Reduction', 1),
+  (pg_temp.aid('st:chem:7:electro'), pg_temp.aid('t:chem:7'), 'Electrochemistry', 2),
+  (pg_temp.aid('st:chem:8:trends'),  pg_temp.aid('t:chem:8'), 'Periodic Trends', 1),
+  (pg_temp.aid('st:chem:8:groups'),  pg_temp.aid('t:chem:8'), 'Group Properties', 2),
+  (pg_temp.aid('st:chem:8:transition'),pg_temp.aid('t:chem:8'), 'Transition Elements', 3),
+  (pg_temp.aid('st:chem:8:reactivity'),pg_temp.aid('t:chem:8'), 'Reactivity Series', 4),
+  (pg_temp.aid('st:chem:9:energetics'),pg_temp.aid('t:chem:9'), 'Chemical Energetics', 1),
+  (pg_temp.aid('st:chem:10:rate'),   pg_temp.aid('t:chem:10'), 'Rate of Reactions', 1),
+  (pg_temp.aid('st:chem:11:fuels'),  pg_temp.aid('t:chem:11'), 'Fuels and Crude Oil', 1),
+  (pg_temp.aid('st:chem:11:hydro'),  pg_temp.aid('t:chem:11'), 'Hydrocarbons', 2),
+  (pg_temp.aid('st:chem:11:alcohols'),pg_temp.aid('t:chem:11'), 'Alcohols, Carboxylic Acids and Esters', 3),
+  (pg_temp.aid('st:chem:11:polymers'),pg_temp.aid('t:chem:11'), 'Polymers', 4),
+  (pg_temp.aid('st:chem:12:air'),    pg_temp.aid('t:chem:12'), 'Maintaining Air Quality', 1)
+on conflict (id) do update set name = excluded.name, sort_order = excluded.sort_order;
+
+insert into learning_outcomes (id, subtopic_id, code, statement, frequency_score) values
+  -- 1. Experimental Chemistry
+  (pg_temp.aid('lo:chem:1.1:a'), pg_temp.aid('st:chem:1:design'), '1.1(a)', 'Name appropriate apparatus for measuring time, temperature, mass and volume (burettes, pipettes, measuring cylinders, gas syringes)', 3),
+  (pg_temp.aid('lo:chem:1.1:b'), pg_temp.aid('st:chem:1:design'), '1.1(b)', 'Suggest suitable apparatus for simple experiments, including drying and collection of gases and measuring rates of reaction', 3),
+  (pg_temp.aid('lo:chem:1.2:a'), pg_temp.aid('st:chem:1:purif'), '1.2(a)', 'Describe methods of separation and purification: solvent/filtration/crystallisation, sublimation, distillation and fractional distillation, separating funnel, paper chromatography', 4),
+  (pg_temp.aid('lo:chem:1.2:b'), pg_temp.aid('st:chem:1:purif'), '1.2(b)', 'Suggest suitable separation/purification methods for solid-solid, solid-liquid and liquid-liquid (miscible and immiscible) mixtures', 4),
+  (pg_temp.aid('lo:chem:1.2:c'), pg_temp.aid('st:chem:1:purif'), '1.2(c)', 'Interpret paper chromatograms including comparison with known samples and the use of Rf values', 4),
+  (pg_temp.aid('lo:chem:1.2:d'), pg_temp.aid('st:chem:1:purif'), '1.2(d)', 'Explain the need to use locating agents in the chromatography of colourless compounds', 2),
+  (pg_temp.aid('lo:chem:1.2:e'), pg_temp.aid('st:chem:1:purif'), '1.2(e)', 'Deduce from melting/boiling point data the identities of substances and their purity', 4),
+  (pg_temp.aid('lo:chem:1.2:f'), pg_temp.aid('st:chem:1:purif'), '1.2(f)', 'Explain the importance of measuring purity of substances used in everyday life (foodstuffs, drugs)', 2),
+  -- 2. The Particulate Nature of Matter
+  (pg_temp.aid('lo:chem:2.1:a'), pg_temp.aid('st:chem:2:kinetic'), '2.1(a)', 'Describe the solid, liquid and gaseous states and explain their interconversion using kinetic particle theory and energy changes', 5),
+  (pg_temp.aid('lo:chem:2.1:b'), pg_temp.aid('st:chem:2:kinetic'), '2.1(b)', 'Describe and explain evidence for the movement of particles in liquids and gases', 3),
+  (pg_temp.aid('lo:chem:2.1:c'), pg_temp.aid('st:chem:2:kinetic'), '2.1(c)', 'Explain everyday effects of diffusion in terms of particles (perfumes, cooking aromas, tea/coffee in water)', 3),
+  (pg_temp.aid('lo:chem:2.1:d'), pg_temp.aid('st:chem:2:kinetic'), '2.1(d)', 'State the effect of molecular mass on rate of diffusion and explain its dependence on temperature', 4),
+  (pg_temp.aid('lo:chem:2.2:a'), pg_temp.aid('st:chem:2:atomic'), '2.2(a)', 'State the relative charges and approximate relative masses of a proton, neutron and electron', 4),
+  (pg_temp.aid('lo:chem:2.2:b'), pg_temp.aid('st:chem:2:atomic'), '2.2(b)', 'Describe the structure of an atom: protons and neutrons in the nucleus with electrons in shells (energy levels)', 4),
+  (pg_temp.aid('lo:chem:2.2:c'), pg_temp.aid('st:chem:2:atomic'), '2.2(c)', 'Define proton (atomic) number and nucleon (mass) number', 4),
+  (pg_temp.aid('lo:chem:2.2:d'), pg_temp.aid('st:chem:2:atomic'), '2.2(d)', 'Interpret and use nuclide notation', 3),
+  (pg_temp.aid('lo:chem:2.2:e'), pg_temp.aid('st:chem:2:atomic'), '2.2(e)', 'Define the term isotopes', 4),
+  (pg_temp.aid('lo:chem:2.2:f'), pg_temp.aid('st:chem:2:atomic'), '2.2(f)', 'Deduce numbers of protons, neutrons and electrons in atoms and ions from proton and nucleon numbers', 4),
+  -- 3. Chemical Bonding and Structure
+  (pg_temp.aid('lo:chem:3.1:a'), pg_temp.aid('st:chem:3:ionic'),   '3.1(a)', 'Describe the formation of ions by electron loss/gain, usually attaining a noble gas configuration', 4),
+  (pg_temp.aid('lo:chem:3.1:b'), pg_temp.aid('st:chem:3:ionic'),   '3.1(b)', 'Describe, using dot-and-cross diagrams, the formation of ionic bonds between metals and non-metals (e.g. NaCl, MgCl2)', 5),
+  (pg_temp.aid('lo:chem:3.1:c'), pg_temp.aid('st:chem:3:ionic'),   '3.1(c)', 'State that ionic materials form a giant lattice held by electrostatic attraction (e.g. NaCl)', 4),
+  (pg_temp.aid('lo:chem:3.1:d'), pg_temp.aid('st:chem:3:ionic'),   '3.1(d)', 'Relate physical properties (including electrical) of ionic compounds to their lattice structure', 4),
+  (pg_temp.aid('lo:chem:3.2:a'), pg_temp.aid('st:chem:3:covalent'),'3.2(a)', 'Describe the formation of a covalent bond by sharing a pair of electrons, usually attaining a noble gas configuration', 4),
+  (pg_temp.aid('lo:chem:3.2:b'), pg_temp.aid('st:chem:3:covalent'),'3.2(b)', 'Describe, using dot-and-cross diagrams, covalent bond formation (e.g. H2, O2, H2O, CH4, CO2)', 5),
+  (pg_temp.aid('lo:chem:3.2:c'), pg_temp.aid('st:chem:3:covalent'),'3.2(c)', 'Deduce the arrangement of electrons in other covalent molecules', 4),
+  (pg_temp.aid('lo:chem:3.2:d'), pg_temp.aid('st:chem:3:covalent'),'3.2(d)', 'Relate physical properties (including electrical) of covalent substances to their structure and bonding', 4),
+  (pg_temp.aid('lo:chem:3.3:a'), pg_temp.aid('st:chem:3:metallic'),'3.3(a)', 'Describe metals as a lattice of positive ions in a sea of electrons', 4),
+  (pg_temp.aid('lo:chem:3.3:b'), pg_temp.aid('st:chem:3:metallic'),'3.3(b)', 'Describe the general physical properties of metals in terms of their structure', 3),
+  (pg_temp.aid('lo:chem:3.4:a'), pg_temp.aid('st:chem:3:materials'),'3.4(a)', 'Describe the differences between elements, compounds and mixtures', 3),
+  (pg_temp.aid('lo:chem:3.4:b'), pg_temp.aid('st:chem:3:materials'),'3.4(b)', 'Describe an alloy as a mixture of a metal with another element (e.g. brass, stainless steel)', 3),
+  (pg_temp.aid('lo:chem:3.4:c'), pg_temp.aid('st:chem:3:materials'),'3.4(c)', 'Identify representations of metals and alloys from diagrams of structures', 2),
+  (pg_temp.aid('lo:chem:3.4:d'), pg_temp.aid('st:chem:3:materials'),'3.4(d)', 'Explain why alloys have different physical properties to their constituent elements', 4),
+  (pg_temp.aid('lo:chem:3.4:e'), pg_temp.aid('st:chem:3:materials'),'3.4(e)', 'Compare structures of simple molecular, macromolecular and giant covalent substances to deduce properties', 4),
+  (pg_temp.aid('lo:chem:3.4:f'), pg_temp.aid('st:chem:3:materials'),'3.4(f)', 'Compare the bonding and structures of diamond and graphite to deduce properties (conductivity, lubrication, cutting)', 5),
+  (pg_temp.aid('lo:chem:3.4:g'), pg_temp.aid('st:chem:3:materials'),'3.4(g)', 'Deduce physical and chemical properties of substances from their structures and bonding and vice versa', 5),
+  -- 4. Chemical Calculations
+  (pg_temp.aid('lo:chem:4.1:a'), pg_temp.aid('st:chem:4:formulae'), '4.1(a)', 'State the symbols of the elements and formulae of the compounds mentioned in the syllabus', 4),
+  (pg_temp.aid('lo:chem:4.1:b'), pg_temp.aid('st:chem:4:formulae'), '4.1(b)', 'Deduce formulae of simple compounds from relative numbers of atoms and vice versa', 4),
+  (pg_temp.aid('lo:chem:4.1:c'), pg_temp.aid('st:chem:4:formulae'), '4.1(c)', 'Deduce formulae of ionic compounds from the charges on the ions and vice versa', 4),
+  (pg_temp.aid('lo:chem:4.1:d'), pg_temp.aid('st:chem:4:formulae'), '4.1(d)', 'Interpret chemical equations with state symbols', 4),
+  (pg_temp.aid('lo:chem:4.1:e'), pg_temp.aid('st:chem:4:formulae'), '4.1(e)', 'Construct chemical equations, with state symbols, including ionic equations', 5),
+  (pg_temp.aid('lo:chem:4.2:a'), pg_temp.aid('st:chem:4:mole'), '4.2(a)', 'Define relative atomic mass, Ar', 3),
+  (pg_temp.aid('lo:chem:4.2:b'), pg_temp.aid('st:chem:4:mole'), '4.2(b)', 'Define relative molecular mass, Mr, and calculate it as the sum of relative atomic masses', 4),
+  (pg_temp.aid('lo:chem:4.2:c'), pg_temp.aid('st:chem:4:mole'), '4.2(c)', 'Define the term mole in terms of the Avogadro constant', 4),
+  (pg_temp.aid('lo:chem:4.2:d'), pg_temp.aid('st:chem:4:mole'), '4.2(d)', 'Calculate the percentage mass of an element in a compound', 4),
+  (pg_temp.aid('lo:chem:4.2:e'), pg_temp.aid('st:chem:4:mole'), '4.2(e)', 'Calculate empirical and molecular formulae from relevant data', 5),
+  (pg_temp.aid('lo:chem:4.2:f'), pg_temp.aid('st:chem:4:mole'), '4.2(f)', 'Calculate stoichiometric reacting masses and volumes of gases (24 dm3 per mole at rtp), including limiting reactants', 5),
+  (pg_temp.aid('lo:chem:4.2:g'), pg_temp.aid('st:chem:4:mole'), '4.2(g)', 'Apply solution concentration (mol/dm3 or g/dm3) to process volumetric (titration) results and solve problems', 5),
+  (pg_temp.aid('lo:chem:4.2:h'), pg_temp.aid('st:chem:4:mole'), '4.2(h)', 'Calculate percentage yield and percentage purity', 4),
+  -- 5. Acid-Base Chemistry
+  (pg_temp.aid('lo:chem:5.1:a'), pg_temp.aid('st:chem:5:acids'), '5.1(a)', 'Describe the meanings of acid and alkali in terms of ions produced in aqueous solution and their effect on Universal Indicator', 5),
+  (pg_temp.aid('lo:chem:5.1:b'), pg_temp.aid('st:chem:5:acids'), '5.1(b)', 'Describe neutrality and relative acidity/alkalinity in terms of H+ and OH- concentrations, Universal Indicator colour and the pH scale', 5),
+  (pg_temp.aid('lo:chem:5.1:c'), pg_temp.aid('st:chem:5:acids'), '5.1(c)', 'Describe qualitatively the difference between strong and weak acids in terms of the extent of ionisation', 4),
+  (pg_temp.aid('lo:chem:5.1:d'), pg_temp.aid('st:chem:5:acids'), '5.1(d)', 'Describe the characteristic properties of acids in reactions with metals, bases and carbonates to form salts', 5),
+  (pg_temp.aid('lo:chem:5.1:e'), pg_temp.aid('st:chem:5:acids'), '5.1(e)', 'Describe neutralisation as the reaction H+ + OH- → H2O', 4),
+  (pg_temp.aid('lo:chem:5.1:f'), pg_temp.aid('st:chem:5:acids'), '5.1(f)', 'Describe the importance of controlling soil pH and treating excess acidity using calcium hydroxide', 3),
+  (pg_temp.aid('lo:chem:5.1:g'), pg_temp.aid('st:chem:5:acids'), '5.1(g)', 'Describe the characteristic properties of bases in reactions with acids and with ammonium salts', 4),
+  (pg_temp.aid('lo:chem:5.1:h'), pg_temp.aid('st:chem:5:acids'), '5.1(h)', 'Classify oxides as acidic, basic, amphoteric or neutral based on metallic/non-metallic character', 4),
+  (pg_temp.aid('lo:chem:5.2:a'), pg_temp.aid('st:chem:5:salts'), '5.2(a)', 'Describe techniques for preparation, separation and purification of salts (precipitation, titration, acid reactions)', 5),
+  (pg_temp.aid('lo:chem:5.2:b'), pg_temp.aid('st:chem:5:salts'), '5.2(b)', 'Describe the general solubility rules for common salts (nitrates, chlorides, sulfates, carbonates, hydroxides, Group 1 and ammonium salts)', 5),
+  (pg_temp.aid('lo:chem:5.2:c'), pg_temp.aid('st:chem:5:salts'), '5.2(c)', 'Suggest a method of preparing a given salt from suitable starting materials', 5),
+  (pg_temp.aid('lo:chem:5.3:a'), pg_temp.aid('st:chem:5:ammonia'), '5.3(a)', 'Describe the use of nitrogen (from air) and hydrogen (from cracking crude oil) in the manufacture of ammonia', 3),
+  (pg_temp.aid('lo:chem:5.3:b'), pg_temp.aid('st:chem:5:ammonia'), '5.3(b)', 'State that some chemical reactions are reversible (e.g. manufacture of ammonia)', 3),
+  (pg_temp.aid('lo:chem:5.3:c'), pg_temp.aid('st:chem:5:ammonia'), '5.3(c)', 'Interpret data on conditions used industrially for reversible reactions (Haber Process)', 3),
+  -- 6. Qualitative Analysis
+  (pg_temp.aid('lo:chem:6:a'), pg_temp.aid('st:chem:6:qa'), '6(a)', 'Use aqueous sodium hydroxide and/or aqueous ammonia to identify aqueous cations (Al, NH4, Ca, Cu(II), Fe(II), Fe(III), Zn) via precipitates and their solubility', 5),
+  (pg_temp.aid('lo:chem:6:b'), pg_temp.aid('st:chem:6:qa'), '6(b)', 'Describe tests to identify anions: carbonate, chloride, iodide, nitrate and sulfate', 5),
+  (pg_temp.aid('lo:chem:6:c'), pg_temp.aid('st:chem:6:qa'), '6(c)', 'Describe tests to identify gases: ammonia, carbon dioxide, chlorine, hydrogen, oxygen and sulfur dioxide', 5),
+  -- 7. Redox Chemistry
+  (pg_temp.aid('lo:chem:7.1:a'), pg_temp.aid('st:chem:7:redox'), '7.1(a)', 'Define oxidation and reduction (redox) in terms of oxygen/hydrogen gain/loss', 4),
+  (pg_temp.aid('lo:chem:7.1:b'), pg_temp.aid('st:chem:7:redox'), '7.1(b)', 'Define redox in terms of electron transfer and changes in oxidation state', 5),
+  (pg_temp.aid('lo:chem:7.1:c'), pg_temp.aid('st:chem:7:redox'), '7.1(c)', 'Identify redox reactions in terms of oxygen/hydrogen, electron transfer and oxidation state changes', 5),
+  (pg_temp.aid('lo:chem:7.1:d'), pg_temp.aid('st:chem:7:redox'), '7.1(d)', 'Describe the use of aqueous KI and acidified KMnO4 in testing for oxidising and reducing agents from colour changes', 4),
+  (pg_temp.aid('lo:chem:7.2:a'), pg_temp.aid('st:chem:7:electro'), '7.2(a)', 'Describe electrolysis as conduction of electricity through a molten or aqueous electrolyte, causing chemical changes at the electrodes', 5),
+  (pg_temp.aid('lo:chem:7.2:b'), pg_temp.aid('st:chem:7:electro'), '7.2(b)', 'Describe electrolysis as evidence for ions held in a lattice when solid but free to move when molten or in solution', 3),
+  (pg_temp.aid('lo:chem:7.2:c'), pg_temp.aid('st:chem:7:electro'), '7.2(c)', 'Describe the electrolysis of molten sodium chloride using inert electrodes', 4),
+  (pg_temp.aid('lo:chem:7.2:d'), pg_temp.aid('st:chem:7:electro'), '7.2(d)', 'Predict the likely products of the electrolysis of a molten binary ionic compound (inert electrodes)', 4),
+  (pg_temp.aid('lo:chem:7.2:e'), pg_temp.aid('st:chem:7:electro'), '7.2(e)', 'Apply selective discharge based on cations (reactivity series), anions and concentration effects', 5),
+  (pg_temp.aid('lo:chem:7.2:f'), pg_temp.aid('st:chem:7:electro'), '7.2(f)', 'Predict the likely products of the electrolysis of an aqueous electrolyte, given relevant information', 5),
+  (pg_temp.aid('lo:chem:7.2:g'), pg_temp.aid('st:chem:7:electro'), '7.2(g)', 'Construct ionic equations for reactions at the electrodes during electrolysis', 4),
+  (pg_temp.aid('lo:chem:7.2:h'), pg_temp.aid('st:chem:7:electro'), '7.2(h)', 'Describe the electrolysis of aqueous copper(II) sulfate with copper electrodes as a means of purifying copper', 3),
+  (pg_temp.aid('lo:chem:7.2:i'), pg_temp.aid('st:chem:7:electro'), '7.2(i)', 'Describe the electroplating of metals and state one use of electroplating', 3),
+  (pg_temp.aid('lo:chem:7.2:j'), pg_temp.aid('st:chem:7:electro'), '7.2(j)', 'Describe the production of electrical energy from simple cells linked to the reactivity series and redox reactions', 3),
+  (pg_temp.aid('lo:chem:7.2:k'), pg_temp.aid('st:chem:7:electro'), '7.2(k)', 'Describe hydrogen as a potential fuel reacting with oxygen in a hydrogen fuel cell to generate electricity', 3),
+  -- 8. Patterns in the Periodic Table
+  (pg_temp.aid('lo:chem:8.1:a'), pg_temp.aid('st:chem:8:trends'), '8.1(a)', 'Describe the Periodic Table as an arrangement of elements in order of increasing proton (atomic) number', 3),
+  (pg_temp.aid('lo:chem:8.1:b'), pg_temp.aid('st:chem:8:trends'), '8.1(b)', 'Describe how an element''s position relates to proton number and electronic configuration', 4),
+  (pg_temp.aid('lo:chem:8.1:c'), pg_temp.aid('st:chem:8:trends'), '8.1(c)', 'Describe the relationship between number of outer electrons and ionic charge for the first twenty elements', 4),
+  (pg_temp.aid('lo:chem:8.1:d'), pg_temp.aid('st:chem:8:trends'), '8.1(d)', 'Explain similarities between elements in the same group in terms of electronic configuration', 4),
+  (pg_temp.aid('lo:chem:8.1:e'), pg_temp.aid('st:chem:8:trends'), '8.1(e)', 'Describe the change from metallic to non-metallic character across a period', 3),
+  (pg_temp.aid('lo:chem:8.1:f'), pg_temp.aid('st:chem:8:trends'), '8.1(f)', 'Describe the relationship between number of outer electrons and metallic/non-metallic character', 3),
+  (pg_temp.aid('lo:chem:8.1:g'), pg_temp.aid('st:chem:8:trends'), '8.1(g)', 'Predict the properties of elements in Group 1 and Group 17 using the Periodic Table', 4),
+  (pg_temp.aid('lo:chem:8.2:a'), pg_temp.aid('st:chem:8:groups'), '8.2(a)', 'Describe Li, Na, K (Group 1) as soft, low-density metals showing trends in melting point and reaction with water', 4),
+  (pg_temp.aid('lo:chem:8.2:b'), pg_temp.aid('st:chem:8:groups'), '8.2(b)', 'Describe Cl, Br, I (Group 17) as diatomic non-metals showing trends in colour, state and displacement reactions', 4),
+  (pg_temp.aid('lo:chem:8.2:c'), pg_temp.aid('st:chem:8:groups'), '8.2(c)', 'Describe the noble gases (Group 18) as monoatomic, unreactive elements providing an inert environment', 3),
+  (pg_temp.aid('lo:chem:8.2:d'), pg_temp.aid('st:chem:8:groups'), '8.2(d)', 'Describe the lack of reactivity of the noble gases in terms of their electronic configurations', 3),
+  (pg_temp.aid('lo:chem:8.3:a'), pg_temp.aid('st:chem:8:transition'), '8.3(a)', 'Describe typical transition elements as metals with high melting point, high density, variable oxidation state and coloured compounds', 4),
+  (pg_temp.aid('lo:chem:8.3:b'), pg_temp.aid('st:chem:8:transition'), '8.3(b)', 'State that the elements and/or their compounds often act as catalysts', 3),
+  (pg_temp.aid('lo:chem:8.4:a'), pg_temp.aid('st:chem:8:reactivity'), '8.4(a)', 'Place metals in order of reactivity by their reactions with water/steam/dilute acid and reduction of their oxides', 5),
+  (pg_temp.aid('lo:chem:8.4:b'), pg_temp.aid('st:chem:8:reactivity'), '8.4(b)', 'Describe the reactivity series as the tendency of a metal to form its positive ion (displacement of ions and oxides)', 4),
+  (pg_temp.aid('lo:chem:8.4:c'), pg_temp.aid('st:chem:8:reactivity'), '8.4(c)', 'Deduce the order of reactivity from a given set of experimental results', 4),
+  (pg_temp.aid('lo:chem:8.4:d'), pg_temp.aid('st:chem:8:reactivity'), '8.4(d)', 'Describe the action of heat on carbonates and relate thermal stability to the reactivity series', 3),
+  (pg_temp.aid('lo:chem:8.4:e'), pg_temp.aid('st:chem:8:reactivity'), '8.4(e)', 'Describe the ease of obtaining metals from ores by relating elements to positions in the reactivity series', 3),
+  (pg_temp.aid('lo:chem:8.4:f'), pg_temp.aid('st:chem:8:reactivity'), '8.4(f)', 'Describe the essential conditions for rusting of iron (oxygen and water) and methods of prevention', 4),
+  (pg_temp.aid('lo:chem:8.4:g'), pg_temp.aid('st:chem:8:reactivity'), '8.4(g)', 'Describe the sacrificial protection of iron by a more reactive metal in terms of the reactivity series', 4),
+  -- 9. Chemical Energetics
+  (pg_temp.aid('lo:chem:9:a'), pg_temp.aid('st:chem:9:energetics'), '9(a)', 'Describe enthalpy change in terms of exothermic (ΔH negative) and endothermic (ΔH positive) reactions', 5),
+  (pg_temp.aid('lo:chem:9:b'), pg_temp.aid('st:chem:9:energetics'), '9(b)', 'Represent energy changes by energy profile diagrams, including reaction enthalpy changes and activation energies', 4),
+  (pg_temp.aid('lo:chem:9:c'), pg_temp.aid('st:chem:9:energetics'), '9(c)', 'Describe bond breaking as endothermic and bond making as exothermic', 5),
+  (pg_temp.aid('lo:chem:9:d'), pg_temp.aid('st:chem:9:energetics'), '9(d)', 'Explain overall enthalpy changes in terms of energy changes for breaking and making covalent bonds', 5),
+  -- 10. Rate of Reactions
+  (pg_temp.aid('lo:chem:10:a'), pg_temp.aid('st:chem:10:rate'), '10(a)', 'Describe and explain the effect of concentration, pressure, particle size and temperature on reaction rate in terms of collisions', 5),
+  (pg_temp.aid('lo:chem:10:b'), pg_temp.aid('st:chem:10:rate'), '10(b)', 'Define catalyst and describe the effect of catalysts (including enzymes) on reaction rates', 4),
+  (pg_temp.aid('lo:chem:10:c'), pg_temp.aid('st:chem:10:rate'), '10(c)', 'Explain how pathways with lower activation energies account for increased reaction rates', 4),
+  (pg_temp.aid('lo:chem:10:d'), pg_temp.aid('st:chem:10:rate'), '10(d)', 'State that some compounds act as catalysts in industrial processes and that enzymes are biological catalysts', 3),
+  (pg_temp.aid('lo:chem:10:e'), pg_temp.aid('st:chem:10:rate'), '10(e)', 'Suggest a suitable method for investigating the effect of a given variable on reaction rate', 4),
+  (pg_temp.aid('lo:chem:10:f'), pg_temp.aid('st:chem:10:rate'), '10(f)', 'Interpret data obtained from experiments concerned with rate of reaction', 5),
+  -- 11. Organic Chemistry
+  (pg_temp.aid('lo:chem:11.1:a'), pg_temp.aid('st:chem:11:fuels'), '11.1(a)', 'Name natural gas (mainly methane) and crude oil as non-renewable sources of energy', 2),
+  (pg_temp.aid('lo:chem:11.1:b'), pg_temp.aid('st:chem:11:fuels'), '11.1(b)', 'Describe crude oil as a mixture of hydrocarbons and its separation by fractional distillation', 4),
+  (pg_temp.aid('lo:chem:11.1:c'), pg_temp.aid('st:chem:11:fuels'), '11.1(c)', 'Describe biofuel (bioethanol from sugarcane) as a renewable alternative to natural gas and crude oil', 3),
+  (pg_temp.aid('lo:chem:11.1:d'), pg_temp.aid('st:chem:11:fuels'), '11.1(d)', 'Describe how biofuel can be more environmentally sustainable than fossil fuels in terms of CO2 emission', 3),
+  (pg_temp.aid('lo:chem:11.2:a'), pg_temp.aid('st:chem:11:hydro'), '11.2(a)', 'Describe a homologous series (general formula, similar chemical properties, gradation in physical properties)', 4),
+  (pg_temp.aid('lo:chem:11.2:b'), pg_temp.aid('st:chem:11:hydro'), '11.2(b)', 'Describe the alkanes as saturated hydrocarbons with general formula CnH2n+2', 4),
+  (pg_temp.aid('lo:chem:11.2:c'), pg_temp.aid('st:chem:11:hydro'), '11.2(c)', 'Draw structures of branched and unbranched alkanes C1-C4 and name unbranched alkanes methane to butane', 4),
+  (pg_temp.aid('lo:chem:11.2:d'), pg_temp.aid('st:chem:11:hydro'), '11.2(d)', 'Define isomerism and identify isomers', 4),
+  (pg_temp.aid('lo:chem:11.2:e'), pg_temp.aid('st:chem:11:hydro'), '11.2(e)', 'Describe alkanes as generally unreactive except in combustion and substitution by chlorine', 4),
+  (pg_temp.aid('lo:chem:11.2:f'), pg_temp.aid('st:chem:11:hydro'), '11.2(f)', 'Describe the alkenes as unsaturated hydrocarbons with general formula CnH2n', 4),
+  (pg_temp.aid('lo:chem:11.2:g'), pg_temp.aid('st:chem:11:hydro'), '11.2(g)', 'Draw structures of branched and unbranched alkenes C2-C4 and name unbranched alkenes ethene to butene', 4),
+  (pg_temp.aid('lo:chem:11.2:h'), pg_temp.aid('st:chem:11:hydro'), '11.2(h)', 'Describe the manufacture of alkenes and hydrogen by cracking, and why cracking matches demand for smaller molecules', 4),
+  (pg_temp.aid('lo:chem:11.2:i'), pg_temp.aid('st:chem:11:hydro'), '11.2(i)', 'Describe the difference between saturated and unsaturated hydrocarbons using aqueous bromine', 5),
+  (pg_temp.aid('lo:chem:11.2:j'), pg_temp.aid('st:chem:11:hydro'), '11.2(j)', 'Describe reactions of alkenes (combustion, polymerisation, addition with bromine, steam and hydrogen)', 5),
+  (pg_temp.aid('lo:chem:11.2:k'), pg_temp.aid('st:chem:11:hydro'), '11.2(k)', 'State the meaning of polyunsaturated when applied to food products', 2),
+  (pg_temp.aid('lo:chem:11.2:l'), pg_temp.aid('st:chem:11:hydro'), '11.2(l)', 'Describe the manufacture of margarine by addition of hydrogen to unsaturated vegetable oils', 2),
+  (pg_temp.aid('lo:chem:11.3:a'), pg_temp.aid('st:chem:11:alcohols'), '11.3(a)', 'Describe the alcohols as a homologous series containing the -OH group', 4),
+  (pg_temp.aid('lo:chem:11.3:b'), pg_temp.aid('st:chem:11:alcohols'), '11.3(b)', 'Draw structures of alcohols C1-C4 and name unbranched alcohols methanol to butanol', 4),
+  (pg_temp.aid('lo:chem:11.3:c'), pg_temp.aid('st:chem:11:alcohols'), '11.3(c)', 'Describe the reactions of alcohols in terms of combustion and oxidation to carboxylic acids', 4),
+  (pg_temp.aid('lo:chem:11.3:d'), pg_temp.aid('st:chem:11:alcohols'), '11.3(d)', 'Describe the formation of ethanol by catalysed addition of steam to ethene and by fermentation of glucose', 4),
+  (pg_temp.aid('lo:chem:11.3:e'), pg_temp.aid('st:chem:11:alcohols'), '11.3(e)', 'Describe the carboxylic acids as a homologous series containing the -CO2H group', 4),
+  (pg_temp.aid('lo:chem:11.3:f'), pg_temp.aid('st:chem:11:alcohols'), '11.3(f)', 'Draw structures of carboxylic acids C1-C4 and name unbranched acids methanoic to butanoic acid', 4),
+  (pg_temp.aid('lo:chem:11.3:g'), pg_temp.aid('st:chem:11:alcohols'), '11.3(g)', 'Describe carboxylic acids as weak acids reacting with carbonates, bases and some metals', 4),
+  (pg_temp.aid('lo:chem:11.3:h'), pg_temp.aid('st:chem:11:alcohols'), '11.3(h)', 'Describe the formation of ethanoic acid by oxidation of ethanol (atmospheric oxygen or acidified KMnO4)', 4),
+  (pg_temp.aid('lo:chem:11.3:i'), pg_temp.aid('st:chem:11:alcohols'), '11.3(i)', 'Describe the reaction of a carboxylic acid with an alcohol to form an ester (e.g. ethyl ethanoate)', 4),
+  (pg_temp.aid('lo:chem:11.3:j'), pg_temp.aid('st:chem:11:alcohols'), '11.3(j)', 'Deduce the name and formula of an ester from the carboxylic acid and alcohol and vice versa', 4),
+  (pg_temp.aid('lo:chem:11.4:a'), pg_temp.aid('st:chem:11:polymers'), '11.4(a)', 'Describe polymers as large molecules built from monomers with different units and/or linkages', 4),
+  (pg_temp.aid('lo:chem:11.4:b'), pg_temp.aid('st:chem:11:polymers'), '11.4(b)', 'Describe the formation of poly(ethene) as addition polymerisation of ethene', 4),
+  (pg_temp.aid('lo:chem:11.4:c'), pg_temp.aid('st:chem:11:polymers'), '11.4(c)', 'State some uses of poly(ethene) as a typical plastic', 2),
+  (pg_temp.aid('lo:chem:11.4:d'), pg_temp.aid('st:chem:11:polymers'), '11.4(d)', 'Deduce the structure of the polymer product from a given monomer and vice versa', 5),
+  (pg_temp.aid('lo:chem:11.4:e'), pg_temp.aid('st:chem:11:polymers'), '11.4(e)', 'Describe nylon (polyamide) and Terylene (polyester) as condensation polymers', 3),
+  (pg_temp.aid('lo:chem:11.4:f'), pg_temp.aid('st:chem:11:polymers'), '11.4(f)', 'State typical uses of man-made fibres such as nylon and Terylene', 2),
+  (pg_temp.aid('lo:chem:11.4:g'), pg_temp.aid('st:chem:11:polymers'), '11.4(g)', 'Describe the pollution problems caused by the disposal of non-biodegradable plastics', 3),
+  (pg_temp.aid('lo:chem:11.4:h'), pg_temp.aid('st:chem:11:polymers'), '11.4(h)', 'Describe physical and chemical methods of recycling plastics', 3),
+  (pg_temp.aid('lo:chem:11.4:i'), pg_temp.aid('st:chem:11:polymers'), '11.4(i)', 'Describe depolymerisation as breaking polymers into monomers (hydrolysis of polyesters using acid catalyst)', 3),
+  (pg_temp.aid('lo:chem:11.4:j'), pg_temp.aid('st:chem:11:polymers'), '11.4(j)', 'Discuss the social, economic and environmental issues of recycling plastics', 3),
+  -- 12. Maintaining Air Quality
+  (pg_temp.aid('lo:chem:12:a'), pg_temp.aid('st:chem:12:air'), '12(a)', 'Describe the volume composition of dry air (approx 78% nitrogen, 21% oxygen, noble gases and CO2)', 3),
+  (pg_temp.aid('lo:chem:12:b'), pg_temp.aid('st:chem:12:air'), '12(b)', 'Name common atmospheric pollutants (CO, methane, nitrogen oxides, ozone, sulfur dioxide, unburned hydrocarbons)', 3),
+  (pg_temp.aid('lo:chem:12:c'), pg_temp.aid('st:chem:12:air'), '12(c)', 'State the sources of CO, nitrogen oxides and sulfur dioxide', 3),
+  (pg_temp.aid('lo:chem:12:d'), pg_temp.aid('st:chem:12:air'), '12(d)', 'Describe reactions used to reduce pollutants: redox in catalytic converters and calcium carbonate for acid rain and flue gas desulfurisation', 3),
+  (pg_temp.aid('lo:chem:12:e'), pg_temp.aid('st:chem:12:air'), '12(e)', 'Discuss the effects of pollutants on health and environment (toxic CO; NO2 and SO2 in acid rain)', 3),
+  (pg_temp.aid('lo:chem:12:f'), pg_temp.aid('st:chem:12:air'), '12(f)', 'Discuss the importance of the ozone layer and problems of its depletion by CFCs', 3),
+  (pg_temp.aid('lo:chem:12:g'), pg_temp.aid('st:chem:12:air'), '12(g)', 'Describe the carbon cycle (combustion, respiration, photosynthesis) and how it regulates atmospheric CO2', 3),
+  (pg_temp.aid('lo:chem:12:h'), pg_temp.aid('st:chem:12:air'), '12(h)', 'State that CO2 and methane are greenhouse gases contributing to global warming; give sources and effects', 3)
+on conflict (id) do update set statement = excluded.statement, code = excluded.code, frequency_score = excluded.frequency_score;
+
+-- ════════════════════════════════════════════════════════════════════════════
+--  A worked lesson: Osmosis (Biology 2 · Movement of Substances)
+-- ════════════════════════════════════════════════════════════════════════════
 insert into lessons (id, subtopic_id, overview, simple_explanation, detailed_explanation, exam_tips, analogy, misconceptions) values
-  ('99999999-0000-0000-0000-000000000001',
-   'c0000002-0000-0000-0000-000000000002',
-   'Osmosis is the movement of water across a partially permeable membrane, driven by differences in water potential.',
+  (pg_temp.aid('lesson:osmosis'),
+   pg_temp.aid('st:bio:2:osmosis'),
+   'Osmosis is the net movement of water across a partially permeable membrane, driven by differences in water potential.',
    'Water moves from where there is lots of it (dilute solution) to where there is less of it (concentrated solution), through a membrane that lets water pass but not the dissolved particles.',
    'Osmosis is the net movement of water molecules from a region of higher water potential to a region of lower water potential, through a partially permeable membrane. In plant cells, water entering makes the cell turgid; water leaving causes plasmolysis. In animal cells (no cell wall), too much water causes the cell to burst (haemolysis); too little causes it to crenate.',
    'Always use the exact phrase "net movement of water molecules" and "partially permeable membrane". Reference "water potential" (higher → lower), not just "concentration". For plant cells use turgid/flaccid/plasmolysed; for animal cells use burst/crenate.',
    'Think of a crowded room (concentrated solution) and an empty room (dilute) joined by a door that only people (water) can fit through — people spread out until both rooms feel equally full.',
    '[{"claim":"Osmosis moves solute particles","correction":"Osmosis is the movement of WATER only; solutes cannot cross the partially permeable membrane."},{"claim":"Water moves from low to high concentration of water","correction":"Water moves from HIGH water potential (dilute) to LOW water potential (concentrated)."}]'::jsonb)
-on conflict (id) do nothing;
+on conflict (id) do update set overview = excluded.overview, detailed_explanation = excluded.detailed_explanation;
 
--- Questions + mark schemes ---------------------------------------------------
+-- ════════════════════════════════════════════════════════════════════════════
+--  Sample questions + SEAB-style mark schemes (remapped to real subtopics)
+-- ════════════════════════════════════════════════════════════════════════════
 insert into questions (id, subject_id, subtopic_id, stem, type, marks, command_words, difficulty, frequency_score) values
-  ('10000000-0000-0000-0000-000000000001', '11111111-1111-1111-1111-111111111111', 'c0000002-0000-0000-0000-000000000002',
+  (pg_temp.aid('q:osmosis:define'), pg_temp.aid('subj:6093'), pg_temp.aid('st:bio:2:osmosis'),
    'Define osmosis.', 'open_ended', 3, '{define}', 2, 5),
-  ('10000000-0000-0000-0000-000000000002', '11111111-1111-1111-1111-111111111111', 'c0000002-0000-0000-0000-000000000002',
+  (pg_temp.aid('q:osmosis:plant'), pg_temp.aid('subj:6093'), pg_temp.aid('st:bio:2:osmosis'),
    'A plant cell is placed in a concentrated sugar solution. Explain what happens to the cell.', 'open_ended', 4, '{explain}', 4, 5),
-  ('10000000-0000-0000-0000-000000000003', '11111111-1111-1111-1111-111111111111', 'c0000004-0000-0000-0000-000000000004',
+  (pg_temp.aid('q:enzyme:temp'), pg_temp.aid('subj:6093'), pg_temp.aid('st:bio:3:enzymes'),
    'Explain why enzyme activity decreases above its optimum temperature.', 'open_ended', 3, '{explain}', 3, 5),
-  ('10000000-0000-0000-0000-000000000004', '11111111-1111-1111-1111-111111111111', 'c0000001-0000-0000-0000-000000000001',
+  (pg_temp.aid('q:diffusion:mcq'), pg_temp.aid('subj:6093'), pg_temp.aid('st:bio:2:diffusion'),
    'Which process describes the net movement of particles from a region of higher concentration to a region of lower concentration?', 'mcq', 1, '{}', 1, 4),
-  ('20000000-0000-0000-0000-000000000001', '22222222-2222-2222-2222-222222222222', 'd0000001-0000-0000-0000-000000000001',
-   'A solution turns universal indicator red. State what this tells you about the solution.', 'open_ended', 2, '{state}', 2, 4)
-on conflict (id) do nothing;
+  (pg_temp.aid('q:acid:indicator'), pg_temp.aid('subj:6092'), pg_temp.aid('st:chem:5:acids'),
+   'A solution turns Universal Indicator red. State what this tells you about the solution.', 'open_ended', 2, '{state}', 2, 4),
+  (pg_temp.aid('q:redox:define'), pg_temp.aid('subj:6092'), pg_temp.aid('st:chem:7:redox'),
+   'Define oxidation in terms of electron transfer.', 'open_ended', 1, '{define}', 2, 5)
+on conflict (id) do update set stem = excluded.stem, marks = excluded.marks;
 
-insert into question_options (question_id, label, text, is_correct, distractor_rationale) values
-  ('10000000-0000-0000-0000-000000000004', 'A', 'Active transport', false, 'Active transport moves particles AGAINST the gradient using energy.'),
-  ('10000000-0000-0000-0000-000000000004', 'B', 'Diffusion', true, null),
-  ('10000000-0000-0000-0000-000000000004', 'C', 'Osmosis', false, 'Osmosis is specifically the movement of WATER across a partially permeable membrane.'),
-  ('10000000-0000-0000-0000-000000000004', 'D', 'Respiration', false, 'Respiration is a chemical reaction releasing energy, not particle movement.')
-on conflict do nothing;
+insert into question_options (id, question_id, label, text, is_correct, distractor_rationale) values
+  (pg_temp.aid('opt:diff:a'), pg_temp.aid('q:diffusion:mcq'), 'A', 'Active transport', false, 'Active transport moves particles AGAINST the gradient using energy.'),
+  (pg_temp.aid('opt:diff:b'), pg_temp.aid('q:diffusion:mcq'), 'B', 'Diffusion', true, null),
+  (pg_temp.aid('opt:diff:c'), pg_temp.aid('q:diffusion:mcq'), 'C', 'Osmosis', false, 'Osmosis is specifically the movement of WATER across a partially permeable membrane.'),
+  (pg_temp.aid('opt:diff:d'), pg_temp.aid('q:diffusion:mcq'), 'D', 'Respiration', false, 'Respiration is a chemical reaction releasing energy, not particle movement.')
+on conflict (id) do update set text = excluded.text, is_correct = excluded.is_correct;
 
 insert into mark_schemes (question_id, marking_points, model_answer, accepted_keywords, rejected_answers) values
-  ('10000000-0000-0000-0000-000000000001',
+  (pg_temp.aid('q:osmosis:define'),
    '["net movement of water molecules","from higher to lower water potential","through a partially permeable membrane"]'::jsonb,
    'Osmosis is the net movement of water molecules from a region of higher water potential to a region of lower water potential, through a partially permeable membrane.',
    '{net movement,water molecules,water potential,partially permeable membrane}',
    '{"movement of water (missing net)","semi-permeable (accept, prefer partially permeable)","movement of particles"}'),
-  ('10000000-0000-0000-0000-000000000002',
+  (pg_temp.aid('q:osmosis:plant'),
    '["water potential inside cell is higher than solution","water leaves the cell by osmosis","across the partially permeable membrane","cell becomes flaccid / plasmolysed"]'::jsonb,
    'The sugar solution has a lower water potential than the cell sap. Water therefore moves out of the cell by osmosis, across the partially permeable membrane. The cell loses turgor, becomes flaccid and eventually plasmolysed as the membrane pulls away from the cell wall.',
    '{lower water potential,osmosis,partially permeable,flaccid,plasmolysed}',
    '{"cell bursts (that is animal cells in dilute solution)"}'),
-  ('10000000-0000-0000-0000-000000000003',
+  (pg_temp.aid('q:enzyme:temp'),
    '["high temperature denatures the enzyme","active site changes shape","substrate no longer fits","fewer enzyme-substrate complexes form"]'::jsonb,
    'Above the optimum, the high temperature denatures the enzyme: the active site changes shape so the substrate no longer fits, so fewer enzyme-substrate complexes form and the rate falls.',
    '{denatured,active site,changes shape,substrate,no longer fits}',
    '{"enzyme is killed (enzymes are not alive)"}'),
-  ('20000000-0000-0000-0000-000000000001',
+  (pg_temp.aid('q:acid:indicator'),
    '["the solution is acidic","it has a low pH / pH below 7"]'::jsonb,
    'The solution is acidic; it has a low pH (below 7).',
    '{acidic,low pH,below 7}',
-   '{"alkaline","neutral"}')
-on conflict (question_id) do nothing;
+   '{"alkaline","neutral"}'),
+  (pg_temp.aid('q:redox:define'),
+   '["oxidation is the loss of electrons"]'::jsonb,
+   'Oxidation is the loss of electrons.',
+   '{loss of electrons,OIL}',
+   '{"gain of electrons (that is reduction)","loss of hydrogen (accept but electron definition wanted)"}')
+on conflict (question_id) do update set model_answer = excluded.model_answer, marking_points = excluded.marking_points;
 
 insert into question_outcomes (question_id, learning_outcome_id, weight) values
-  ('10000000-0000-0000-0000-000000000001','e0000001-0000-0000-0000-000000000001',1),
-  ('10000000-0000-0000-0000-000000000002','e0000002-0000-0000-0000-000000000002',1),
-  ('10000000-0000-0000-0000-000000000003','e0000005-0000-0000-0000-000000000005',1),
-  ('10000000-0000-0000-0000-000000000004','e0000003-0000-0000-0000-000000000003',1),
-  ('20000000-0000-0000-0000-000000000001','f0000001-0000-0000-0000-000000000001',1)
-on conflict do nothing;
+  (pg_temp.aid('q:osmosis:define'),  pg_temp.aid('lo:bio:2:b'),      1),
+  (pg_temp.aid('q:osmosis:plant'),   pg_temp.aid('lo:bio:2:b'),      1),
+  (pg_temp.aid('q:enzyme:temp'),     pg_temp.aid('lo:bio:3:f'),      1),
+  (pg_temp.aid('q:diffusion:mcq'),   pg_temp.aid('lo:bio:2:a'),      1),
+  (pg_temp.aid('q:acid:indicator'),  pg_temp.aid('lo:chem:5.1:b'),   1),
+  (pg_temp.aid('q:redox:define'),    pg_temp.aid('lo:chem:7.1:b'),   1)
+on conflict (question_id, learning_outcome_id) do nothing;
