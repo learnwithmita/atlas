@@ -42,6 +42,99 @@ Rules:
 
 export type ChatMessage = { role: "user" | "model"; text: string };
 
+export type ExtractedQuestion = {
+  number: string;
+  stem: string;
+  marks: number;
+  type: "mcq" | "structured" | "open_ended" | "data_based" | "diagram" | "practical";
+  commandWords: string[];
+  topic: string; // must match one of the provided topic names, or "Unknown"
+  confidence: number; // 0..1
+};
+
+/**
+ * Extract exam questions from an uploaded paper (PDF or image) and classify
+ * each to a syllabus topic from the provided list.
+ */
+export async function extractQuestions(
+  fileBase64: string,
+  mimeType: string,
+  topics: { name: string; subject: string }[]
+): Promise<ExtractedQuestion[]> {
+  if (!isGeminiConfigured) throw new Error("GEMINI_API_KEY missing");
+
+  const topicList = topics
+    .map((t) => `- ${t.name} (${t.subject})`)
+    .join("\n");
+
+  const prompt = `You are an SEAB examiner digitising a Singapore O-Level science exam paper.
+
+Extract EVERY distinct question (and sub-part) from the attached document. For each, return:
+- number: the question label as printed (e.g. "1", "3(b)", "5(a)(ii)")
+- stem: the full question text, cleaned up. Preserve chemical formulae, subscripts and units in plain text (e.g. "H2O", "CO2", "24 dm3").
+- marks: the mark allocation if shown, else your best estimate.
+- type: one of mcq, structured, open_ended, data_based, diagram, practical.
+- commandWords: the SEAB command words used (state, describe, explain, suggest, calculate, define, etc.).
+- topic: classify to EXACTLY ONE topic name from this list (copy the name verbatim); if unsure use "Unknown":
+${topicList}
+- confidence: 0 to 1, how sure you are of the topic.
+
+Return only questions actually present in the document. Do not invent questions.`;
+
+  const res = await client().models.generateContent({
+    model: CHAT_MODEL,
+    contents: [
+      {
+        role: "user",
+        parts: [
+          { inlineData: { mimeType, data: fileBase64 } },
+          { text: prompt },
+        ],
+      },
+    ],
+    config: {
+      temperature: 0.1,
+      responseMimeType: "application/json",
+      responseSchema: {
+        type: Type.ARRAY,
+        items: {
+          type: Type.OBJECT,
+          properties: {
+            number: { type: Type.STRING },
+            stem: { type: Type.STRING },
+            marks: { type: Type.NUMBER },
+            type: {
+              type: Type.STRING,
+              enum: ["mcq", "structured", "open_ended", "data_based", "diagram", "practical"],
+            },
+            commandWords: { type: Type.ARRAY, items: { type: Type.STRING } },
+            topic: { type: Type.STRING },
+            confidence: { type: Type.NUMBER },
+          },
+          required: ["stem", "topic"],
+        },
+      },
+    },
+  });
+
+  try {
+    const parsed = JSON.parse(res.text ?? "[]");
+    if (!Array.isArray(parsed)) return [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return parsed.map((q: any) => ({
+      number: String(q.number ?? ""),
+      stem: String(q.stem ?? ""),
+      marks: Number(q.marks) || 1,
+      type: q.type ?? "structured",
+      commandWords: Array.isArray(q.commandWords) ? q.commandWords : [],
+      topic: String(q.topic ?? "Unknown"),
+      confidence: Number(q.confidence) || 0,
+    }));
+  } catch {
+    return [];
+  }
+}
+
 export async function tutorReply(
   messages: ChatMessage[],
   topicContext?: string

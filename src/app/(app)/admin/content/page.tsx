@@ -1,25 +1,10 @@
-import { FileText } from "lucide-react";
 import { getFullCurriculum, getResources } from "@/lib/data";
 import { Card } from "@/components/ui/Card";
-import { Badge } from "@/components/ui/Badge";
 import { UploadResource } from "@/components/admin/UploadResource";
+import { ResourceCard } from "@/components/admin/ResourceCard";
 
 export const metadata = { title: "Uploads · Atlas Admin" };
 export const dynamic = "force-dynamic";
-
-function fmtSize(bytes: number | null) {
-  if (!bytes) return "—";
-  const kb = bytes / 1024;
-  return kb > 1024 ? `${(kb / 1024).toFixed(1)} MB` : `${Math.round(kb)} KB`;
-}
-
-const statusTone: Record<string, "neutral" | "accent" | "mint" | "flame"> = {
-  uploaded: "accent",
-  processing: "flame",
-  review: "flame",
-  approved: "mint",
-  rejected: "neutral",
-};
 
 export default async function AdminContentPage() {
   const [resources, subjects] = await Promise.all([
@@ -50,10 +35,9 @@ export default async function AdminContentPage() {
 
       <Card className="p-2 mb-6 bg-accent-soft border-0">
         <p className="text-sm text-ink px-3 py-2">
-          <strong>Next pipeline:</strong> automatic OCR → question extraction →
-          outcome mapping isn&apos;t wired yet, so uploads stay in{" "}
-          <em>uploaded</em> for now. They&apos;re safely stored and ready for
-          that step.
+          <strong>Tip:</strong> after uploading a PDF or image, hit{" "}
+          <em>Extract questions</em> — Atlas reads the paper, pulls out each
+          question, and detects which syllabus topic it tests.
         </p>
       </Card>
 
@@ -65,22 +49,7 @@ export default async function AdminContentPage() {
       ) : (
         <div className="space-y-2">
           {resources.map((r) => (
-            <Card key={r.id} className="p-4 flex items-center gap-4">
-              <span className="h-10 w-10 shrink-0 rounded-[12px] bg-surface-2 grid place-items-center">
-                <FileText size={18} className="text-ink-2" />
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className="text-[15px] font-medium text-ink truncate">
-                  {r.title}
-                </p>
-                <p className="text-xs text-ink-3">
-                  {r.type.replace("_", " ")}
-                  {r.subject ? ` · ${r.subject}` : ""} · {fmtSize(r.file_size)} ·{" "}
-                  {new Date(r.created_at).toLocaleDateString("en-SG")}
-                </p>
-              </div>
-              <Badge tone={statusTone[r.status] ?? "neutral"}>{r.status}</Badge>
-            </Card>
+            <ResourceCard key={r.id} resource={r} detailBase="/admin/content" />
           ))}
         </div>
       )}

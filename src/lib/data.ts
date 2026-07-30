@@ -141,6 +141,7 @@ export type ResourceRow = {
   status: string;
   visibility: string;
   mine: boolean;
+  extractedCount: number;
   file_size: number | null;
   created_at: string;
   subject: string | null;
@@ -155,7 +156,7 @@ export async function getResources(): Promise<ResourceRow[]> {
   const { data } = await supabase
     .from("resources")
     .select(
-      "id, title, type, status, visibility, uploaded_by, file_size, created_at, subject:subjects(name)"
+      "id, title, type, status, visibility, uploaded_by, extracted_count, file_size, created_at, subject:subjects(name)"
     )
     .order("created_at", { ascending: false })
     .limit(100);
@@ -167,10 +168,93 @@ export async function getResources(): Promise<ResourceRow[]> {
     status: r.status,
     visibility: r.visibility ?? "private",
     mine: !!user && r.uploaded_by === user.id,
+    extractedCount: r.extracted_count ?? 0,
     file_size: r.file_size,
     created_at: r.created_at,
     subject: r.subject?.name ?? null,
   }));
+}
+
+export type PaperView = {
+  id: string;
+  title: string;
+  status: string;
+  subject: string | null;
+  topics: {
+    topicId: string | null;
+    topicName: string;
+    questions: {
+      id: string;
+      number: string | null;
+      stem: string;
+      marks: number | null;
+      type: string;
+      commandWords: string[];
+      confidence: number | null;
+    }[];
+  }[];
+  total: number;
+};
+
+/** A single uploaded paper with its extracted questions grouped by topic. */
+export async function getPaper(resourceId: string): Promise<PaperView | null> {
+  if (!isSupabaseConfigured) return null;
+  const supabase = await createClient();
+  const { data: resource } = await supabase
+    .from("resources")
+    .select("id, title, status, subject:subjects(name)")
+    .eq("id", resourceId)
+    .single();
+  if (!resource) return null;
+
+  const { data: qs } = await supabase
+    .from("extracted_questions")
+    .select(
+      "id, question_number, stem, marks, type, command_words, confidence, detected_topic_name, topic:topics(id, name, sort_order)"
+    )
+    .eq("resource_id", resourceId)
+    .limit(500);
+
+  type QRow = PaperView["topics"][number]["questions"][number];
+  type Group = { topicId: string | null; topicName: string; sort: number; questions: QRow[] };
+  const groups = new Map<string, Group>();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  for (const q of (qs ?? []) as any[]) {
+    const key = q.topic?.id ?? `unknown:${q.detected_topic_name ?? "Unknown"}`;
+    const g: Group =
+      groups.get(key) ??
+      {
+        topicId: q.topic?.id ?? null,
+        topicName: q.topic?.name ?? q.detected_topic_name ?? "Unclassified",
+        sort: q.topic?.sort_order ?? 999,
+        questions: [],
+      };
+    g.questions.push({
+      id: q.id,
+      number: q.question_number,
+      stem: q.stem,
+      marks: q.marks,
+      type: q.type,
+      commandWords: q.command_words ?? [],
+      confidence: q.confidence,
+    });
+    groups.set(key, g);
+  }
+
+  const topics = [...groups.values()]
+    .sort((a, b) => a.sort - b.sort)
+    .map((g) => ({ topicId: g.topicId, topicName: g.topicName, questions: g.questions }));
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const subjectName = (resource as any).subject?.name ?? null;
+  return {
+    id: resource.id,
+    title: resource.title,
+    status: resource.status,
+    subject: subjectName,
+    topics,
+    total: (qs ?? []).length,
+  };
 }
 
 export type AdminAnalytics = {
