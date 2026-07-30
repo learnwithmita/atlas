@@ -2,12 +2,25 @@ import { GoogleGenAI, Type } from "@google/genai";
 
 const API_KEY = process.env.GEMINI_API_KEY ?? "";
 const CHAT_MODEL = process.env.GEMINI_MODEL ?? "gemini-2.5-flash";
-const MARK_MODEL = process.env.GEMINI_MARKING_MODEL ?? "gemini-2.5-pro";
+// Default to flash: gemini-2.5-pro is not available on the Gemini free tier.
+const MARK_MODEL = process.env.GEMINI_MARKING_MODEL ?? "gemini-2.5-flash";
 
 export const isGeminiConfigured = API_KEY.length > 0;
 
 function client() {
   return new GoogleGenAI({ apiKey: API_KEY });
+}
+
+/** Turn a raw Gemini SDK error into a short, human message. */
+export function friendlyGeminiError(e: unknown): string {
+  const msg = e instanceof Error ? e.message : String(e);
+  if (/RESOURCE_EXHAUSTED|quota|429|rate.?limit/i.test(msg)) {
+    return "The AI is rate-limited on Gemini's free tier right now. Wait a minute and try again — or add billing / use gemini-2.5-flash to raise the limit.";
+  }
+  if (/API key|401|403|PERMISSION_DENIED|invalid/i.test(msg)) {
+    return "Gemini rejected the API key. Check GEMINI_API_KEY in .env.local (it should start with 'AIza').";
+  }
+  return "The AI hit an unexpected error. Please try again in a moment.";
 }
 
 const TUTOR_SYSTEM = `You are Atlas, a warm but rigorous Biology & Chemistry tutor for Singapore secondary-school students sitting SEAB (Singapore-Cambridge) examinations.

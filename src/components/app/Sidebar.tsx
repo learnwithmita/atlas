@@ -5,12 +5,13 @@ import { usePathname } from "next/navigation";
 import {
   BarChart3,
   BookOpen,
-  CreditCard,
   GraduationCap,
   Home,
+  Library,
   MessageCircle,
   PenLine,
   Sparkles,
+  UploadCloud,
 } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { StreakFlame } from "@/components/ui/StreakFlame";
@@ -29,7 +30,16 @@ const studentNav: NavItem[] = [
 
 const adminNav: NavItem[] = [
   { href: "/admin", label: "Analytics", icon: BarChart3 },
+  { href: "/admin/curriculum", label: "Curriculum", icon: Library },
+  { href: "/admin/content", label: "Uploads", icon: UploadCloud },
 ];
+
+/** Longest-prefix match so parent + child routes don't both highlight. */
+function activeHref(pathname: string, nav: NavItem[]): string | undefined {
+  return nav
+    .filter((i) => pathname === i.href || pathname.startsWith(i.href + "/"))
+    .sort((a, b) => b.href.length - a.href.length)[0]?.href;
+}
 
 export function Sidebar({
   role,
@@ -42,6 +52,7 @@ export function Sidebar({
 }) {
   const pathname = usePathname();
   const nav = role === "admin" ? adminNav : studentNav;
+  const active = activeHref(pathname, nav);
 
   return (
     <aside className="hidden md:flex md:w-64 shrink-0 flex-col border-r border-hairline bg-surface/60 backdrop-blur-xl h-screen sticky top-0 p-5">
@@ -51,8 +62,7 @@ export function Sidebar({
 
       <nav className="mt-8 space-y-1">
         {nav.map((item) => {
-          const active =
-            pathname === item.href || pathname.startsWith(item.href + "/");
+          const isActive = active === item.href;
           const Icon = item.icon;
           return (
             <Link
@@ -60,12 +70,12 @@ export function Sidebar({
               href={item.href}
               className={cn(
                 "flex items-center gap-3 h-11 px-3 rounded-[12px] text-[15px] font-medium transition-colors",
-                active
+                isActive
                   ? "bg-accent-soft text-accent"
                   : "text-ink-2 hover:text-ink hover:bg-surface-2"
               )}
             >
-              <Icon size={19} strokeWidth={active ? 2.4 : 2} />
+              <Icon size={19} strokeWidth={isActive ? 2.4 : 2} />
               {item.label}
             </Link>
           );

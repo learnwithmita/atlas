@@ -48,6 +48,87 @@ export type StudentDashboard = {
   hasData: boolean;
 };
 
+export type CurriculumOutcome = { id: string; code: string | null; statement: string; frequency: number };
+export type CurriculumSubtopic = { id: string; name: string; outcomes: CurriculumOutcome[] };
+export type CurriculumTopic = { id: string; name: string; subtopics: CurriculumSubtopic[]; outcomeCount: number };
+export type CurriculumSubject = { id: string; name: string; code: string | null; topics: CurriculumTopic[] };
+
+/** Full curriculum tree for the admin browser. */
+export async function getFullCurriculum(): Promise<CurriculumSubject[]> {
+  if (!isSupabaseConfigured) return [];
+  const supabase = await createClient();
+
+  const [{ data: subjects }, { data: topics }, { data: subtopics }, { data: outcomes }] =
+    await Promise.all([
+      supabase.from("subjects").select("id, name, syllabus_code, sort_order").order("sort_order"),
+      supabase.from("topics").select("id, subject_id, name, sort_order").order("sort_order"),
+      supabase.from("subtopics").select("id, topic_id, name, sort_order").order("sort_order"),
+      supabase.from("learning_outcomes").select("id, subtopic_id, code, statement, frequency_score"),
+    ]);
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const outBySub = new Map<string, CurriculumOutcome[]>();
+  for (const o of outcomes ?? []) {
+    const list = outBySub.get(o.subtopic_id) ?? [];
+    list.push({ id: o.id, code: o.code, statement: o.statement, frequency: o.frequency_score ?? 3 });
+    outBySub.set(o.subtopic_id, list);
+  }
+  const subsByTopic = new Map<string, CurriculumSubtopic[]>();
+  for (const st of subtopics ?? []) {
+    const list = subsByTopic.get(st.topic_id) ?? [];
+    list.push({ id: st.id, name: st.name, outcomes: outBySub.get(st.id) ?? [] });
+    subsByTopic.set(st.topic_id, list);
+  }
+  const topicsBySubject = new Map<string, CurriculumTopic[]>();
+  for (const t of topics ?? []) {
+    const sts = subsByTopic.get(t.id) ?? [];
+    const list = topicsBySubject.get(t.subject_id) ?? [];
+    list.push({
+      id: t.id,
+      name: t.name,
+      subtopics: sts,
+      outcomeCount: sts.reduce((n, s) => n + s.outcomes.length, 0),
+    });
+    topicsBySubject.set(t.subject_id, list);
+  }
+  return (subjects ?? []).map((s) => ({
+    id: s.id,
+    name: s.name,
+    code: s.syllabus_code,
+    topics: topicsBySubject.get(s.id) ?? [],
+  }));
+}
+
+export type ResourceRow = {
+  id: string;
+  title: string;
+  type: string;
+  status: string;
+  file_size: number | null;
+  created_at: string;
+  subject: string | null;
+};
+
+export async function getResources(): Promise<ResourceRow[]> {
+  if (!isSupabaseConfigured) return [];
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("resources")
+    .select("id, title, type, status, file_size, created_at, subject:subjects(name)")
+    .order("created_at", { ascending: false })
+    .limit(100);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (data ?? []).map((r: any) => ({
+    id: r.id,
+    title: r.title,
+    type: r.type,
+    status: r.status,
+    file_size: r.file_size,
+    created_at: r.created_at,
+    subject: r.subject?.name ?? null,
+  }));
+}
+
 export type AdminAnalytics = {
   totalStudents: number;
   activeThisWeek: number;
@@ -221,6 +302,115 @@ export async function getAdminAnalytics(): Promise<AdminAnalytics> {
     signupsByDay,
     configured: true,
   };
+}
+
+export type TopicProgress = {
+  id: string;
+  name: string;
+  outcomeCount: number;
+  practised: number;
+  mastery: number; // 0..100, averaged over the topic's outcomes (0 if none)
+};
+
+export type SubjectProgress = {
+  id: string;
+  name: string;
+  topics: TopicProgress[];
+  mastery: number;
+};
+
+/** The full syllabus tree with the current student's progress overlaid.
+    Works even before any practice — unpractised outcomes count as 0%. */
+export async function getCurriculumProgress(): Promise<SubjectProgress[]> {
+  if (!isSupabaseConfigured) return [];
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const { data: outcomeRows } = await supabase
+    .from("learning_outcomes")
+    .select(
+      `id, subtopic:subtopics ( topic:topics ( id, name, sort_order, subject:subjects ( id, name, sort_order ) ) )`
+    );
+
+  const masteryById = new Map<string, number>();
+  if (user) {
+    const { data: mRows } = await supabase
+      .from("mastery")
+      .select("learning_outcome_id, mastery_score")
+      .eq("student_id", user.id);
+    for (const m of mRows ?? [])
+      masteryById.set(m.learning_outcome_id, Number(m.mastery_score) || 0);
+  }
+
+  type Acc = {
+    id: string;
+    name: string;
+    sort: number;
+    subjectId: string;
+    subjectName: string;
+    subjectSort: number;
+    count: number;
+    sum: number;
+    practised: number;
+  };
+  const topics = new Map<string, Acc>();
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  for (const r of (outcomeRows ?? []) as any[]) {
+    const t = r.subtopic?.topic;
+    const s = t?.subject;
+    if (!t || !s) continue;
+    const acc =
+      topics.get(t.id) ??
+      ({
+        id: t.id,
+        name: t.name,
+        sort: t.sort_order ?? 0,
+        subjectId: s.id,
+        subjectName: s.name,
+        subjectSort: s.sort_order ?? 0,
+        count: 0,
+        sum: 0,
+        practised: 0,
+      } as Acc);
+    const score = masteryById.get(r.id) ?? 0;
+    acc.count += 1;
+    acc.sum += score;
+    if (masteryById.has(r.id)) acc.practised += 1;
+    topics.set(t.id, acc);
+  }
+
+  const bySubject = new Map<string, SubjectProgress & { sort: number }>();
+  for (const t of topics.values()) {
+    const subj =
+      bySubject.get(t.subjectId) ??
+      ({
+        id: t.subjectId,
+        name: t.subjectName,
+        sort: t.subjectSort,
+        topics: [],
+        mastery: 0,
+      } as SubjectProgress & { sort: number });
+    subj.topics.push({
+      id: t.id,
+      name: t.name,
+      outcomeCount: t.count,
+      practised: t.practised,
+      mastery: t.count ? Math.round(t.sum / t.count) : 0,
+    });
+    bySubject.set(t.subjectId, subj);
+  }
+
+  const result = [...bySubject.values()].sort((a, b) => a.sort - b.sort);
+  for (const s of result) {
+    s.topics.sort((a, b) => a.name.localeCompare(b.name));
+    s.mastery = s.topics.length
+      ? Math.round(s.topics.reduce((x, t) => x + t.mastery, 0) / s.topics.length)
+      : 0;
+  }
+  return result;
 }
 
 export type PracticeQuestion = {

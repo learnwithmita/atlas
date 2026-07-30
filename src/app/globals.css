@@ -20,6 +20,10 @@
   --color-ink-2: #6e6e73; /* secondary */
   --color-ink-3: #86868b; /* tertiary */
 
+  /* Always-dark surface (does NOT invert in dark mode) — for panels that stay
+     dark with white text in both themes, e.g. the marketing CTA. */
+  --color-ink-static: #1d1d1f;
+
   /* Brand accent — refined indigo */
   --color-accent: #5b5bd6;
   --color-accent-strong: #4b4bc4;

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
-import { markAnswer } from "@/lib/gemini";
+import { friendlyGeminiError, markAnswer } from "@/lib/gemini";
 
 export const runtime = "nodejs";
 
@@ -48,14 +48,20 @@ export async function POST(req: Request) {
       : // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (q as any).mark_schemes) ?? {};
 
-    const result = await markAnswer({
-      stem: q.stem,
-      marks: q.marks,
-      markingPoints: ms.marking_points ?? [],
-      modelAnswer: ms.model_answer ?? "",
-      acceptedKeywords: ms.accepted_keywords ?? [],
-      studentAnswer: answer,
-    });
+    let result;
+    try {
+      result = await markAnswer({
+        stem: q.stem,
+        marks: q.marks,
+        markingPoints: ms.marking_points ?? [],
+        modelAnswer: ms.model_answer ?? "",
+        acceptedKeywords: ms.accepted_keywords ?? [],
+        studentAnswer: answer,
+      });
+    } catch (e) {
+      // AI failed (e.g. rate limit) — return a clean message, persist nothing.
+      return NextResponse.json({ error: friendlyGeminiError(e) }, { status: 502 });
+    }
 
     // Persist the attempt.
     const { data: attempt } = await supabase

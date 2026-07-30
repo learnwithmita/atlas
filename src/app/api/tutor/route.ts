@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { tutorReply, type ChatMessage } from "@/lib/gemini";
+import { friendlyGeminiError, tutorReply, type ChatMessage } from "@/lib/gemini";
 
 export const runtime = "nodejs";
 
@@ -15,9 +15,6 @@ export async function POST(req: Request) {
     const reply = await tutorReply(messages.slice(-12), topic);
     return NextResponse.json(reply);
   } catch (e) {
-    return NextResponse.json(
-      { error: e instanceof Error ? e.message : "Tutor error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: friendlyGeminiError(e) }, { status: 502 });
   }
 }

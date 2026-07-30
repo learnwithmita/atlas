@@ -114,7 +114,7 @@ export default async function LessonPage({
           )}
 
           {lesson.exam_tips && (
-            <Card className="p-6 my-8 bg-ink text-white border-0">
+            <Card className="p-6 my-8 bg-ink-static text-white border-0">
               <CardEyebrow className="text-white/50 flex items-center gap-1.5">
                 <Sparkles size={13} /> Examiner tips
               </CardEyebrow>

@@ -10,6 +10,7 @@ import {
 import { SiteHeader } from "@/components/site/SiteHeader";
 import { LinkButton } from "@/components/ui/Button";
 import { Logo } from "@/components/Logo";
+import { getProfile } from "@/lib/data";
 
 const features = [
   {
@@ -34,7 +35,16 @@ const features = [
   },
 ];
 
-export default function Landing() {
+export default async function Landing() {
+  const profile = await getProfile();
+  const loggedIn = !!profile;
+  const dashHref =
+    profile?.role === "admin"
+      ? "/admin"
+      : profile?.role === "tutor"
+        ? "/tutor"
+        : "/learn";
+
   return (
     <>
       <SiteHeader />
@@ -63,16 +73,25 @@ export default function Landing() {
             and turns it into tomorrow&apos;s study plan.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center mt-9">
-            <LinkButton href="/signup" size="lg">
-              Start free <ArrowRight size={18} />
-            </LinkButton>
+            {loggedIn ? (
+              <LinkButton href={dashHref} size="lg">
+                {profile?.role === "student" ? "Back to learning" : "Go to dashboard"}{" "}
+                <ArrowRight size={18} />
+              </LinkButton>
+            ) : (
+              <LinkButton href="/signup" size="lg">
+                Start free <ArrowRight size={18} />
+              </LinkButton>
+            )}
             <LinkButton href="/pricing" variant="secondary" size="lg">
               See pricing
             </LinkButton>
           </div>
-          <p className="text-sm text-ink-3 mt-4">
-            No card required · Free forever plan
-          </p>
+          {!loggedIn && (
+            <p className="text-sm text-ink-3 mt-4">
+              No card required · Free forever plan
+            </p>
+          )}
         </div>
 
         {/* Product glimpse */}
@@ -176,7 +195,7 @@ export default function Landing() {
 
       {/* CTA */}
       <section className="mx-auto max-w-6xl px-5 sm:px-8 py-10 pb-24">
-        <div className="rounded-[28px] bg-ink text-white p-12 sm:p-16 text-center relative overflow-hidden">
+        <div className="rounded-[28px] bg-ink-static text-white p-12 sm:p-16 text-center relative overflow-hidden">
           <div
             className="absolute inset-0 opacity-80"
             style={{
@@ -193,11 +212,12 @@ export default function Landing() {
               their weakest topic climb first.
             </p>
             <LinkButton
-              href="/signup"
+              href={loggedIn ? dashHref : "/signup"}
               size="lg"
-              className="mt-8 bg-white text-ink hover:bg-white/90"
+              className="mt-8 bg-white text-ink-static hover:bg-white/90"
             >
-              Create your free account <ArrowRight size={18} />
+              {loggedIn ? "Back to learning" : "Create your free account"}{" "}
+              <ArrowRight size={18} />
             </LinkButton>
           </div>
         </div>

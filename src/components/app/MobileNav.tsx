@@ -2,7 +2,15 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, BookOpen, Home, MessageCircle, PenLine } from "lucide-react";
+import {
+  BarChart3,
+  BookOpen,
+  Home,
+  Library,
+  MessageCircle,
+  PenLine,
+  UploadCloud,
+} from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { StreakFlame } from "@/components/ui/StreakFlame";
 import { ThemeToggle } from "@/components/app/ThemeToggle";
@@ -20,7 +28,11 @@ export function MobileNav({
 
   const items =
     role === "admin"
-      ? [{ href: "/admin", label: "Analytics", icon: BarChart3 }]
+      ? [
+          { href: "/admin", label: "Analytics", icon: BarChart3 },
+          { href: "/admin/curriculum", label: "Curriculum", icon: Library },
+          { href: "/admin/content", label: "Uploads", icon: UploadCloud },
+        ]
       : [
           { href: "/learn", label: "Home", icon: Home },
           { href: "/practice", label: "Practice", icon: PenLine },
@@ -39,9 +51,14 @@ export function MobileNav({
       </header>
 
       <nav className="md:hidden fixed bottom-0 inset-x-0 z-30 flex items-center justify-around h-16 border-t border-hairline bg-surface/90 backdrop-blur-xl pb-safe">
-        {items.map((item) => {
-          const active =
-            pathname === item.href || pathname.startsWith(item.href + "/");
+        {(() => {
+          const activeHref = items
+            .filter(
+              (i) => pathname === i.href || pathname.startsWith(i.href + "/")
+            )
+            .sort((a, b) => b.href.length - a.href.length)[0]?.href;
+          return items.map((item) => {
+          const active = activeHref === item.href;
           const Icon = item.icon;
           return (
             <Link
@@ -56,7 +73,8 @@ export function MobileNav({
               {item.label}
             </Link>
           );
-        })}
+          });
+        })()}
       </nav>
     </>
   );

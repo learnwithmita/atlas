@@ -9,7 +9,7 @@ export default function AuthLayout({
   return (
     <div className="min-h-screen grid lg:grid-cols-2">
       {/* Brand panel */}
-      <div className="hidden lg:flex flex-col justify-between p-14 relative overflow-hidden bg-ink">
+      <div className="hidden lg:flex flex-col justify-between p-14 relative overflow-hidden bg-ink-static">
         <div
           className="absolute inset-0 opacity-90"
           style={{
