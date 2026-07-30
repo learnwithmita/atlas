@@ -1,26 +1,143 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ============================================================
+   Atlas — Apple-minimalist / premium design tokens
+   No green. Ink + a single refined indigo accent + warm amber
+   reserved for streaks. Generous whitespace, soft depth.
+   ============================================================ */
+
+@theme {
+  /* Surfaces */
+  --color-canvas: #fbfbfd; /* page background (light) */
+  --color-surface: #ffffff; /* cards */
+  --color-surface-2: #f5f5f7; /* subtle fills */
+  --color-hairline: rgba(0, 0, 0, 0.08);
+
+  /* Text */
+  --color-ink: #1d1d1f; /* primary text */
+  --color-ink-2: #6e6e73; /* secondary */
+  --color-ink-3: #86868b; /* tertiary */
+
+  /* Brand accent — refined indigo */
+  --color-accent: #5b5bd6;
+  --color-accent-strong: #4b4bc4;
+  --color-accent-soft: #eeeefb;
+
+  /* Semantic (used sparingly) */
+  --color-flame: #ff9f0a; /* streaks */
+  --color-flame-soft: #fff4e0;
+  --color-danger: #ff453a;
+  --color-mint: #34c0ac; /* rare positive accent, not Duolingo green */
+
+  /* Typography — SF Pro on Apple devices, Inter fallback */
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display",
+    "SF Pro Text", "Inter", system-ui, "Segoe UI", Roboto, sans-serif;
+
+  /* Radii — generous, Apple-like */
+  --radius-sm: 10px;
+  --radius: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+
+  /* Soft, layered shadows */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04);
+  --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+/* Dark mode token overrides */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: light;
+}
+.dark {
+  color-scheme: dark;
+  --color-canvas: #000000;
+  --color-surface: #1c1c1e;
+  --color-surface-2: #2c2c2e;
+  --color-hairline: rgba(255, 255, 255, 0.1);
+  --color-ink: #f5f5f7;
+  --color-ink-2: #aeaeb2;
+  --color-ink-3: #8e8e93;
+  --color-accent: #7c7cf0;
+  --color-accent-strong: #9a9af5;
+  --color-accent-soft: #1e1e3a;
+  --color-flame-soft: #2a2213;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+* {
+  border-color: var(--color-hairline);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  letter-spacing: -0.011em;
+}
+
+/* Refined heading tracking, Apple-style tightness on large sizes */
+h1,
+h2,
+h3 {
+  letter-spacing: -0.025em;
+}
+
+/* Subtle premium gradient text helper */
+.text-gradient {
+  background: linear-gradient(135deg, var(--color-ink) 0%, var(--color-accent) 140%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Focus ring */
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Reduced motion respect */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Thin, quiet scrollbars */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-hairline);
+  border-radius: 999px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-fade-up {
+  animation: fade-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
