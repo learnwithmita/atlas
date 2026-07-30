@@ -1,7 +1,28 @@
 -- ============================================================================
--- Atlas — classroom RLS (was missing) + resource visibility model.
--- Run AFTER 0001_init.sql and 0003_resources.sql. Re-runnable.
+-- Atlas — classrooms + classroom membership, their RLS, and the resource
+-- visibility model. Run AFTER 0001_init.sql and 0003_resources.sql. Re-runnable.
 -- ============================================================================
+
+-- ── Classrooms & membership tables ──────────────────────────────────────────
+create table if not exists classrooms (
+  id            uuid primary key default uuid_generate_v4(),
+  tutor_id      uuid references profiles(id) on delete cascade,
+  name          text not null,
+  subject_id    uuid references subjects(id) on delete set null,
+  level         edu_level,
+  academic_year text,
+  invite_code   text unique not null,
+  created_at    timestamptz not null default now()
+);
+
+create table if not exists classroom_members (
+  classroom_id uuid references classrooms(id) on delete cascade,
+  student_id   uuid references profiles(id) on delete cascade,
+  joined_at    timestamptz not null default now(),
+  primary key (classroom_id, student_id)
+);
+
+create index if not exists idx_cm_student on classroom_members(student_id);
 
 -- ── Classrooms & membership RLS ─────────────────────────────────────────────
 alter table classrooms         enable row level security;
