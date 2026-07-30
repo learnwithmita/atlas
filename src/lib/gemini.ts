@@ -20,6 +20,9 @@ export function friendlyGeminiError(e: unknown): string {
   if (/RESOURCE_EXHAUSTED|quota|429|rate.?limit/i.test(msg)) {
     return "Gemini is rate-limited on the free tier right now. Wait a minute and try again — or add billing to raise the limit.";
   }
+  if (/503|UNAVAILABLE|overloaded|high demand/i.test(msg)) {
+    return "Gemini is briefly overloaded. Give it a few seconds and try again.";
+  }
   if (/API[_ ]?key|401|403|PERMISSION_DENIED|API_KEY_INVALID|unregistered/i.test(msg)) {
     return "Gemini rejected the API key. Create a key at aistudio.google.com/apikey (it should start with 'AIza') and put it in .env.local as GEMINI_API_KEY.";
   }
@@ -178,6 +181,78 @@ Rules: front = a short recall question or key term; back = the precise SEAB-keyw
     return parsed
       .map((c: any) => ({ front: String(c.front ?? ""), back: String(c.back ?? "") }))
       .filter((c: GeneratedCard) => c.front && c.back);
+  } catch {
+    return [];
+  }
+}
+
+export type GeneratedExamQuestion = {
+  stem: string;
+  marks: number;
+  type: "structured" | "open_ended" | "data_based";
+  commandWords: string[];
+  topic: string;
+};
+
+/** Generate fresh SEAB-style exam questions spread across the given topics. */
+export async function generateExamQuestions(
+  topics: string[],
+  count: number
+): Promise<GeneratedExamQuestion[]> {
+  if (!isGeminiConfigured) throw new Error("GEMINI_API_KEY missing");
+
+  const prompt = `You are setting a Singapore O-Level (SEAB) science practice paper.
+
+Write ${count} exam questions, spread as evenly as possible across these topics:
+${topics.map((t) => `- ${t}`).join("\n")}
+
+Rules:
+- Mix command words (state, describe, explain, suggest, calculate, define) and mark values (1–5).
+- Make them genuinely varied — different contexts, data, scenarios and numbers each time. Do NOT reuse the same stock textbook question repeatedly.
+- type is one of: structured, open_ended, data_based (no MCQ).
+- topic must be copied verbatim from the list above.
+- Write any maths/chemistry in LaTeX ($...$, $\\ce{...}$).
+Return only the questions.`;
+
+  const res = await client().models.generateContent({
+    model: CHAT_MODEL,
+    contents: prompt,
+    config: {
+      temperature: 1.0, // high → fresh questions each call
+      responseMimeType: "application/json",
+      responseSchema: {
+        type: Type.ARRAY,
+        items: {
+          type: Type.OBJECT,
+          properties: {
+            stem: { type: Type.STRING },
+            marks: { type: Type.NUMBER },
+            type: {
+              type: Type.STRING,
+              enum: ["structured", "open_ended", "data_based"],
+            },
+            commandWords: { type: Type.ARRAY, items: { type: Type.STRING } },
+            topic: { type: Type.STRING },
+          },
+          required: ["stem", "marks", "topic"],
+        },
+      },
+    },
+  });
+
+  try {
+    const parsed = JSON.parse(res.text ?? "[]");
+    if (!Array.isArray(parsed)) return [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return parsed
+      .map((q: any) => ({
+        stem: String(q.stem ?? ""),
+        marks: Math.max(1, Math.min(5, Math.round(Number(q.marks) || 2))),
+        type: q.type ?? "structured",
+        commandWords: Array.isArray(q.commandWords) ? q.commandWords : [],
+        topic: String(q.topic ?? ""),
+      }))
+      .filter((q: GeneratedExamQuestion) => q.stem);
   } catch {
     return [];
   }

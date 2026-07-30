@@ -1,18 +1,23 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
-import { Sparkles } from "lucide-react";
+import { Loader2, Sparkles } from "lucide-react";
 import type { CurriculumSubject } from "@/lib/data";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import {
+  GeneratedPracticeSession,
+  type GenQuestion,
+} from "@/components/practice/GeneratedPracticeSession";
 import { cn } from "@/lib/utils";
 
 export function PaperBuilder({ subjects }: { subjects: CurriculumSubject[] }) {
-  const router = useRouter();
   const [subjectId, setSubjectId] = useState(subjects[0]?.id ?? "");
   const [picked, setPicked] = useState<Set<string>>(new Set());
   const [count, setCount] = useState(10);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [questions, setQuestions] = useState<GenQuestion[] | null>(null);
 
   const subject = useMemo(
     () => subjects.find((s) => s.id === subjectId),
@@ -28,9 +33,46 @@ export function PaperBuilder({ subjects }: { subjects: CurriculumSubject[] }) {
     });
   }
 
-  function generate() {
-    if (picked.size === 0) return;
-    router.push(`/practice?topics=${[...picked].join(",")}&n=${count}`);
+  async function generate() {
+    if (picked.size === 0 || busy) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/paper/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ topicIds: [...picked], count }),
+      });
+      const data = await res.json();
+      if (res.ok) setQuestions(data.questions);
+      else setError(data.error ?? "Generation failed.");
+    } catch {
+      setError("Network error.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  // Practising a freshly generated paper.
+  if (questions) {
+    return (
+      <div className="mx-auto max-w-2xl px-5 sm:px-8 py-8 pb-24 md:pb-8">
+        <header className="mb-6">
+          <h1 className="text-3xl font-semibold text-ink">Your paper</h1>
+          <p className="text-ink-2 mt-1">
+            {questions.length} freshly generated questions. Answer each — Atlas
+            marks like an examiner.
+          </p>
+        </header>
+        <GeneratedPracticeSession
+          questions={questions}
+          onRegenerate={() => {
+            setQuestions(null);
+            generate();
+          }}
+        />
+      </div>
+    );
   }
 
   return (
@@ -38,8 +80,8 @@ export function PaperBuilder({ subjects }: { subjects: CurriculumSubject[] }) {
       <header className="mb-6">
         <h1 className="text-3xl font-semibold text-ink">Build a paper</h1>
         <p className="text-ink-2 mt-1">
-          Preparing for WA2? Pick exactly the topics your school is testing and
-          Atlas assembles a randomised paper.
+          Preparing for WA2? Pick the topics your school is testing and Atlas
+          writes a fresh, randomised paper each time.
         </p>
       </header>
 
@@ -107,14 +149,12 @@ export function PaperBuilder({ subjects }: { subjects: CurriculumSubject[] }) {
       <Card className="p-5 mb-6">
         <div className="flex items-center justify-between mb-2">
           <p className="text-sm font-medium text-ink">Number of questions</p>
-          <span className="text-lg font-semibold text-accent tabular-nums">
-            {count}
-          </span>
+          <span className="text-lg font-semibold text-accent tabular-nums">{count}</span>
         </div>
         <input
           type="range"
           min={5}
-          max={25}
+          max={20}
           step={5}
           value={count}
           onChange={(e) => setCount(Number(e.target.value))}
@@ -122,15 +162,25 @@ export function PaperBuilder({ subjects }: { subjects: CurriculumSubject[] }) {
         />
       </Card>
 
-      <Button
-        size="lg"
-        className="w-full"
-        disabled={picked.size === 0}
-        onClick={generate}
-      >
-        <Sparkles size={18} />
-        Generate paper ({picked.size} topic{picked.size === 1 ? "" : "s"})
+      {error && <p className="text-sm text-danger mb-3">{error}</p>}
+
+      <Button size="lg" className="w-full" disabled={picked.size === 0 || busy} onClick={generate}>
+        {busy ? (
+          <>
+            <Loader2 size={18} className="animate-spin" /> Writing your paper…
+          </>
+        ) : (
+          <>
+            <Sparkles size={18} /> Generate paper ({picked.size} topic
+            {picked.size === 1 ? "" : "s"})
+          </>
+        )}
       </Button>
+      {busy && (
+        <p className="text-center text-sm text-ink-3 mt-3">
+          Atlas is writing {count} fresh questions — about 15 seconds.
+        </p>
+      )}
     </div>
   );
 }
