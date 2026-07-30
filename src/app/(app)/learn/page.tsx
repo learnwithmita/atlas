@@ -10,6 +10,7 @@ import { StudyPlan } from "@/components/dashboard/StudyPlan";
 import { ActivityStrip } from "@/components/dashboard/ActivityStrip";
 import { EmptyState } from "@/components/dashboard/EmptyState";
 import { JoinClass } from "@/components/dashboard/JoinClass";
+import { levelFromXp, rankName } from "@/lib/gamification";
 
 export const metadata = { title: "Home · Atlas" };
 export const dynamic = "force-dynamic";
@@ -27,17 +28,40 @@ export default async function LearnHome() {
 
   return (
     <div className="mx-auto max-w-6xl px-5 sm:px-8 py-8 pb-24 md:pb-8">
-      <header className="mb-8 animate-fade-up">
-        <p className="text-ink-3 text-sm">
-          {new Date().toLocaleDateString("en-SG", {
-            weekday: "long",
-            day: "numeric",
-            month: "long",
-          })}
-        </p>
-        <h1 className="text-3xl font-semibold text-ink mt-1">
-          Hello, {firstName}
-        </h1>
+      <header className="mb-8 animate-fade-up flex items-end justify-between gap-4">
+        <div>
+          <p className="text-ink-3 text-sm">
+            {new Date().toLocaleDateString("en-SG", {
+              weekday: "long",
+              day: "numeric",
+              month: "long",
+            })}
+          </p>
+          <h1 className="text-3xl font-semibold text-ink mt-1">
+            Hello, {firstName}
+          </h1>
+        </div>
+        {(() => {
+          const lvl = levelFromXp(d.profile?.xp ?? 0);
+          return (
+            <Link
+              href="/rewards"
+              className="shrink-0 flex items-center gap-2.5 rounded-full border border-hairline bg-surface pl-2 pr-4 py-1.5 hover:border-accent transition-colors"
+            >
+              <span className="h-8 w-8 rounded-full bg-accent grid place-items-center text-white text-sm font-semibold">
+                {lvl.level}
+              </span>
+              <span className="text-left leading-tight">
+                <span className="block text-xs text-ink-3">
+                  {rankName(lvl.level)}
+                </span>
+                <span className="block text-sm font-medium text-ink tabular-nums">
+                  {d.profile?.xp ?? 0} XP
+                </span>
+              </span>
+            </Link>
+          );
+        })()}
       </header>
 
       {/* Assignments from tutors */}

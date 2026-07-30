@@ -6,7 +6,15 @@ import { Loader2, Sparkles, X } from "lucide-react";
 import type { CurriculumSubject } from "@/lib/data";
 import { Button } from "@/components/ui/Button";
 
-export function GenerateDeck({ subjects }: { subjects: CurriculumSubject[] }) {
+export function GenerateDeck({
+  subjects,
+  endpoint = "/api/flashcards/generate",
+  label = "Generate a deck",
+}: {
+  subjects: CurriculumSubject[];
+  endpoint?: string;
+  label?: string;
+}) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [subtopicId, setSubtopicId] = useState("");
@@ -18,7 +26,7 @@ export function GenerateDeck({ subjects }: { subjects: CurriculumSubject[] }) {
     setBusy(true);
     setMsg(null);
     try {
-      const res = await fetch("/api/flashcards/generate", {
+      const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ subtopicId }),
@@ -38,7 +46,7 @@ export function GenerateDeck({ subjects }: { subjects: CurriculumSubject[] }) {
   if (!open) {
     return (
       <Button variant="secondary" onClick={() => setOpen(true)}>
-        <Sparkles size={16} /> Generate a deck
+        <Sparkles size={16} /> {label}
       </Button>
     );
   }

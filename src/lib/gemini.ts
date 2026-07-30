@@ -183,6 +183,53 @@ Rules: front = a short recall question or key term; back = the precise SEAB-keyw
   }
 }
 
+export type GeneratedCloze = { text: string; answer: string };
+
+/** Generate fill-in-the-blank items for a subtopic. */
+export async function generateCloze(
+  subtopicName: string,
+  outcomes: string[],
+  count = 8
+): Promise<GeneratedCloze[]> {
+  if (!isGeminiConfigured) throw new Error("GEMINI_API_KEY missing");
+
+  const prompt = `Create ${count} fill-in-the-blank revision sentences for the SEAB O-Level topic "${subtopicName}".
+${outcomes.length ? `Base them on these learning outcomes:\n${outcomes.map((o) => `- ${o}`).join("\n")}` : ""}
+
+Rules: each sentence must state a key fact and hide ONE important keyword/phrase (the answer a student must recall) by wrapping it in double braces, e.g. "Osmosis moves water across a {{partially permeable}} membrane." The "answer" field = the exact text inside the braces. Keep sentences short and unambiguous, with only ONE blank each. Use British spelling.`;
+
+  const res = await client().models.generateContent({
+    model: CHAT_MODEL,
+    contents: prompt,
+    config: {
+      temperature: 0.4,
+      responseMimeType: "application/json",
+      responseSchema: {
+        type: Type.ARRAY,
+        items: {
+          type: Type.OBJECT,
+          properties: {
+            text: { type: Type.STRING },
+            answer: { type: Type.STRING },
+          },
+          required: ["text", "answer"],
+        },
+      },
+    },
+  });
+
+  try {
+    const parsed = JSON.parse(res.text ?? "[]");
+    if (!Array.isArray(parsed)) return [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return parsed
+      .map((c: any) => ({ text: String(c.text ?? ""), answer: String(c.answer ?? "") }))
+      .filter((c: GeneratedCloze) => c.text.includes("{{") && c.answer);
+  } catch {
+    return [];
+  }
+}
+
 export async function tutorReply(
   messages: ChatMessage[],
   topicContext?: string

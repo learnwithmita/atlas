@@ -84,6 +84,52 @@ export async function getTutorClassrooms(): Promise<Classroom[]> {
 }
 
 // ── Question bank ────────────────────────────────────────────────────────────
+// ── Gamification ─────────────────────────────────────────────────────────────
+import type { GamiStats } from "@/lib/gamification";
+
+export async function getGamification(): Promise<GamiStats> {
+  const empty: GamiStats = {
+    xp: 0,
+    currentStreak: 0,
+    longestStreak: 0,
+    attempts: 0,
+    fullMarks: 0,
+    maxMastery: 0,
+    submissions: 0,
+    cardReviews: 0,
+  };
+  if (!isSupabaseConfigured) return empty;
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return empty;
+
+  const [profile, attemptRows, mastery, subs, reviews] = await Promise.all([
+    supabase.from("profiles").select("xp, current_streak, longest_streak").eq("id", user.id).single(),
+    supabase.from("attempts").select("awarded_marks, max_marks").eq("student_id", user.id).limit(2000),
+    supabase.from("mastery").select("mastery_score").eq("student_id", user.id).order("mastery_score", { ascending: false }).limit(1),
+    supabase.from("assignment_submissions").select("assignment_id", { count: "exact", head: true }).eq("student_id", user.id).eq("status", "submitted"),
+    supabase.from("flashcard_reviews").select("flashcard_id", { count: "exact", head: true }).eq("student_id", user.id),
+  ]);
+
+  const attempts = attemptRows.data ?? [];
+  const fullMarks = attempts.filter(
+    (a) => a.max_marks != null && Number(a.awarded_marks) >= Number(a.max_marks)
+  ).length;
+
+  return {
+    xp: profile.data?.xp ?? 0,
+    currentStreak: profile.data?.current_streak ?? 0,
+    longestStreak: profile.data?.longest_streak ?? 0,
+    attempts: attempts.length,
+    fullMarks,
+    maxMastery: Math.round(Number(mastery.data?.[0]?.mastery_score ?? 0)),
+    submissions: subs.count ?? 0,
+    cardReviews: reviews.count ?? 0,
+  };
+}
+
 // ── Flashcards ───────────────────────────────────────────────────────────────
 export type FlashcardDeck = {
   subtopicId: string;
@@ -184,6 +230,66 @@ export async function getStudyCards(
   // Due/new first.
   mapped.sort((a, b) => Number(b.due) - Number(a.due));
   return { subtopicName: st?.name ?? "", cards: mapped };
+}
+
+// ── Cloze (fill-in-the-blank) ────────────────────────────────────────────────
+export type ClozeDeck = {
+  subtopicId: string;
+  subtopicName: string;
+  topic: string;
+  subject: string;
+  total: number;
+};
+
+export async function getClozeDecks(): Promise<ClozeDeck[]> {
+  if (!isSupabaseConfigured) return [];
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("cloze_items")
+    .select("id, subtopic:subtopics(id, name, topic:topics(name, subject:subjects(name)))");
+  const decks = new Map<string, ClozeDeck>();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  for (const c of (data ?? []) as any[]) {
+    const st = c.subtopic;
+    if (!st) continue;
+    const d =
+      decks.get(st.id) ??
+      ({
+        subtopicId: st.id,
+        subtopicName: st.name,
+        topic: st.topic?.name ?? "",
+        subject: st.topic?.subject?.name ?? "",
+        total: 0,
+      } as ClozeDeck);
+    d.total += 1;
+    decks.set(st.id, d);
+  }
+  return [...decks.values()].sort((a, b) => a.subject.localeCompare(b.subject));
+}
+
+export type ClozeItem = { id: string; text: string; answer: string };
+
+export async function getClozeItems(
+  subtopicId: string
+): Promise<{ subtopicName: string; items: ClozeItem[] }> {
+  if (!isSupabaseConfigured) return { subtopicName: "", items: [] };
+  const supabase = await createClient();
+  const { data: st } = await supabase
+    .from("subtopics")
+    .select("name")
+    .eq("id", subtopicId)
+    .single();
+  const { data } = await supabase
+    .from("cloze_items")
+    .select("id, text, answer")
+    .eq("subtopic_id", subtopicId)
+    .limit(50);
+  const items = (data ?? []).map((c) => ({ id: c.id, text: c.text, answer: c.answer }));
+  for (let i = items.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [items[i], items[j]] = [items[j], items[i]];
+  }
+  return { subtopicName: st?.name ?? "", items };
 }
 
 export type BankTopic = {

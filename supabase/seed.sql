@@ -558,3 +558,23 @@ insert into flashcards (id, subtopic_id, topic_id, front, back, created_by) valu
    'Define oxidation and reduction in terms of electrons (OIL RIG).',
    'Oxidation Is Loss of electrons; Reduction Is Gain of electrons.', null)
 on conflict (id) do update set front = excluded.front, back = excluded.back;
+
+-- ════════════════════════════════════════════════════════════════════════════
+--  Curated fill-in-the-blank items. Requires 0008_cloze.sql.
+-- ════════════════════════════════════════════════════════════════════════════
+insert into cloze_items (id, subtopic_id, topic_id, text, answer, created_by) values
+  (pg_temp.aid('cz:osmosis:wp'), pg_temp.aid('st:bio:2:osmosis'), pg_temp.aid('t:bio:2'),
+   'Osmosis is the net movement of water molecules from a region of higher water potential to a region of lower {{water potential}}, through a partially permeable membrane.', 'water potential', null),
+  (pg_temp.aid('cz:osmosis:mem'), pg_temp.aid('st:bio:2:osmosis'), pg_temp.aid('t:bio:2'),
+   'Water crosses the membrane during osmosis because the membrane is {{partially permeable}}.', 'partially permeable', null),
+  (pg_temp.aid('cz:diffusion:grad'), pg_temp.aid('st:bio:2:diffusion'), pg_temp.aid('t:bio:2'),
+   'In diffusion, particles move down a concentration {{gradient}} from high to low concentration.', 'gradient', null),
+  (pg_temp.aid('cz:enzyme:denat'), pg_temp.aid('st:bio:3:enzymes'), pg_temp.aid('t:bio:3'),
+   'Above the optimum temperature an enzyme is {{denatured}}, so its active site changes shape.', 'denatured', null),
+  (pg_temp.aid('cz:enzyme:site'), pg_temp.aid('st:bio:3:enzymes'), pg_temp.aid('t:bio:3'),
+   'The substrate binds to the enzyme''s {{active site}} to form an enzyme-substrate complex.', 'active site', null),
+  (pg_temp.aid('cz:acid:ion'), pg_temp.aid('st:chem:5:acids'), pg_temp.aid('t:chem:5'),
+   'All acids produce {{hydrogen}} ions when dissolved in water.', 'hydrogen', null),
+  (pg_temp.aid('cz:redox:oxid'), pg_temp.aid('st:chem:7:redox'), pg_temp.aid('t:chem:7'),
+   'In terms of electrons, oxidation is the {{loss}} of electrons.', 'loss', null)
+on conflict (id) do update set text = excluded.text, answer = excluded.answer;

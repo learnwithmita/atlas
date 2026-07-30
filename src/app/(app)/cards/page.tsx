@@ -4,6 +4,7 @@ import { getFlashcardDecks, getFullCurriculum } from "@/lib/data";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { GenerateDeck } from "@/components/cards/GenerateDeck";
+import { StudyModeTabs } from "@/components/cards/StudyModeTabs";
 
 export const metadata = { title: "Flashcards · Atlas" };
 export const dynamic = "force-dynamic";
@@ -28,6 +29,8 @@ export default async function CardsPage() {
         </div>
         <GenerateDeck subjects={subjects} />
       </header>
+
+      <StudyModeTabs active="cards" />
 
       {decks.length === 0 ? (
         <Card className="p-10 text-center">
