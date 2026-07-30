@@ -49,19 +49,24 @@ setup message) so you can browse the UI. Add the keys below to make it live.
    - `NEXT_PUBLIC_SUPABASE_URL`
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
    - `SUPABASE_SERVICE_ROLE_KEY` (optional for this slice)
-3. **SQL Editor** → run these files in order:
-   1. `supabase/migrations/0001_init.sql` (schema + RLS + triggers)
+3. **SQL Editor** → run these files **in order** (each is re-runnable):
+   1. `supabase/migrations/0001_init.sql` (core schema + RLS + triggers)
    2. `supabase/migrations/0002_demo_progress.sql` (demo-progress RPC)
-   3. `supabase/seed.sql` (G3 Biology + Chemistry content)
+   3. `supabase/migrations/0003_resources.sql` (uploads table + storage bucket)
+   4. `supabase/migrations/0004_classrooms_visibility.sql` (classrooms + resource visibility)
+   5. `supabase/migrations/0005_extracted_questions.sql` (OCR output table)
+   6. `supabase/migrations/0006_assignments.sql` (assignments + join-class RPC)
+   7. `supabase/seed.sql` (SEAB Biology 6093 + Chemistry 6092 content)
 4. **Auth → Providers → Email**: for easy testing, turn **off** "Confirm email"
    so signup logs you straight in.
 
 ### 2. Gemini
 
 1. Get a key at [aistudio.google.com/apikey](https://aistudio.google.com/apikey).
-2. Put it in `.env.local` as `GEMINI_API_KEY`. Defaults:
-   - `GEMINI_MODEL=gemini-2.5-flash` (chat / bulk — cheap)
-   - `GEMINI_MARKING_MODEL=gemini-2.5-pro` (marking — accuracy where it's sold)
+2. Put it in `.env.local` as `GEMINI_API_KEY`. Defaults (use the `-latest`
+   aliases — versioned ids like `gemini-2.5-flash` get retired for new keys):
+   - `GEMINI_MODEL=gemini-flash-latest` (chat / bulk / extraction)
+   - `GEMINI_MARKING_MODEL=gemini-flash-latest` (marking; use `gemini-pro-latest` on billing)
 
 Restart `npm run dev` after editing `.env.local`.
 

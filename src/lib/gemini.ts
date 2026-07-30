@@ -272,3 +272,85 @@ Award marks like a Singapore examiner. Be specific about which marking points th
     };
   }
 }
+
+/**
+ * Mark an open-ended answer when there is NO stored mark scheme (e.g. a question
+ * extracted from an uploaded paper). Gemini derives an SEAB-style scheme itself,
+ * then marks against it.
+ */
+export async function markOpenEnded(input: {
+  stem: string;
+  marks: number;
+  studentAnswer: string;
+}): Promise<MarkResult> {
+  if (!isGeminiConfigured) {
+    return {
+      awarded: 0,
+      max: input.marks,
+      missingPoints: [],
+      awardedPoints: [],
+      errorType: "none",
+      modelAnswer: "",
+      improvedAnswer: "",
+      feedback: "AI marking isn't connected. Add GEMINI_API_KEY to .env.local.",
+    };
+  }
+
+  const prompt = `You are a Singapore O-Level (SEAB) examiner. First derive the mark scheme for the question, then mark the student's answer against it.
+
+QUESTION (${input.marks} marks): ${input.stem}
+
+STUDENT ANSWER: "${input.studentAnswer}"
+
+Award marks like a Singapore examiner (one mark per valid point, up to ${input.marks}). Return: the marking points the student earned, the ones missing, the dominant error type (conceptual/careless/technique/knowledge, or "none"), a full-marks model answer, and an improved version of the student's own answer.`;
+
+  const res = await client().models.generateContent({
+    model: MARK_MODEL,
+    contents: prompt,
+    config: {
+      temperature: 0.1,
+      responseMimeType: "application/json",
+      responseSchema: {
+        type: Type.OBJECT,
+        properties: {
+          awarded: { type: Type.NUMBER },
+          missingPoints: { type: Type.ARRAY, items: { type: Type.STRING } },
+          awardedPoints: { type: Type.ARRAY, items: { type: Type.STRING } },
+          errorType: {
+            type: Type.STRING,
+            enum: ["conceptual", "careless", "technique", "knowledge", "none"],
+          },
+          modelAnswer: { type: Type.STRING },
+          improvedAnswer: { type: Type.STRING },
+          feedback: { type: Type.STRING },
+        },
+        required: ["awarded", "missingPoints", "awardedPoints", "errorType", "modelAnswer", "improvedAnswer", "feedback"],
+      },
+    },
+  });
+
+  try {
+    const p = JSON.parse(res.text ?? "{}");
+    return {
+      awarded: Math.min(input.marks, Math.max(0, Number(p.awarded) || 0)),
+      max: input.marks,
+      missingPoints: p.missingPoints ?? [],
+      awardedPoints: p.awardedPoints ?? [],
+      errorType: p.errorType ?? "none",
+      modelAnswer: p.modelAnswer ?? "",
+      improvedAnswer: p.improvedAnswer ?? "",
+      feedback: p.feedback ?? "",
+    };
+  } catch {
+    return {
+      awarded: 0,
+      max: input.marks,
+      missingPoints: [],
+      awardedPoints: [],
+      errorType: "none",
+      modelAnswer: "",
+      improvedAnswer: "",
+      feedback: "Couldn't parse the marking response. Please try again.",
+    };
+  }
+}

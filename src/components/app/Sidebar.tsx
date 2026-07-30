@@ -32,12 +32,14 @@ const studentNav: NavItem[] = [
 const tutorNav: NavItem[] = [
   { href: "/teach", label: "Classrooms", icon: Users },
   { href: "/teach/curriculum", label: "Curriculum", icon: Library },
+  { href: "/teach/bank", label: "Question Bank", icon: BookOpen },
   { href: "/teach/uploads", label: "Materials", icon: UploadCloud },
 ];
 
 const adminNav: NavItem[] = [
   { href: "/admin", label: "Analytics", icon: BarChart3 },
   { href: "/admin/curriculum", label: "Curriculum", icon: Library },
+  { href: "/admin/bank", label: "Question Bank", icon: BookOpen },
   { href: "/admin/content", label: "Uploads", icon: UploadCloud },
 ];
 

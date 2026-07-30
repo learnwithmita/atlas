@@ -83,6 +83,196 @@ export async function getTutorClassrooms(): Promise<Classroom[]> {
   }));
 }
 
+// ── Question bank ────────────────────────────────────────────────────────────
+export type BankTopic = {
+  topicId: string;
+  topicName: string;
+  subject: string;
+  bankCount: number;
+  extractedCount: number;
+};
+
+export async function getQuestionBank(): Promise<BankTopic[]> {
+  if (!isSupabaseConfigured) return [];
+  const supabase = await createClient();
+
+  const [{ data: topics }, { data: bankQ }, { data: exQ }] = await Promise.all([
+    supabase.from("topics").select("id, name, sort_order, subject:subjects(name)").order("sort_order"),
+    supabase.from("questions").select("id, subtopic:subtopics(topic_id)"),
+    supabase.from("extracted_questions").select("topic_id"),
+  ]);
+
+  const bankByTopic = new Map<string, number>();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  for (const q of (bankQ ?? []) as any[]) {
+    const tid = q.subtopic?.topic_id;
+    if (tid) bankByTopic.set(tid, (bankByTopic.get(tid) ?? 0) + 1);
+  }
+  const exByTopic = new Map<string, number>();
+  for (const q of exQ ?? []) {
+    if (q.topic_id) exByTopic.set(q.topic_id, (exByTopic.get(q.topic_id) ?? 0) + 1);
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (topics ?? []).map((t: any) => ({
+    topicId: t.id,
+    topicName: t.name,
+    subject: t.subject?.name ?? "",
+    bankCount: bankByTopic.get(t.id) ?? 0,
+    extractedCount: exByTopic.get(t.id) ?? 0,
+  }));
+}
+
+// ── Roster / assign targets ──────────────────────────────────────────────────
+export type RosterStudent = { id: string; name: string; email: string | null; classroom: string };
+
+export async function getTutorStudents(): Promise<RosterStudent[]> {
+  if (!isSupabaseConfigured) return [];
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+  const { data: classes } = await supabase
+    .from("classrooms")
+    .select("id, name")
+    .eq("tutor_id", user.id);
+  const ids = (classes ?? []).map((c) => c.id);
+  if (ids.length === 0) return [];
+  const nameById = new Map((classes ?? []).map((c) => [c.id, c.name]));
+  const { data: members } = await supabase
+    .from("classroom_members")
+    .select("classroom_id, student:profiles(id, full_name, email)")
+    .in("classroom_id", ids);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (members ?? []).map((m: any) => ({
+    id: m.student?.id,
+    name: m.student?.full_name ?? m.student?.email ?? "Student",
+    email: m.student?.email ?? null,
+    classroom: nameById.get(m.classroom_id) ?? "",
+  }));
+}
+
+export type ClassroomDetail = {
+  id: string;
+  name: string;
+  invite_code: string;
+  members: { id: string; name: string; email: string | null }[];
+};
+
+export async function getClassroom(id: string): Promise<ClassroomDetail | null> {
+  if (!isSupabaseConfigured) return null;
+  const supabase = await createClient();
+  const { data: c } = await supabase
+    .from("classrooms")
+    .select("id, name, invite_code")
+    .eq("id", id)
+    .single();
+  if (!c) return null;
+  const { data: members } = await supabase
+    .from("classroom_members")
+    .select("student:profiles(id, full_name, email)")
+    .eq("classroom_id", id);
+  return {
+    id: c.id,
+    name: c.name,
+    invite_code: c.invite_code,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    members: (members ?? []).map((m: any) => ({
+      id: m.student?.id,
+      name: m.student?.full_name ?? m.student?.email ?? "Student",
+      email: m.student?.email ?? null,
+    })),
+  };
+}
+
+// ── Assignments ──────────────────────────────────────────────────────────────
+export type AssignmentSummary = {
+  id: string;
+  title: string;
+  classroom: string | null;
+  dueAt: string | null;
+  questionCount: number;
+  status: string; // assigned | in_progress | submitted
+  score: number | null;
+  maxScore: number | null;
+};
+
+export async function getStudentAssignments(): Promise<AssignmentSummary[]> {
+  if (!isSupabaseConfigured) return [];
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("assignments")
+    .select(
+      "id, title, due_at, classroom:classrooms(name), assignment_questions(count), assignment_submissions(status, score, max_score)"
+    )
+    .order("created_at", { ascending: false })
+    .limit(50);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (data ?? []).map((a: any) => {
+    const sub = a.assignment_submissions?.[0];
+    return {
+      id: a.id,
+      title: a.title,
+      classroom: a.classroom?.name ?? null,
+      dueAt: a.due_at,
+      questionCount: a.assignment_questions?.[0]?.count ?? 0,
+      status: sub?.status ?? "assigned",
+      score: sub?.score ?? null,
+      maxScore: sub?.max_score ?? null,
+    };
+  });
+}
+
+export type AssignmentDetail = {
+  id: string;
+  title: string;
+  questions: {
+    id: string;
+    stem: string;
+    marks: number | null;
+    type: string;
+    commandWords: string[];
+    topic: string | null;
+  }[];
+  status: string;
+  score: number | null;
+};
+
+export async function getAssignment(id: string): Promise<AssignmentDetail | null> {
+  if (!isSupabaseConfigured) return null;
+  const supabase = await createClient();
+  const { data: a } = await supabase
+    .from("assignments")
+    .select(
+      "id, title, assignment_questions(id, stem, marks, type, command_words, sort_order, topic:topics(name)), assignment_submissions(status, score)"
+    )
+    .eq("id", id)
+    .single();
+  if (!a) return null;
+  const sub = // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (a as any).assignment_submissions?.[0];
+  return {
+    id: a.id,
+    title: a.title,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    questions: ((a as any).assignment_questions ?? [])
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .sort((x: any, y: any) => (x.sort_order ?? 0) - (y.sort_order ?? 0))
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .map((q: any) => ({
+        id: q.id,
+        stem: q.stem,
+        marks: q.marks,
+        type: q.type,
+        commandWords: q.command_words ?? [],
+        topic: q.topic?.name ?? null,
+      })),
+    status: sub?.status ?? "assigned",
+    score: sub?.score ?? null,
+  };
+}
+
 export type CurriculumOutcome = { id: string; code: string | null; statement: string; frequency: number };
 export type CurriculumSubtopic = { id: string; name: string; outcomes: CurriculumOutcome[] };
 export type CurriculumTopic = { id: string; name: string; subtopics: CurriculumSubtopic[]; outcomeCount: number };

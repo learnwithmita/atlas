@@ -1,4 +1,5 @@
-import { Copy, Users } from "lucide-react";
+import Link from "next/link";
+import { ArrowRight, Users } from "lucide-react";
 import { getFullCurriculum, getTutorClassrooms } from "@/lib/data";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
@@ -41,25 +42,30 @@ export default async function TeachHome() {
       ) : (
         <div className="grid sm:grid-cols-2 gap-4">
           {classrooms.map((c) => (
-            <Card key={c.id} className="p-6">
-              <div className="flex items-start justify-between gap-3">
-                <h3 className="font-semibold text-ink text-lg">{c.name}</h3>
-                {c.subject && <Badge tone="accent">{c.subject}</Badge>}
-              </div>
-              <p className="text-sm text-ink-3 mt-1 flex items-center gap-1.5">
-                <Users size={14} /> {c.memberCount} student
-                {c.memberCount === 1 ? "" : "s"}
-              </p>
-              <div className="mt-4 flex items-center justify-between rounded-[12px] bg-surface-2 px-4 py-3">
-                <div>
-                  <p className="text-xs text-ink-3">Invite code</p>
-                  <p className="font-mono text-lg font-semibold text-ink tracking-widest">
-                    {c.invite_code}
-                  </p>
+            <Link key={c.id} href={`/teach/${c.id}`} className="group">
+              <Card className="p-6 h-full hover:border-accent transition-colors">
+                <div className="flex items-start justify-between gap-3">
+                  <h3 className="font-semibold text-ink text-lg">{c.name}</h3>
+                  {c.subject && <Badge tone="accent">{c.subject}</Badge>}
                 </div>
-                <Copy size={16} className="text-ink-3" />
-              </div>
-            </Card>
+                <p className="text-sm text-ink-3 mt-1 flex items-center gap-1.5">
+                  <Users size={14} /> {c.memberCount} student
+                  {c.memberCount === 1 ? "" : "s"}
+                </p>
+                <div className="mt-4 flex items-center justify-between rounded-[12px] bg-surface-2 px-4 py-3">
+                  <div>
+                    <p className="text-xs text-ink-3">Invite code</p>
+                    <p className="font-mono text-lg font-semibold text-ink tracking-widest">
+                      {c.invite_code}
+                    </p>
+                  </div>
+                  <ArrowRight
+                    size={16}
+                    className="text-ink-3 group-hover:translate-x-0.5 transition-transform"
+                  />
+                </div>
+              </Card>
+            </Link>
           ))}
         </div>
       )}

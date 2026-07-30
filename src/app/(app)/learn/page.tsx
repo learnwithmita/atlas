@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { ArrowRight, BookOpen, Target } from "lucide-react";
-import { getStudentDashboard } from "@/lib/data";
+import { ArrowRight, BookOpen, ClipboardList, Target } from "lucide-react";
+import { getStudentAssignments, getStudentDashboard } from "@/lib/data";
 import { ProgressRing } from "@/components/ui/ProgressRing";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
@@ -9,12 +9,16 @@ import { MasteryBar } from "@/components/ui/MasteryBar";
 import { StudyPlan } from "@/components/dashboard/StudyPlan";
 import { ActivityStrip } from "@/components/dashboard/ActivityStrip";
 import { EmptyState } from "@/components/dashboard/EmptyState";
+import { JoinClass } from "@/components/dashboard/JoinClass";
 
 export const metadata = { title: "Home · Atlas" };
 export const dynamic = "force-dynamic";
 
 export default async function LearnHome() {
-  const d = await getStudentDashboard();
+  const [d, assignments] = await Promise.all([
+    getStudentDashboard(),
+    getStudentAssignments(),
+  ]);
   const firstName = (d.profile?.full_name ?? "there").split(" ")[0];
   const today = new Date().toISOString().slice(0, 10);
   const goal = d.profile?.daily_goal_xp ?? 40;
@@ -35,6 +39,49 @@ export default async function LearnHome() {
           Hello, {firstName}
         </h1>
       </header>
+
+      {/* Assignments from tutors */}
+      {assignments.length > 0 && (
+        <Card className="p-6 mb-5 animate-fade-up">
+          <div className="flex items-center gap-2 mb-4">
+            <ClipboardList size={19} className="text-accent" />
+            <h2 className="text-lg font-semibold text-ink">
+              Assignments from your tutor
+            </h2>
+          </div>
+          <ul className="space-y-2">
+            {assignments.map((a) => (
+              <li key={a.id}>
+                <Link
+                  href={`/learn/assignments/${a.id}`}
+                  className="flex items-center gap-4 p-3 rounded-[14px] hover:bg-surface-2 transition-colors"
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[15px] font-medium text-ink truncate">
+                      {a.title}
+                    </p>
+                    <p className="text-xs text-ink-3">
+                      {a.questionCount} questions
+                      {a.classroom ? ` · ${a.classroom}` : ""}
+                      {a.dueAt
+                        ? ` · due ${new Date(a.dueAt).toLocaleDateString("en-SG")}`
+                        : ""}
+                    </p>
+                  </div>
+                  {a.status === "submitted" ? (
+                    <Badge tone="mint">
+                      {a.score ?? 0}/{a.maxScore ?? 0}
+                    </Badge>
+                  ) : (
+                    <Badge tone="accent">To do</Badge>
+                  )}
+                  <ArrowRight size={16} className="text-ink-3" />
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
 
       {!d.hasData ? (
         <EmptyState />
@@ -122,6 +169,21 @@ export default async function LearnHome() {
           </Card>
         </div>
       )}
+
+      {/* Join a class */}
+      <Card className="p-5 mt-5 animate-fade-up">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:justify-between">
+          <div>
+            <p className="font-medium text-ink">Have a class code?</p>
+            <p className="text-sm text-ink-3">
+              Join your tutor&apos;s class to get assignments.
+            </p>
+          </div>
+          <div className="sm:w-72">
+            <JoinClass />
+          </div>
+        </div>
+      </Card>
     </div>
   );
 }
