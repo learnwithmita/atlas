@@ -310,54 +310,84 @@ alter table mastery            enable row level security;
 alter table subscriptions      enable row level security;
 alter table ai_events          enable row level security;
 
+-- NOTE: policies are dropped-if-exists first so this whole file is re-runnable.
+
 -- Profiles: own row read/write; admins read all
+drop policy if exists "profiles_self_select" on profiles;
 create policy "profiles_self_select" on profiles for select using (id = auth.uid() or public.current_user_role() = 'admin');
+drop policy if exists "profiles_self_update" on profiles;
 create policy "profiles_self_update" on profiles for update using (id = auth.uid());
 
 -- Daily activity: own
+drop policy if exists "activity_own" on daily_activity;
 create policy "activity_own" on daily_activity for all using (user_id = auth.uid()) with check (user_id = auth.uid());
 
 -- Curriculum content: readable by any authenticated user; admin writes
+drop policy if exists "content_read_subjects" on subjects;
 create policy "content_read_subjects" on subjects for select using (auth.role() = 'authenticated');
+drop policy if exists "content_read_topics" on topics;
 create policy "content_read_topics" on topics for select using (auth.role() = 'authenticated');
+drop policy if exists "content_read_subtopics" on subtopics;
 create policy "content_read_subtopics" on subtopics for select using (auth.role() = 'authenticated');
+drop policy if exists "content_read_outcomes" on learning_outcomes;
 create policy "content_read_outcomes" on learning_outcomes for select using (auth.role() = 'authenticated');
+drop policy if exists "content_read_lessons" on lessons;
 create policy "content_read_lessons" on lessons for select using (auth.role() = 'authenticated');
+drop policy if exists "content_read_questions" on questions;
 create policy "content_read_questions" on questions for select using (auth.role() = 'authenticated');
+drop policy if exists "content_read_options" on question_options;
 create policy "content_read_options" on question_options for select using (auth.role() = 'authenticated');
+drop policy if exists "content_read_ms" on mark_schemes;
 create policy "content_read_ms" on mark_schemes for select using (auth.role() = 'authenticated');
+drop policy if exists "content_read_qo" on question_outcomes;
 create policy "content_read_qo" on question_outcomes for select using (auth.role() = 'authenticated');
 
+drop policy if exists "content_admin_subjects" on subjects;
 create policy "content_admin_subjects" on subjects for all using (public.current_user_role() = 'admin');
+drop policy if exists "content_admin_topics" on topics;
 create policy "content_admin_topics" on topics for all using (public.current_user_role() = 'admin');
+drop policy if exists "content_admin_subtopics" on subtopics;
 create policy "content_admin_subtopics" on subtopics for all using (public.current_user_role() = 'admin');
+drop policy if exists "content_admin_outcomes" on learning_outcomes;
 create policy "content_admin_outcomes" on learning_outcomes for all using (public.current_user_role() = 'admin');
+drop policy if exists "content_admin_lessons" on lessons;
 create policy "content_admin_lessons" on lessons for all using (public.current_user_role() = 'admin');
+drop policy if exists "content_admin_questions" on questions;
 create policy "content_admin_questions" on questions for all using (public.current_user_role() = 'admin');
+drop policy if exists "content_admin_options" on question_options;
 create policy "content_admin_options" on question_options for all using (public.current_user_role() = 'admin');
+drop policy if exists "content_admin_ms" on mark_schemes;
 create policy "content_admin_ms" on mark_schemes for all using (public.current_user_role() = 'admin');
+drop policy if exists "content_admin_qo" on question_outcomes;
 create policy "content_admin_qo" on question_outcomes for all using (public.current_user_role() = 'admin');
 
 -- Student-owned activity data
+drop policy if exists "attempts_own" on attempts;
 create policy "attempts_own" on attempts for all
   using (student_id = auth.uid() or public.current_user_role() = 'admin')
   with check (student_id = auth.uid());
 
+drop policy if exists "feedback_own" on ai_feedback;
 create policy "feedback_own" on ai_feedback for select
   using (exists (select 1 from attempts a where a.id = attempt_id and (a.student_id = auth.uid() or public.current_user_role() = 'admin')));
+drop policy if exists "feedback_insert" on ai_feedback;
 create policy "feedback_insert" on ai_feedback for insert
-  using (true) with check (true);
+  with check (exists (select 1 from attempts a where a.id = attempt_id and a.student_id = auth.uid()));
 
+drop policy if exists "mastery_own" on mastery;
 create policy "mastery_own" on mastery for all
   using (student_id = auth.uid() or public.current_user_role() = 'admin')
   with check (student_id = auth.uid());
 
+drop policy if exists "subs_own" on subscriptions;
 create policy "subs_own" on subscriptions for all
   using (user_id = auth.uid() or public.current_user_role() = 'admin')
   with check (user_id = auth.uid());
 
 -- AI events: user inserts own; admin reads all (for cost dashboard)
+drop policy if exists "ai_events_insert" on ai_events;
 create policy "ai_events_insert" on ai_events for insert with check (user_id = auth.uid() or user_id is null);
+drop policy if exists "ai_events_read" on ai_events;
 create policy "ai_events_read" on ai_events for select using (user_id = auth.uid() or public.current_user_role() = 'admin');
 
 -- Vector index (fast enough at this scale — see blueprint §5)
