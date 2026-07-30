@@ -11,7 +11,7 @@ export async function SiteHeader() {
     profile?.role === "admin"
       ? "/admin"
       : profile?.role === "tutor"
-        ? "/tutor"
+        ? "/teach"
         : "/learn";
 
   return (

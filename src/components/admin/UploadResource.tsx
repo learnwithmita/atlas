@@ -18,14 +18,18 @@ const TYPES = [
 
 export function UploadResource({
   subjects,
+  variant = "tutor",
 }: {
   subjects: { id: string; name: string }[];
+  /** admin uploads are always public; tutor uploads choose private/shared. */
+  variant?: "admin" | "tutor";
 }) {
   const router = useRouter();
   const [file, setFile] = useState<File | null>(null);
   const [title, setTitle] = useState("");
   const [type, setType] = useState("past_paper");
   const [subjectId, setSubjectId] = useState("");
+  const [visibility, setVisibility] = useState<"private" | "shared">("private");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ ok?: boolean; text: string } | null>(null);
   const [drag, setDrag] = useState(false);
@@ -66,6 +70,7 @@ export function UploadResource({
         file_path: path,
         file_size: file.size,
         status: "uploaded",
+        visibility: variant === "admin" ? "public" : visibility,
       });
       if (ins.error) {
         setMsg({ text: `Saved file but metadata failed: ${ins.error.message}` });
@@ -130,6 +135,30 @@ export function UploadResource({
           placeholder="Title (e.g. 2024 Prelim P2)"
           className="h-11 px-4 rounded-[12px] bg-surface-2 border border-hairline outline-none focus:border-accent text-[15px] text-ink sm:col-span-3"
         />
+        {variant === "tutor" && (
+          <div className="sm:col-span-3 flex gap-2">
+            {(
+              [
+                { v: "private", label: "Only me" },
+                { v: "shared", label: "Share with all tutors" },
+              ] as const
+            ).map((o) => (
+              <button
+                key={o.v}
+                type="button"
+                onClick={() => setVisibility(o.v)}
+                className={cn(
+                  "flex-1 h-10 rounded-[12px] text-sm font-medium border transition-all",
+                  visibility === o.v
+                    ? "bg-accent text-white border-accent"
+                    : "bg-surface-2 text-ink-2 border-hairline hover:text-ink"
+                )}
+              >
+                {o.label}
+              </button>
+            ))}
+          </div>
+        )}
         <select
           value={type}
           onChange={(e) => setType(e.target.value)}

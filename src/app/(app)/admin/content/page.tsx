@@ -39,8 +39,14 @@ export default async function AdminContentPage() {
       </header>
 
       <Card className="p-6 mb-6">
-        <UploadResource subjects={subjects.map((s) => ({ id: s.id, name: s.name }))} />
+        <UploadResource
+          variant="admin"
+          subjects={subjects.map((s) => ({ id: s.id, name: s.name }))}
+        />
       </Card>
+      <p className="text-xs text-ink-3 -mt-4 mb-6 px-1">
+        Admin uploads are visible to everyone on the platform.
+      </p>
 
       <Card className="p-2 mb-6 bg-accent-soft border-0">
         <p className="text-sm text-ink px-3 py-2">

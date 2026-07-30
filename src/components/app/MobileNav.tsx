@@ -10,6 +10,7 @@ import {
   MessageCircle,
   PenLine,
   UploadCloud,
+  Users,
 } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { StreakFlame } from "@/components/ui/StreakFlame";
@@ -33,19 +34,27 @@ export function MobileNav({
           { href: "/admin/curriculum", label: "Curriculum", icon: Library },
           { href: "/admin/content", label: "Uploads", icon: UploadCloud },
         ]
-      : [
-          { href: "/learn", label: "Home", icon: Home },
-          { href: "/practice", label: "Practice", icon: PenLine },
-          { href: "/tutor", label: "Tutor", icon: MessageCircle },
-          { href: "/plan", label: "Plan", icon: BookOpen },
-        ];
+      : role === "tutor"
+        ? [
+            { href: "/teach", label: "Classes", icon: Users },
+            { href: "/teach/curriculum", label: "Curriculum", icon: Library },
+            { href: "/teach/uploads", label: "Materials", icon: UploadCloud },
+          ]
+        : [
+            { href: "/learn", label: "Home", icon: Home },
+            { href: "/practice", label: "Practice", icon: PenLine },
+            { href: "/tutor", label: "Tutor", icon: MessageCircle },
+            { href: "/plan", label: "Plan", icon: BookOpen },
+          ];
+  const homeHref =
+    role === "admin" ? "/admin" : role === "tutor" ? "/teach" : "/learn";
 
   return (
     <>
       <header className="md:hidden sticky top-0 z-30 flex items-center justify-between h-14 px-4 border-b border-hairline bg-surface/80 backdrop-blur-xl">
-        <Logo href={role === "admin" ? "/admin" : "/learn"} />
+        <Logo href={homeHref} />
         <div className="flex items-center gap-1">
-          {role !== "admin" && <StreakFlame days={streak} size="sm" />}
+          {role === "student" && <StreakFlame days={streak} size="sm" />}
           <ThemeToggle />
         </div>
       </header>

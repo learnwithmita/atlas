@@ -48,6 +48,41 @@ export type StudentDashboard = {
   hasData: boolean;
 };
 
+export type Classroom = {
+  id: string;
+  name: string;
+  invite_code: string;
+  subject: string | null;
+  memberCount: number;
+  created_at: string;
+};
+
+/** Classrooms owned by the current tutor, with member counts. */
+export async function getTutorClassrooms(): Promise<Classroom[]> {
+  if (!isSupabaseConfigured) return [];
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+  const { data } = await supabase
+    .from("classrooms")
+    .select(
+      "id, name, invite_code, academic_year, subject:subjects(name), classroom_members(count)"
+    )
+    .eq("tutor_id", user.id)
+    .order("academic_year", { ascending: false });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (data ?? []).map((c: any) => ({
+    id: c.id,
+    name: c.name,
+    invite_code: c.invite_code,
+    subject: c.subject?.name ?? null,
+    memberCount: c.classroom_members?.[0]?.count ?? 0,
+    created_at: c.academic_year ?? "",
+  }));
+}
+
 export type CurriculumOutcome = { id: string; code: string | null; statement: string; frequency: number };
 export type CurriculumSubtopic = { id: string; name: string; outcomes: CurriculumOutcome[] };
 export type CurriculumTopic = { id: string; name: string; subtopics: CurriculumSubtopic[]; outcomeCount: number };
@@ -104,6 +139,8 @@ export type ResourceRow = {
   title: string;
   type: string;
   status: string;
+  visibility: string;
+  mine: boolean;
   file_size: number | null;
   created_at: string;
   subject: string | null;
@@ -112,9 +149,14 @@ export type ResourceRow = {
 export async function getResources(): Promise<ResourceRow[]> {
   if (!isSupabaseConfigured) return [];
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   const { data } = await supabase
     .from("resources")
-    .select("id, title, type, status, file_size, created_at, subject:subjects(name)")
+    .select(
+      "id, title, type, status, visibility, uploaded_by, file_size, created_at, subject:subjects(name)"
+    )
     .order("created_at", { ascending: false })
     .limit(100);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -123,6 +165,8 @@ export async function getResources(): Promise<ResourceRow[]> {
     title: r.title,
     type: r.type,
     status: r.status,
+    visibility: r.visibility ?? "private",
+    mine: !!user && r.uploaded_by === user.id,
     file_size: r.file_size,
     created_at: r.created_at,
     subject: r.subject?.name ?? null,

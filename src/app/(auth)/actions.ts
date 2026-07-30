@@ -34,7 +34,7 @@ export async function signIn(
       .eq("id", user.id)
       .single();
     if (profile?.role === "admin") dest = "/admin";
-    else if (profile?.role === "tutor") dest = "/tutor";
+    else if (profile?.role === "tutor") dest = "/teach";
   }
   redirect(dest);
 }
@@ -71,7 +71,7 @@ export async function signUp(
         "Account created. Check your email to confirm, then sign in. (Tip: for testing, disable email confirmation in Supabase → Auth → Providers → Email.)",
     };
   }
-  redirect(role === "admin" ? "/admin" : role === "tutor" ? "/tutor" : "/learn");
+  redirect(role === "admin" ? "/admin" : role === "tutor" ? "/teach" : "/learn");
 }
 
 export async function signOut() {

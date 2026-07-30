@@ -12,6 +12,7 @@ import {
   PenLine,
   Sparkles,
   UploadCloud,
+  Users,
 } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { StreakFlame } from "@/components/ui/StreakFlame";
@@ -28,11 +29,20 @@ const studentNav: NavItem[] = [
   { href: "/plan", label: "Study Plan", icon: BookOpen },
 ];
 
+const tutorNav: NavItem[] = [
+  { href: "/teach", label: "Classrooms", icon: Users },
+  { href: "/teach/curriculum", label: "Curriculum", icon: Library },
+  { href: "/teach/uploads", label: "Materials", icon: UploadCloud },
+];
+
 const adminNav: NavItem[] = [
   { href: "/admin", label: "Analytics", icon: BarChart3 },
   { href: "/admin/curriculum", label: "Curriculum", icon: Library },
   { href: "/admin/content", label: "Uploads", icon: UploadCloud },
 ];
+
+const NAVS = { student: studentNav, tutor: tutorNav, admin: adminNav } as const;
+const HOME = { student: "/learn", tutor: "/teach", admin: "/admin" } as const;
 
 /** Longest-prefix match so parent + child routes don't both highlight. */
 function activeHref(pathname: string, nav: NavItem[]): string | undefined {
@@ -51,13 +61,13 @@ export function Sidebar({
   streak: number;
 }) {
   const pathname = usePathname();
-  const nav = role === "admin" ? adminNav : studentNav;
+  const nav = NAVS[role];
   const active = activeHref(pathname, nav);
 
   return (
     <aside className="hidden md:flex md:w-64 shrink-0 flex-col border-r border-hairline bg-surface/60 backdrop-blur-xl h-screen sticky top-0 p-5">
       <div className="px-2 py-1">
-        <Logo href={role === "admin" ? "/admin" : "/learn"} />
+        <Logo href={HOME[role]} />
       </div>
 
       <nav className="mt-8 space-y-1">
@@ -82,7 +92,7 @@ export function Sidebar({
         })}
       </nav>
 
-      {role !== "admin" && (
+      {role === "student" && (
         <Link
           href="/pricing"
           className="mt-4 flex items-center gap-3 h-11 px-3 rounded-[12px] text-[15px] font-medium text-ink-2 hover:text-ink hover:bg-surface-2 transition-colors"
@@ -93,7 +103,7 @@ export function Sidebar({
       )}
 
       <div className="mt-auto space-y-3">
-        {role !== "admin" && (
+        {role === "student" && (
           <div className="flex items-center justify-between px-3 py-2.5 rounded-[12px] bg-flame-soft">
             <span className="text-sm font-medium text-flame">Streak</span>
             <StreakFlame days={streak} size="sm" />
