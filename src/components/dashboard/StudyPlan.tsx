@@ -51,7 +51,7 @@ export function StudyPlan({ buckets }: { buckets: StudyBucket[] }) {
           {bucket.items.map((o) => (
             <li key={o.outcomeId}>
               <Link
-                href="/practice"
+                href={o.topicId ? `/practice/topic/${o.topicId}` : "/practice"}
                 className="group flex items-center gap-4 p-3.5 rounded-[14px] hover:bg-surface-2 transition-colors"
               >
                 <div className="w-16 shrink-0">

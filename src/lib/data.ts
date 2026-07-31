@@ -25,6 +25,7 @@ export type OutcomeMastery = {
   attempts: number;
   subtopic: string;
   topic: string;
+  topicId: string | null;
   subject: string;
 };
 
@@ -84,6 +85,54 @@ export async function getTutorClassrooms(): Promise<Classroom[]> {
 }
 
 // ── Question bank ────────────────────────────────────────────────────────────
+// ── Practice review / history ────────────────────────────────────────────────
+export type PracticeLogItem = {
+  id: string;
+  topic: string | null;
+  stem: string;
+  marks: number | null;
+  answer: string | null;
+  awarded: number | null;
+  awardedPoints: string[];
+  missingPoints: string[];
+  modelAnswer: string | null;
+  improvedAnswer: string | null;
+  feedback: string | null;
+  createdAt: string;
+};
+
+export async function getPracticeHistory(limit = 50): Promise<PracticeLogItem[]> {
+  if (!isSupabaseConfigured) return [];
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+  const { data } = await supabase
+    .from("practice_log")
+    .select(
+      "id, stem, marks, answer, awarded, awarded_points, missing_points, model_answer, improved_answer, feedback, created_at, topic:topics(name)"
+    )
+    .eq("student_id", user.id)
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (data ?? []).map((r: any) => ({
+    id: r.id,
+    topic: r.topic?.name ?? null,
+    stem: r.stem,
+    marks: r.marks,
+    answer: r.answer,
+    awarded: r.awarded,
+    awardedPoints: r.awarded_points ?? [],
+    missingPoints: r.missing_points ?? [],
+    modelAnswer: r.model_answer,
+    improvedAnswer: r.improved_answer,
+    feedback: r.feedback,
+    createdAt: r.created_at,
+  }));
+}
+
 // ── Gamification ─────────────────────────────────────────────────────────────
 import type { GamiStats } from "@/lib/gamification";
 
@@ -1118,7 +1167,7 @@ export async function getStudentDashboard(): Promise<StudentDashboard> {
       `mastery_score, confidence, attempts_count,
        outcome:learning_outcomes(
          id, statement, code, frequency_score,
-         subtopic:subtopics( name, topic:topics( name, subject:subjects( name ) ) )
+         subtopic:subtopics( name, topic:topics( id, name, subject:subjects( name ) ) )
        )`
     )
     .eq("student_id", user.id);
@@ -1138,6 +1187,7 @@ export async function getStudentDashboard(): Promise<StudentDashboard> {
         attempts: r.attempts_count ?? 0,
         subtopic: o.subtopic?.name ?? "",
         topic: o.subtopic?.topic?.name ?? "",
+        topicId: o.subtopic?.topic?.id ?? null,
         subject: o.subtopic?.topic?.subject?.name ?? "",
       } as OutcomeMastery;
     })

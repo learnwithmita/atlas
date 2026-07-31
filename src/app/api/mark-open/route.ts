@@ -48,6 +48,23 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: friendlyGeminiError(e) }, { status: 502 });
   }
 
+  // Ad-hoc generated practice (no assignment question id): log it for review.
+  if (!body.questionId) {
+    await supabase.from("practice_log").insert({
+      student_id: user.id,
+      topic_id: body.topicId ?? null,
+      stem,
+      marks,
+      answer: body.answer,
+      awarded: result.awarded,
+      awarded_points: result.awardedPoints,
+      missing_points: result.missingPoints,
+      model_answer: result.modelAnswer,
+      improved_answer: result.improvedAnswer,
+      feedback: result.feedback,
+    });
+  }
+
   // Generated practice: nudge topic-level mastery so the adaptive loop keeps
   // working even though these questions aren't outcome-mapped.
   if (body.topicId) {

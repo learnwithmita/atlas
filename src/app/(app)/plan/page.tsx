@@ -53,7 +53,7 @@ export default async function PlanPage() {
                     {b.items.map((o) => (
                       <li key={o.outcomeId}>
                         <Link
-                          href="/practice"
+                          href={o.topicId ? `/practice/topic/${o.topicId}` : "/practice"}
                           className="flex items-center gap-4 py-3"
                         >
                           <div className="min-w-0 flex-1">
@@ -103,7 +103,7 @@ export default async function PlanPage() {
               {subject.topics.map((t) => (
                 <li key={t.id}>
                   <Link
-                    href="/practice"
+                    href={`/practice/topic/${t.id}`}
                     className="group block rounded-[12px] -mx-2 px-2 py-2 hover:bg-surface-2 transition-colors"
                   >
                     <div className="flex items-center justify-between mb-1.5 gap-3">
