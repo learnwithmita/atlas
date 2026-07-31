@@ -22,6 +22,12 @@ export type GenQuestion = {
 
 type QState = { answer: string; result: MarkResult | null; marking: boolean; open: boolean };
 
+function buildStates(qs: GenQuestion[]): Record<string, QState> {
+  return Object.fromEntries(
+    qs.map((q) => [q.id, { answer: "", result: null, marking: false, open: false }])
+  );
+}
+
 export function GeneratedPracticeSession({
   questions,
   onRegenerate,
@@ -30,12 +36,18 @@ export function GeneratedPracticeSession({
   onRegenerate: () => void;
 }) {
   const router = useRouter();
-  const [states, setStates] = useState<Record<string, QState>>(() =>
-    Object.fromEntries(
-      questions.map((q) => [q.id, { answer: "", result: null, marking: false, open: false }])
-    )
-  );
+  const [states, setStates] = useState<Record<string, QState>>(() => buildStates(questions));
   const [done, setDone] = useState(false);
+
+  // Reset when a new set of questions arrives (render-phase reset pattern) so
+  // `states` always has an entry for every current question.
+  const sig = questions.map((q) => q.id).join("|");
+  const [prevSig, setPrevSig] = useState(sig);
+  if (sig !== prevSig) {
+    setPrevSig(sig);
+    setStates(buildStates(questions));
+    setDone(false);
+  }
 
   const totals = useMemo(() => {
     let awarded = 0;
@@ -56,8 +68,10 @@ export function GeneratedPracticeSession({
     setStates((s) => ({ ...s, [id]: { ...s[id], ...patch } }));
   }
 
+  const blank: QState = { answer: "", result: null, marking: false, open: false };
+
   async function mark(q: GenQuestion) {
-    const st = states[q.id];
+    const st = states[q.id] ?? blank;
     if (!st.answer.trim() || st.marking) return;
     set(q.id, { marking: true });
     try {
@@ -107,7 +121,7 @@ export function GeneratedPracticeSession({
   return (
     <div className="space-y-5">
       {questions.map((q, i) => {
-        const st = states[q.id];
+        const st = states[q.id] ?? blank;
         const r = st.result;
         return (
           <div key={q.id} className="rounded-[18px] border border-hairline bg-surface p-5">
