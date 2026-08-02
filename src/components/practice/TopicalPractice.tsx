@@ -2,8 +2,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Loader2, RefreshCw } from "lucide-react";
-import { Button } from "@/components/ui/Button";
+import { ArrowLeft, BookText, Loader2, RefreshCw } from "lucide-react";
+import { Button, LinkButton } from "@/components/ui/Button";
 import {
   GeneratedPracticeSession,
   type GenQuestion,
@@ -59,11 +59,16 @@ export function TopicalPractice({
           <h1 className="text-3xl font-semibold text-ink">{topicName}</h1>
           <p className="text-ink-2 mt-1">Fresh questions on this topic, marked by Atlas.</p>
         </div>
-        {questions && (
-          <Button variant="secondary" size="sm" onClick={generate}>
-            <RefreshCw size={15} /> New set
-          </Button>
-        )}
+        <div className="flex items-center gap-2 shrink-0">
+          <LinkButton href={`/learn/notes/${topicId}`} variant="secondary" size="sm">
+            <BookText size={15} /> Notes
+          </LinkButton>
+          {questions && (
+            <Button variant="secondary" size="sm" onClick={generate}>
+              <RefreshCw size={15} /> New set
+            </Button>
+          )}
+        </div>
       </header>
 
       {loading && (

@@ -56,6 +56,27 @@ export async function submitAssignment(
   return { ok: true };
 }
 
+/** Save a student's personal notes for a topic. */
+export async function saveStudentNotes(
+  topicId: string,
+  content: string
+): Promise<{ error?: string; ok?: boolean }> {
+  if (!isSupabaseConfigured) return { error: "Supabase not connected." };
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not signed in." };
+  const { error } = await supabase.from("student_notes").upsert({
+    student_id: user.id,
+    topic_id: topicId,
+    content,
+    updated_at: new Date().toISOString(),
+  });
+  if (error) return { error: error.message };
+  return { ok: true };
+}
+
 /** Spaced-repetition review (SM-2 lite). grade: again | hard | good | easy. */
 export async function reviewFlashcard(
   flashcardId: string,

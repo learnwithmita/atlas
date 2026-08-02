@@ -85,6 +85,60 @@ export async function getTutorClassrooms(): Promise<Classroom[]> {
 }
 
 // ── Question bank ────────────────────────────────────────────────────────────
+// ── Topic notes ──────────────────────────────────────────────────────────────
+export type TopicNotesView = {
+  topicName: string;
+  subject: string;
+  keyPoints: string[];
+  misconceptions: { claim: string; correction: string }[];
+  hasNotes: boolean;
+  studentNotes: string;
+};
+
+export async function getTopicNotes(topicId: string): Promise<TopicNotesView | null> {
+  if (!isSupabaseConfigured) return null;
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const { data: topic } = await supabase
+    .from("topics")
+    .select("name, subject:subjects(name)")
+    .eq("id", topicId)
+    .single();
+  if (!topic) return null;
+
+  const { data: notes } = await supabase
+    .from("topic_notes")
+    .select("key_points, misconceptions")
+    .eq("topic_id", topicId)
+    .maybeSingle();
+
+  let studentNotes = "";
+  if (user) {
+    const { data: sn } = await supabase
+      .from("student_notes")
+      .select("content")
+      .eq("student_id", user.id)
+      .eq("topic_id", topicId)
+      .maybeSingle();
+    studentNotes = sn?.content ?? "";
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const subjectName = (topic as any)?.subject?.name ?? "";
+  return {
+    topicName: topic.name,
+    subject: subjectName,
+    keyPoints: (notes?.key_points as string[]) ?? [],
+    misconceptions:
+      (notes?.misconceptions as { claim: string; correction: string }[]) ?? [],
+    hasNotes: !!notes,
+    studentNotes,
+  };
+}
+
 // ── Practice review / history ────────────────────────────────────────────────
 export type PracticeLogItem = {
   id: string;

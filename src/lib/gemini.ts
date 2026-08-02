@@ -171,6 +171,70 @@ Do NOT copy the paper's original wording. Adapt every question.`;
   }
 }
 
+export type TopicNotes = {
+  keyPoints: string[];
+  misconceptions: { claim: string; correction: string }[];
+};
+
+/** Generate quick revision notes + common misconceptions for a topic. */
+export async function generateTopicNotes(
+  topicName: string,
+  outcomes: string[]
+): Promise<TopicNotes> {
+  if (!isGeminiConfigured) throw new Error("GEMINI_API_KEY missing");
+
+  const prompt = `Write concise revision notes for the SEAB O-Level science topic "${topicName}".
+${outcomes.length ? `Cover these learning outcomes:\n${outcomes.map((o) => `- ${o}`).join("\n")}` : ""}
+
+Return:
+- keyPoints: 6–10 short bullet points of the must-know facts and exam keywords (each one line, British spelling; maths/chemistry in LaTeX $...$ / $\\ce{...}$).
+- misconceptions: 3–5 common student misconceptions, each with the wrong "claim" and the "correction".`;
+
+  const res = await client().models.generateContent({
+    model: CHAT_MODEL,
+    contents: prompt,
+    config: {
+      temperature: 0.4,
+      responseMimeType: "application/json",
+      responseSchema: {
+        type: Type.OBJECT,
+        properties: {
+          keyPoints: { type: Type.ARRAY, items: { type: Type.STRING } },
+          misconceptions: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                claim: { type: Type.STRING },
+                correction: { type: Type.STRING },
+              },
+              required: ["claim", "correction"],
+            },
+          },
+        },
+        required: ["keyPoints", "misconceptions"],
+      },
+    },
+  });
+
+  try {
+    const p = JSON.parse(res.text ?? "{}");
+    return {
+      keyPoints: Array.isArray(p.keyPoints) ? p.keyPoints.map(String) : [],
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      misconceptions: Array.isArray(p.misconceptions)
+        ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          p.misconceptions.map((m: any) => ({
+            claim: String(m.claim ?? ""),
+            correction: String(m.correction ?? ""),
+          }))
+        : [],
+    };
+  } catch {
+    return { keyPoints: [], misconceptions: [] };
+  }
+}
+
 export type GeneratedCard = { front: string; back: string };
 
 /** Generate flashcards for a topic/subtopic (Lumi-style AI decks). */

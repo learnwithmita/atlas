@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ChevronRight, FileText, History, SlidersHorizontal } from "lucide-react";
+import { BookText, ChevronRight, FileText, History, SlidersHorizontal } from "lucide-react";
 import { getFullCurriculum } from "@/lib/data";
 import { Card } from "@/components/ui/Card";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
@@ -72,13 +72,20 @@ export default async function PracticeHub() {
             <Card className="p-2">
               <ul className="divide-y divide-hairline">
                 {s.topics.map((t) => (
-                  <li key={t.id}>
+                  <li key={t.id} className="flex items-center">
                     <Link
                       href={`/practice/topic/${t.id}`}
-                      className="flex items-center justify-between gap-3 px-3 py-3 rounded-[12px] hover:bg-surface-2 transition-colors"
+                      className="flex-1 flex items-center justify-between gap-3 px-3 py-3 rounded-[12px] hover:bg-surface-2 transition-colors"
                     >
                       <span className="text-[15px] text-ink">{t.name}</span>
                       <ChevronRight size={16} className="text-ink-3" />
+                    </Link>
+                    <Link
+                      href={`/learn/notes/${t.id}`}
+                      title="Notes"
+                      className="ml-1 shrink-0 h-9 w-9 grid place-items-center rounded-[10px] text-ink-3 hover:text-accent hover:bg-surface-2 transition-colors"
+                    >
+                      <BookText size={17} />
                     </Link>
                   </li>
                 ))}
