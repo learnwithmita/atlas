@@ -627,6 +627,7 @@ export type PaperView = {
   title: string;
   status: string;
   subject: string | null;
+  source: string | null; // e.g. "Anglo-Chinese School · Prelim 2024"
   topics: {
     topicId: string | null;
     topicName: string;
@@ -649,10 +650,17 @@ export async function getPaper(resourceId: string): Promise<PaperView | null> {
   const supabase = await createClient();
   const { data: resource } = await supabase
     .from("resources")
-    .select("id, title, status, subject:subjects(name)")
+    .select("id, title, status, school, year, paper_type, subject:subjects(name)")
     .eq("id", resourceId)
     .single();
   if (!resource) return null;
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const rr = resource as any;
+  const source =
+    [rr.school, [rr.paper_type, rr.year].filter(Boolean).join(" ")]
+      .filter(Boolean)
+      .join(" · ") || null;
 
   const { data: qs } = await supabase
     .from("extracted_questions")
@@ -699,8 +707,86 @@ export async function getPaper(resourceId: string): Promise<PaperView | null> {
     title: resource.title,
     status: resource.status,
     subject: subjectName,
+    source,
     topics,
     total: (qs ?? []).length,
+  };
+}
+
+// ── Question bank: a topic's questions (curated + extracted, with source) ─────
+export type BankQuestion = {
+  id: string;
+  stem: string;
+  marks: number | null;
+  type: string;
+  commandWords: string[];
+  origin: "bank" | "extracted";
+  source: string | null; // for extracted: "School · Type Year · Q3"
+};
+
+export async function getTopicQuestions(
+  topicId: string
+): Promise<{ topicName: string; subject: string; questions: BankQuestion[] }> {
+  if (!isSupabaseConfigured) return { topicName: "", subject: "", questions: [] };
+  const supabase = await createClient();
+
+  const { data: topic } = await supabase
+    .from("topics")
+    .select("name, subject:subjects(name)")
+    .eq("id", topicId)
+    .single();
+
+  // Curated bank questions (via subtopics under this topic).
+  const { data: subs } = await supabase.from("subtopics").select("id").eq("topic_id", topicId);
+  const subIds = (subs ?? []).map((s) => s.id);
+  let bankQ: BankQuestion[] = [];
+  if (subIds.length) {
+    const { data } = await supabase
+      .from("questions")
+      .select("id, stem, marks, type, command_words")
+      .in("subtopic_id", subIds);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    bankQ = (data ?? []).map((q: any) => ({
+      id: q.id,
+      stem: q.stem,
+      marks: q.marks,
+      type: q.type,
+      commandWords: q.command_words ?? [],
+      origin: "bank" as const,
+      source: null,
+    }));
+  }
+
+  // Extracted questions for this topic (with paper provenance).
+  const { data: exRows } = await supabase
+    .from("extracted_questions")
+    .select("id, stem, marks, type, command_words, question_number, resource:resources(school, year, paper_type, title)")
+    .eq("topic_id", topicId)
+    .limit(300);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const exQ: BankQuestion[] = (exRows ?? []).map((q: any) => {
+    const r = q.resource ?? {};
+    const src =
+      [r.school || r.title, [r.paper_type, r.year].filter(Boolean).join(" "), q.question_number ? `Q${q.question_number}` : ""]
+        .filter(Boolean)
+        .join(" · ") || null;
+    return {
+      id: q.id,
+      stem: q.stem,
+      marks: q.marks,
+      type: q.type,
+      commandWords: q.command_words ?? [],
+      origin: "extracted" as const,
+      source: src,
+    };
+  });
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const subjectName = (topic as any)?.subject?.name ?? "";
+  return {
+    topicName: topic?.name ?? "",
+    subject: subjectName,
+    questions: [...bankQ, ...exQ],
   };
 }
 

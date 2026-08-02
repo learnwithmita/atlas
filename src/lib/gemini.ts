@@ -56,76 +56,99 @@ export type ExtractedQuestion = {
   confidence: number; // 0..1
 };
 
+export type PaperMeta = {
+  school: string;
+  year: string;
+  paperType: string; // e.g. Prelim, WA1, SA2, Mid-Year
+  subject: string;
+};
+
+export type ExtractionResult = { meta: PaperMeta; questions: ExtractedQuestion[] };
+
 /**
- * Extract exam questions from an uploaded paper (PDF or image) and classify
- * each to a syllabus topic from the provided list.
+ * Read an uploaded past paper and produce ADAPTED practice questions (rephrased
+ * in the model's own words — same concept and difficulty, different scenario/
+ * values). This deliberately avoids reproducing the copyrighted paper verbatim
+ * (which both breaches copyright and triggers Gemini's RECITATION block). Also
+ * reads the paper's provenance (school/year/type) from the cover.
  */
 export async function extractQuestions(
   fileBase64: string,
   mimeType: string,
   topics: { name: string; subject: string }[]
-): Promise<ExtractedQuestion[]> {
+): Promise<ExtractionResult> {
   if (!isGeminiConfigured) throw new Error("GEMINI_API_KEY missing");
 
-  const topicList = topics
-    .map((t) => `- ${t.name} (${t.subject})`)
-    .join("\n");
+  const topicList = topics.map((t) => `- ${t.name} (${t.subject})`).join("\n");
 
-  const prompt = `You are an SEAB examiner digitising a Singapore O-Level science exam paper.
+  const prompt = `You are digitising a Singapore secondary-school science exam paper into ADAPTED practice questions.
 
-Extract EVERY distinct question (and sub-part) from the attached document. For each, return:
-- number: the question label as printed (e.g. "1", "3(b)", "5(a)(ii)")
-- stem: the full question text, cleaned up. Preserve chemical formulae, subscripts and units in plain text (e.g. "H2O", "CO2", "24 dm3").
-- marks: the mark allocation if shown, else your best estimate.
-- type: one of mcq, structured, open_ended, data_based, diagram, practical.
-- commandWords: the SEAB command words used (state, describe, explain, suggest, calculate, define, etc.).
-- topic: classify to EXACTLY ONE topic name from this list (copy the name verbatim); if unsure use "Unknown":
+First, read the cover/header and report the paper's provenance:
+- school (e.g. "Anglo-Chinese School (Independent)")
+- year (e.g. "2024")
+- paperType (e.g. "Prelim", "Mid-Year", "WA1", "SA2", "End-of-Year")
+- subject (Biology or Chemistry)
+
+Then, for EVERY question in the paper, write an ADAPTED practice version:
+- number: the ORIGINAL question number as printed (e.g. "1", "3(b)", "5(a)(ii)")
+- stem: REPHRASE the question IN YOUR OWN WORDS. Keep the same concept, skill and difficulty, but change the scenario, context, values or organism so it is NOT a verbatim copy. If the original is multiple-choice, turn it into a short structured/open-ended question testing the same idea. Preserve any maths/chemistry in LaTeX ($...$, $\\ce{...}$).
+- marks: the mark allocation shown, else a sensible estimate.
+- type: one of structured, open_ended, data_based (avoid mcq).
+- commandWords: SEAB command words (state, describe, explain, suggest, calculate, define…).
+- topic: EXACTLY one topic name from this list (verbatim), or "Unknown":
 ${topicList}
-- confidence: 0 to 1, how sure you are of the topic.
+- confidence: 0..1 for the topic classification.
 
-Return only questions actually present in the document. Do not invent questions.`;
+Do NOT copy the paper's original wording. Adapt every question.`;
 
   const res = await client().models.generateContent({
     model: CHAT_MODEL,
     contents: [
       {
         role: "user",
-        parts: [
-          { inlineData: { mimeType, data: fileBase64 } },
-          { text: prompt },
-        ],
+        parts: [{ inlineData: { mimeType, data: fileBase64 } }, { text: prompt }],
       },
     ],
     config: {
-      temperature: 0.1,
+      temperature: 0.5,
+      maxOutputTokens: 32768,
       responseMimeType: "application/json",
       responseSchema: {
-        type: Type.ARRAY,
-        items: {
-          type: Type.OBJECT,
-          properties: {
-            number: { type: Type.STRING },
-            stem: { type: Type.STRING },
-            marks: { type: Type.NUMBER },
-            type: {
-              type: Type.STRING,
-              enum: ["mcq", "structured", "open_ended", "data_based", "diagram", "practical"],
+        type: Type.OBJECT,
+        properties: {
+          school: { type: Type.STRING },
+          year: { type: Type.STRING },
+          paperType: { type: Type.STRING },
+          subject: { type: Type.STRING },
+          questions: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                number: { type: Type.STRING },
+                stem: { type: Type.STRING },
+                marks: { type: Type.NUMBER },
+                type: {
+                  type: Type.STRING,
+                  enum: ["structured", "open_ended", "data_based"],
+                },
+                commandWords: { type: Type.ARRAY, items: { type: Type.STRING } },
+                topic: { type: Type.STRING },
+                confidence: { type: Type.NUMBER },
+              },
+              required: ["number", "stem", "topic"],
             },
-            commandWords: { type: Type.ARRAY, items: { type: Type.STRING } },
-            topic: { type: Type.STRING },
-            confidence: { type: Type.NUMBER },
           },
-          required: ["stem", "topic"],
         },
+        required: ["questions"],
       },
     },
   });
 
   try {
-    const parsed = JSON.parse(res.text ?? "[]");
-    if (!Array.isArray(parsed)) return [];
+    const p = JSON.parse(res.text ?? "{}");
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return parsed.map((q: any) => ({
+    const questions: ExtractedQuestion[] = (p.questions ?? []).map((q: any) => ({
       number: String(q.number ?? ""),
       stem: String(q.stem ?? ""),
       marks: Number(q.marks) || 1,
@@ -133,9 +156,18 @@ Return only questions actually present in the document. Do not invent questions.
       commandWords: Array.isArray(q.commandWords) ? q.commandWords : [],
       topic: String(q.topic ?? "Unknown"),
       confidence: Number(q.confidence) || 0,
-    }));
+    })).filter((q: ExtractedQuestion) => q.stem);
+    return {
+      meta: {
+        school: String(p.school ?? ""),
+        year: String(p.year ?? ""),
+        paperType: String(p.paperType ?? ""),
+        subject: String(p.subject ?? ""),
+      },
+      questions,
+    };
   } catch {
-    return [];
+    return { meta: { school: "", year: "", paperType: "", subject: "" }, questions: [] };
   }
 }
 

@@ -13,7 +13,7 @@ export default async function AdminBankPage() {
         <h1 className="text-3xl font-semibold text-ink mt-1">Question bank</h1>
         <p className="text-ink-2 mt-1">Questions available per topic.</p>
       </header>
-      <BankView topics={topics} />
+      <BankView topics={topics} base="/admin/bank" />
     </div>
   );
 }

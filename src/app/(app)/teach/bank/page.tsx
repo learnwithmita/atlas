@@ -15,7 +15,7 @@ export default async function TeachBankPage() {
           from your uploaded papers.
         </p>
       </header>
-      <BankView topics={topics} />
+      <BankView topics={topics} base="/teach/bank" />
     </div>
   );
 }

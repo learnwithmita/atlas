@@ -1,9 +1,11 @@
+import Link from "next/link";
+import { ChevronRight } from "lucide-react";
 import type { BankTopic } from "@/lib/data";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 
 /** Per-topic question counts (curated bank + extracted from papers). */
-export function BankView({ topics }: { topics: BankTopic[] }) {
+export function BankView({ topics, base }: { topics: BankTopic[]; base: string }) {
   if (topics.length === 0) {
     return (
       <Card className="p-8 text-center text-ink-2">
@@ -34,19 +36,22 @@ export function BankView({ topics }: { topics: BankTopic[] }) {
             </div>
             <ul className="divide-y divide-hairline">
               {ts.map((t) => (
-                <li
-                  key={t.topicId}
-                  className="flex items-center justify-between py-3 gap-3"
-                >
-                  <span className="text-[15px] text-ink">{t.topicName}</span>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <Badge tone={t.bankCount > 0 ? "accent" : "neutral"}>
-                      {t.bankCount} bank
-                    </Badge>
-                    {t.extractedCount > 0 && (
-                      <Badge tone="mint">{t.extractedCount} extracted</Badge>
-                    )}
-                  </div>
+                <li key={t.topicId}>
+                  <Link
+                    href={`${base}/${t.topicId}`}
+                    className="flex items-center justify-between py-3 px-2 -mx-2 gap-3 rounded-[10px] hover:bg-surface-2 transition-colors"
+                  >
+                    <span className="text-[15px] text-ink">{t.topicName}</span>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <Badge tone={t.bankCount > 0 ? "accent" : "neutral"}>
+                        {t.bankCount} bank
+                      </Badge>
+                      {t.extractedCount > 0 && (
+                        <Badge tone="mint">{t.extractedCount} extracted</Badge>
+                      )}
+                      <ChevronRight size={16} className="text-ink-3" />
+                    </div>
+                  </Link>
                 </li>
               ))}
             </ul>

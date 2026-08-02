@@ -59,7 +59,8 @@ setup message) so you can browse the UI. Add the keys below to make it live.
    7. `supabase/migrations/0007_flashcards.sql` (flashcards + spaced repetition)
    8. `supabase/migrations/0008_cloze.sql` (fill-in-the-blank items)
    9. `supabase/migrations/0009_practice_log.sql` (practice review history)
-   10. `supabase/seed.sql` (SEAB content + flashcards + cloze items)
+   10. `supabase/migrations/0010_paper_attribution.sql` (paper provenance)
+   11. `supabase/seed.sql` (SEAB content + flashcards + cloze items)
 4. **Auth → Providers → Email**: for easy testing, turn **off** "Confirm email"
    so signup logs you straight in.
 

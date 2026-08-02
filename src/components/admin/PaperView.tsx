@@ -24,9 +24,20 @@ export function PaperView({
       <header className="mb-6">
         <h1 className="text-3xl font-semibold text-ink">{paper.title}</h1>
         <p className="text-ink-2 mt-1">
-          {paper.total} questions extracted{paper.subject ? ` · ${paper.subject}` : ""}
+          {paper.total} adapted practice questions
+          {paper.subject ? ` · ${paper.subject}` : ""}
         </p>
+        {paper.source && (
+          <p className="text-sm text-ink-3 mt-1">Adapted from {paper.source}</p>
+        )}
       </header>
+
+      <Card className="p-3 mb-6 bg-surface-2 border-0">
+        <p className="text-xs text-ink-2 px-2 py-1">
+          Questions are <strong>rephrased</strong> to test the same concepts —
+          not verbatim copies of the original paper.
+        </p>
+      </Card>
 
       {/* Topics tested summary */}
       <Card className="p-6 mb-6">

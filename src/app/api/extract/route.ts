@@ -65,12 +65,21 @@ export async function POST(req: Request) {
 
   await supabase.from("resources").update({ status: "processing" }).eq("id", resourceId);
 
-  let extracted;
+  let extraction;
   try {
-    extracted = await extractQuestions(base64, mimeType, topics.map((t) => ({ name: t.name, subject: t.subject })));
+    extraction = await extractQuestions(base64, mimeType, topics.map((t) => ({ name: t.name, subject: t.subject })));
   } catch (e) {
     await supabase.from("resources").update({ status: "uploaded" }).eq("id", resourceId);
     return NextResponse.json({ error: friendlyGeminiError(e) }, { status: 502 });
+  }
+  const extracted = extraction.questions;
+
+  if (extracted.length === 0) {
+    await supabase.from("resources").update({ status: "uploaded" }).eq("id", resourceId);
+    return NextResponse.json(
+      { error: "Couldn't read any questions from this file. Make sure it's a clear PDF or image of an exam paper, then try again." },
+      { status: 502 }
+    );
   }
 
   // Map detected topic names to ids (exact, else contains).
@@ -110,9 +119,18 @@ export async function POST(req: Request) {
   }
 
   const topicsTested = [...new Set(rows.map((r) => r.topic_id).filter(Boolean))] as string[];
+  const m = extraction.meta;
   await supabase
     .from("resources")
-    .update({ status: "extracted", extracted_count: rows.length, topics_tested: topicsTested })
+    .update({
+      status: "extracted",
+      extracted_count: rows.length,
+      topics_tested: topicsTested,
+      // Only fill provenance we don't already have (admin may have typed it).
+      school: m.school || undefined,
+      year: m.year || undefined,
+      paper_type: m.paperType || undefined,
+    })
     .eq("id", resourceId);
 
   return NextResponse.json({ count: rows.length, topicsTested: topicsTested.length });
