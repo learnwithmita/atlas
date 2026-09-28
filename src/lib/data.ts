@@ -458,13 +458,24 @@ export async function getQuestionBank(): Promise<BankTopic[]> {
   if (!isSupabaseConfigured) return [];
   const supabase = await createClient();
 
-  const [{ data: topics }, { data: bankQ }, { data: genQ }, { data: exQ }] =
-    await Promise.all([
-      supabase.from("topics").select("id, name, sort_order, discipline, subject:subjects(name)").order("sort_order"),
-      supabase.from("questions").select("id, subtopic:subtopics(topic_id)"),
-      supabase.from("generated_questions").select("topic_id").limit(10000),
-      supabase.from("extracted_questions").select("topic_id, detected_topic_name").limit(10000),
-    ]);
+  // Topics with discipline, degrading gracefully if 0018 isn't run yet.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let topicsQ: any = await supabase
+    .from("topics")
+    .select("id, name, sort_order, discipline, subject:subjects(name)")
+    .order("sort_order");
+  if (topicsQ.error) {
+    topicsQ = await supabase
+      .from("topics")
+      .select("id, name, sort_order, subject:subjects(name)")
+      .order("sort_order");
+  }
+  const [{ data: bankQ }, { data: genQ }, { data: exQ }] = await Promise.all([
+    supabase.from("questions").select("id, subtopic:subtopics(topic_id)"),
+    supabase.from("generated_questions").select("topic_id").limit(10000),
+    supabase.from("extracted_questions").select("topic_id, detected_topic_name").limit(10000),
+  ]);
+  const topics = topicsQ.data ?? [];
 
   // Map lowercased topic name -> id, to rescue extracted rows whose topic_id
   // is null (extracted before the syllabus existed) via their detected name.
@@ -712,18 +723,39 @@ export type CurriculumSubtopic = { id: string; name: string; outcomes: Curriculu
 export type CurriculumTopic = { id: string; name: string; subtopics: CurriculumSubtopic[]; outcomeCount: number; discipline: string | null };
 export type CurriculumSubject = { id: string; name: string; code: string | null; topics: CurriculumTopic[] };
 
+/**
+ * Read topics including the `discipline` column, degrading gracefully if the
+ * 0018 migration hasn't been run yet (so a missing column never blanks the
+ * whole curriculum). Returns rows with `discipline` defaulted to null.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function selectTopicsWithDiscipline(supabase: any): Promise<any[]> {
+  const withDisc = await supabase
+    .from("topics")
+    .select("id, subject_id, name, sort_order, discipline")
+    .order("sort_order");
+  if (!withDisc.error) return withDisc.data ?? [];
+  const without = await supabase
+    .from("topics")
+    .select("id, subject_id, name, sort_order")
+    .order("sort_order");
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (without.data ?? []).map((t: any) => ({ ...t, discipline: null }));
+}
+
 /** Full curriculum tree for the admin browser. */
 export async function getFullCurriculum(): Promise<CurriculumSubject[]> {
   if (!isSupabaseConfigured) return [];
   const supabase = await createClient();
 
-  const [{ data: subjects }, { data: topics }, { data: subtopics }, { data: outcomes }] =
+  const [{ data: subjects }, topicsRes, { data: subtopics }, { data: outcomes }] =
     await Promise.all([
       supabase.from("subjects").select("id, name, syllabus_code, sort_order").order("sort_order"),
-      supabase.from("topics").select("id, subject_id, name, sort_order, discipline").order("sort_order"),
+      selectTopicsWithDiscipline(supabase),
       supabase.from("subtopics").select("id, topic_id, name, sort_order").order("sort_order"),
       supabase.from("learning_outcomes").select("id, subtopic_id, code, statement, frequency_score"),
     ]);
+  const topics = topicsRes;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const outBySub = new Map<string, CurriculumOutcome[]>();
