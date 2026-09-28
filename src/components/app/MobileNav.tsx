@@ -21,6 +21,7 @@ import { cn } from "@/lib/utils";
 
 export function MobileNav({
   role,
+  name,
   streak,
 }: {
   role: "student" | "tutor" | "admin";
@@ -57,9 +58,16 @@ export function MobileNav({
     <>
       <header className="md:hidden sticky top-0 z-30 flex items-center justify-between h-14 px-4 border-b border-hairline bg-surface/80 backdrop-blur-xl">
         <Logo href={homeHref} />
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1.5">
           {role === "student" && <StreakFlame days={streak} size="sm" />}
           <ThemeToggle />
+          <Link
+            href="/account"
+            aria-label="Account settings"
+            className="h-8 w-8 shrink-0 rounded-full bg-accent grid place-items-center text-white text-sm font-semibold"
+          >
+            {name.slice(0, 1).toUpperCase()}
+          </Link>
         </div>
       </header>
 

@@ -149,6 +149,48 @@ export async function recordActivity(xp = 10, minutes = 1) {
   return { ok: true };
 }
 
+// ── Account / profile ────────────────────────────────────────────────────────
+
+/** Update the signed-in user's display name. */
+export async function updateProfileName(
+  fullName: string
+): Promise<{ error?: string; ok?: boolean }> {
+  if (!isSupabaseConfigured) return { error: "Supabase not connected." };
+  const name = fullName.trim();
+  if (!name) return { error: "Enter your name." };
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not signed in." };
+  const { error } = await supabase
+    .from("profiles")
+    .update({ full_name: name })
+    .eq("id", user.id);
+  if (error) return { error: error.message };
+  // Keep auth metadata in step so the name is consistent everywhere.
+  await supabase.auth.updateUser({ data: { full_name: name } });
+  revalidatePath("/account");
+  revalidatePath("/learn");
+  return { ok: true };
+}
+
+/** Change the signed-in user's password. */
+export async function changePassword(
+  password: string
+): Promise<{ error?: string; ok?: boolean }> {
+  if (!isSupabaseConfigured) return { error: "Supabase not connected." };
+  if (password.length < 8) return { error: "Use at least 8 characters." };
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not signed in." };
+  const { error } = await supabase.auth.updateUser({ password });
+  if (error) return { error: error.message };
+  return { ok: true };
+}
+
 // ── Flashcard authoring ──────────────────────────────────────────────────────
 
 /**

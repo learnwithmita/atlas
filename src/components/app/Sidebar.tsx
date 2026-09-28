@@ -115,16 +115,22 @@ export function Sidebar({
           </div>
         )}
 
-        <div className="flex items-center gap-3 p-2 rounded-[14px] hover:bg-surface-2 transition-colors">
-          <div className="h-9 w-9 shrink-0 rounded-full bg-accent grid place-items-center text-white text-sm font-semibold">
-            {name.slice(0, 1).toUpperCase()}
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-sm font-medium text-ink truncate">{name}</p>
-            <p className="text-xs text-ink-3 capitalize flex items-center gap-1">
-              <GraduationCap size={12} /> {role}
-            </p>
-          </div>
+        <div className="flex items-center gap-2 p-2 rounded-[14px] hover:bg-surface-2 transition-colors">
+          <Link
+            href="/account"
+            className="flex items-center gap-3 min-w-0 flex-1"
+            title="Account settings"
+          >
+            <div className="h-9 w-9 shrink-0 rounded-full bg-accent grid place-items-center text-white text-sm font-semibold">
+              {name.slice(0, 1).toUpperCase()}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-medium text-ink truncate">{name}</p>
+              <p className="text-xs text-ink-3 capitalize flex items-center gap-1">
+                <GraduationCap size={12} /> {role}
+              </p>
+            </div>
+          </Link>
           <ThemeToggle />
         </div>
 
