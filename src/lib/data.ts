@@ -528,6 +528,51 @@ export async function getClassroom(id: string): Promise<ClassroomDetail | null> 
   };
 }
 
+// ── Tutor insights (weak areas) ──────────────────────────────────────────────
+export type WeakTopic = {
+  topicId: string;
+  topicName: string;
+  subject: string;
+  attempts: number;
+  avgPct: number | null;
+  students: number;
+};
+export type ClassStudent = {
+  studentId: string;
+  name: string;
+  attempts: number;
+  avgPct: number | null;
+};
+
+/** Weakest topics + per-student summary for a classroom the tutor owns. */
+export async function getClassInsights(
+  classroomId: string
+): Promise<{ weakTopics: WeakTopic[]; students: ClassStudent[] }> {
+  if (!isSupabaseConfigured) return { weakTopics: [], students: [] };
+  const supabase = await createClient();
+  const [topics, students] = await Promise.all([
+    supabase.rpc("tutor_class_weak_topics", { p_classroom_id: classroomId }),
+    supabase.rpc("tutor_class_students", { p_classroom_id: classroomId }),
+  ]);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const weakTopics: WeakTopic[] = (topics.data ?? []).map((r: any) => ({
+    topicId: r.topic_id,
+    topicName: r.topic_name,
+    subject: r.subject ?? "",
+    attempts: Number(r.attempts) || 0,
+    avgPct: r.avg_pct == null ? null : Number(r.avg_pct),
+    students: Number(r.students) || 0,
+  }));
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const studentRows: ClassStudent[] = (students.data ?? []).map((r: any) => ({
+    studentId: r.student_id,
+    name: r.name,
+    attempts: Number(r.attempts) || 0,
+    avgPct: r.avg_pct == null ? null : Number(r.avg_pct),
+  }));
+  return { weakTopics, students: studentRows };
+}
+
 // ── Assignments ──────────────────────────────────────────────────────────────
 export type AssignmentSummary = {
   id: string;

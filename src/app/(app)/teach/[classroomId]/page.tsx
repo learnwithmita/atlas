@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Users } from "lucide-react";
-import { getClassroom } from "@/lib/data";
+import { getClassInsights, getClassroom } from "@/lib/data";
 import { Card } from "@/components/ui/Card";
+import { ClassInsights } from "@/components/teach/ClassInsights";
 
 export const metadata = { title: "Class · Atlas" };
 export const dynamic = "force-dynamic";
@@ -13,7 +14,10 @@ export default async function ClassroomPage({
   params: Promise<{ classroomId: string }>;
 }) {
   const { classroomId } = await params;
-  const classroom = await getClassroom(classroomId);
+  const [classroom, insights] = await Promise.all([
+    getClassroom(classroomId),
+    getClassInsights(classroomId),
+  ]);
   if (!classroom) notFound();
 
   return (
@@ -58,6 +62,15 @@ export default async function ClassroomPage({
             ))}
           </ul>
         </Card>
+      )}
+
+      {classroom.members.length > 0 && (
+        <section className="mt-8">
+          <ClassInsights
+            weakTopics={insights.weakTopics}
+            students={insights.students}
+          />
+        </section>
       )}
 
       <p className="text-sm text-ink-3 mt-6">

@@ -66,7 +66,8 @@ setup message) so you can browse the UI. Add the keys below to make it live.
    13. `supabase/migrations/0013_syllabus_ingest.sql` (subject level/track + syllabus auto-ingest)
    14. `supabase/migrations/0014_flashcard_authoring.sql` (student/tutor card editing + class assignment)
    15. `supabase/migrations/0015_question_bank.sql` (shared reusable question bank + mark schemes)
-   16. `supabase/seed.sql` (SEAB content + flashcards + cloze items)
+   16. `supabase/migrations/0016_tutor_insights.sql` (tutor weak-area aggregates)
+   17. `supabase/seed.sql` (SEAB content + flashcards + cloze items)
 4. **Auth → Providers → Email**: for easy testing, turn **off** "Confirm email"
    so signup logs you straight in.
 
