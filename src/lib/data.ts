@@ -976,6 +976,36 @@ export type BankQuestion = {
   answer: string | null; // model answer / mark scheme (AI bank only)
 };
 
+/**
+ * Fetch extracted questions for a topic (by id + by detected name for unlinked
+ * rows), tolerant of the 0010 provenance columns not existing yet — it retries
+ * without the resources join so questions always show, just without a source.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function fetchExtractedForTopic(supabase: any, topicId: string, topicName: string): Promise<any[]> {
+  const full =
+    "id, stem, marks, type, command_words, question_number, resource:resources(school, year, paper_type, title)";
+  const basic = "id, stem, marks, type, command_words, question_number";
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const run = async (sel: string) => {
+    const [byId, byName] = await Promise.all([
+      supabase.from("extracted_questions").select(sel).eq("topic_id", topicId).limit(300),
+      topicName
+        ? supabase
+            .from("extracted_questions")
+            .select(sel)
+            .is("topic_id", null)
+            .ilike("detected_topic_name", topicName)
+            .limit(300)
+        : Promise.resolve({ data: [], error: null }),
+    ]);
+    return { rows: [...(byId.data ?? []), ...(byName.data ?? [])], error: byId.error || byName.error };
+  };
+  let r = await run(full);
+  if (r.error) r = await run(basic);
+  return r.rows;
+}
+
 export async function getTopicQuestions(
   topicId: string
 ): Promise<{ topicName: string; subject: string; questions: BankQuestion[] }> {
@@ -1035,22 +1065,10 @@ export async function getTopicQuestions(
 
   // Extracted questions: matched by topic_id, plus (for older rows extracted
   // before the syllabus existed, so topic_id is null) by the detected topic
-  // name. Two queries — safer than embedding names in a PostgREST or-filter.
+  // name. Provenance columns come from 0010; if that migration hasn't run,
+  // fall back to a query without them so questions still show.
   const topicName = topic?.name ?? "";
-  const sel =
-    "id, stem, marks, type, command_words, question_number, resource:resources(school, year, paper_type, title)";
-  const [byId, byName] = await Promise.all([
-    supabase.from("extracted_questions").select(sel).eq("topic_id", topicId).limit(300),
-    topicName
-      ? supabase
-          .from("extracted_questions")
-          .select(sel)
-          .is("topic_id", null)
-          .ilike("detected_topic_name", topicName)
-          .limit(300)
-      : Promise.resolve({ data: [] as unknown[] }),
-  ]);
-  const exRows = [...(byId.data ?? []), ...((byName.data as unknown[]) ?? [])];
+  const exRows = await fetchExtractedForTopic(supabase, topicId, topicName);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const exQ: BankQuestion[] = (exRows ?? []).map((q: any) => {
     const r = q.resource ?? {};
@@ -1179,20 +1197,23 @@ export async function getPrintableQuestions(
   }
 
   // Extracted paper questions (no stored answer) — matched by id or name.
-  const sel = "stem, marks, question_number, resource:resources(school, year, paper_type, title)";
-  const [byId, byName] = await Promise.all([
-    supabase.from("extracted_questions").select(sel).eq("topic_id", topicId).limit(500),
-    topicName
-      ? supabase
-          .from("extracted_questions")
-          .select(sel)
-          .is("topic_id", null)
-          .ilike("detected_topic_name", topicName)
-          .limit(500)
-      : Promise.resolve({ data: [] as unknown[] }),
-  ]);
+  // Tolerate the 0010 provenance columns not existing yet.
+  const pFull = "stem, marks, question_number, resource:resources(school, year, paper_type, title)";
+  const pBasic = "stem, marks, question_number";
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  for (const q of ([...(byId.data ?? []), ...((byName.data as any[]) ?? [])] as any[])) {
+  const pRun = async (sel: string) => {
+    const [byId, byName] = await Promise.all([
+      supabase.from("extracted_questions").select(sel).eq("topic_id", topicId).limit(500),
+      topicName
+        ? supabase.from("extracted_questions").select(sel).is("topic_id", null).ilike("detected_topic_name", topicName).limit(500)
+        : Promise.resolve({ data: [], error: null }),
+    ]);
+    return { rows: [...(byId.data ?? []), ...(byName.data ?? [])], error: byId.error || byName.error };
+  };
+  let pr = await pRun(pFull);
+  if (pr.error) pr = await pRun(pBasic);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  for (const q of pr.rows as any[]) {
     const r = q.resource ?? {};
     const src =
       [r.school || r.title, [r.paper_type, r.year].filter(Boolean).join(" ")]
@@ -1774,13 +1795,16 @@ export async function serveBankQuestions(
   }
 
   // 2) Adapted questions from uploaded papers (no stored scheme → AI marks).
-  const { data: exRows } = await supabase
-    .from("extracted_questions")
-    .select(
-      "id, topic_id, stem, marks, type, command_words, question_number, resource:resources(school, year, paper_type, title)"
-    )
-    .in("topic_id", topicIds)
-    .limit(300);
+  // Tolerate the 0010 provenance columns not existing yet.
+  const exFull =
+    "id, topic_id, stem, marks, type, command_words, question_number, resource:resources(school, year, paper_type, title)";
+  const exBasic = "id, topic_id, stem, marks, type, command_words, question_number";
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let exResp: any = await supabase.from("extracted_questions").select(exFull).in("topic_id", topicIds).limit(300);
+  if (exResp.error) {
+    exResp = await supabase.from("extracted_questions").select(exBasic).in("topic_id", topicIds).limit(300);
+  }
+  const exRows = exResp.data;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   for (const q of (exRows ?? []) as any[]) {
     const r = q.resource ?? {};
