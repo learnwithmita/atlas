@@ -99,8 +99,8 @@ export default async function Landing() {
           <div className="rounded-[28px] border border-hairline bg-surface shadow-lg p-3">
             <div className="rounded-[18px] bg-canvas p-6 sm:p-10">
               <div className="grid sm:grid-cols-3 gap-4">
-                <MockStat big value="74%" label="Mastery" />
-                <MockStat value="A2" label="Predicted grade" accent />
+                <MockStat big value="92%" label="Mastery" />
+                <MockStat value="A1" label="Predicted grade" accent />
                 <MockStat value="🔥 7" label="Day streak" />
               </div>
               <div className="mt-4 rounded-[16px] border border-hairline p-4 text-left">
