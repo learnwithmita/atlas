@@ -14,11 +14,14 @@ function client() {
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-// When the primary model is overloaded (503), fall through to lighter models
-// that are far less contended. Override with GEMINI_FALLBACK_MODELS (CSV).
+// When the primary model is overloaded (503) or out of quota (429), fall
+// through to these lighter, less-contended models. These are the "-latest" and
+// 3.x ids that work for current keys — DO NOT list gemini-2.5-flash here, it
+// returns 404 ("no longer available to new users"). Override with
+// GEMINI_FALLBACK_MODELS (CSV).
 const FALLBACK_MODELS = (
   process.env.GEMINI_FALLBACK_MODELS ??
-  "gemini-flash-lite-latest,gemini-2.5-flash,gemini-2.5-flash-lite"
+  "gemini-flash-lite-latest,gemini-3.5-flash-lite,gemini-3.5-flash"
 )
   .split(",")
   .map((s) => s.trim())
@@ -27,15 +30,20 @@ const FALLBACK_MODELS = (
 const isOverloaded = (msg: string) =>
   /503|UNAVAILABLE|overloaded|high demand/i.test(msg);
 const isQuota = (msg: string) => /429|RESOURCE_EXHAUSTED|quota/i.test(msg);
+const isNotFound = (msg: string) =>
+  /404|NOT_FOUND|not found|no longer available|is not found for API version|not supported/i.test(
+    msg
+  );
 
 /**
  * Call Gemini resiliently:
  *  - retry the primary model on transient overload (503),
- *  - fall through to lighter fallback models when the primary is overloaded
- *    (503) OR its per-model free-tier quota is exhausted (429) — each model has
- *    its own quota bucket, so a sibling model often still works,
- *  - fail fast on hard errors (bad key, 404).
- * Callers still catch the final throw and fall back to bank/paper questions.
+ *  - fall through to lighter fallback models when a model is overloaded (503),
+ *    out of its per-model free-tier quota (429), or unavailable/404 (a retired
+ *    id) — each model has its own quota bucket, so a sibling often still works,
+ *  - fail fast only on genuinely hard errors (bad key / permission).
+ * If EVERY model fails, the last error is thrown; callers catch it and fall
+ * back to bank/paper questions where possible.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function genContent(params: any, perModelRetries = 1): Promise<any> {
@@ -49,11 +57,10 @@ async function genContent(params: any, perModelRetries = 1): Promise<any> {
       } catch (e) {
         lastErr = e;
         const msg = e instanceof Error ? e.message : String(e);
-        const overloaded = isOverloaded(msg);
-        const quota = isQuota(msg);
-        if (!overloaded && !quota) throw e; // hard error — stop entirely
-        // Quota won't clear in seconds, so don't retry the same model — move on.
-        if (quota) break;
+        const recoverable = isOverloaded(msg) || isQuota(msg) || isNotFound(msg);
+        if (!recoverable) throw e; // e.g. bad key / permission — stop entirely
+        // Quota/404 won't clear in seconds — don't retry the same model, move on.
+        if (isQuota(msg) || isNotFound(msg)) break;
         if (attempt < perModelRetries) await sleep(600 * (attempt + 1));
       }
     }
@@ -78,8 +85,8 @@ export function friendlyGeminiError(e: unknown): string {
   if (/API[_ ]?key|401|403|PERMISSION_DENIED|API_KEY_INVALID|unregistered/i.test(msg)) {
     return "Gemini rejected the API key. Create a key at aistudio.google.com/apikey (it should start with 'AIza') and put it in .env.local as GEMINI_API_KEY.";
   }
-  if (/404|not found|NOT_FOUND|is not found for API version|not supported/i.test(msg)) {
-    return `Gemini couldn't find that model. Set GEMINI_MODEL / GEMINI_MARKING_MODEL to a valid id like 'gemini-2.5-flash'. (${msg.slice(0, 160)})`;
+  if (/404|not found|NOT_FOUND|is not found for API version|not supported|no longer available/i.test(msg)) {
+    return `Gemini couldn't find that model. Set GEMINI_MODEL / GEMINI_MARKING_MODEL to a current id like 'gemini-flash-latest' (avoid retired ids like gemini-2.5-flash). (${msg.slice(0, 160)})`;
   }
   // Surface the real cause so it can be diagnosed instead of a dead-end message.
   return `The AI call failed: ${msg.slice(0, 240)}`;
