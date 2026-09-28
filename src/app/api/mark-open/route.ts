@@ -1,17 +1,32 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
-import { friendlyGeminiError, markOpenEnded } from "@/lib/gemini";
+import {
+  friendlyGeminiError,
+  isGeminiConfigured,
+  markAgainstScheme,
+  markAnswer,
+  markOpenEnded,
+  type MarkResult,
+} from "@/lib/gemini";
+import { getBankScheme } from "@/lib/data";
 
 export const runtime = "nodejs";
 
-/** Mark an answer to an assignment question (no stored scheme — Gemini derives one). */
+/**
+ * Mark an open-ended answer. Three paths:
+ *  - assignment question  → AI derives a scheme (markOpenEnded)
+ *  - bank question (bankId) → HYBRID: free keyword match against the stored
+ *    scheme, escalating to a single AI call only on borderline scores
+ *  - ad-hoc (stem only)   → AI derives a scheme (markOpenEnded)
+ */
 export async function POST(req: Request) {
   if (!isSupabaseConfigured) {
     return NextResponse.json({ error: "Supabase not connected." }, { status: 503 });
   }
   const body = (await req.json()) as {
     questionId?: string;
+    bankId?: string | null;
     answer: string;
     stem?: string;
     marks?: number;
@@ -39,20 +54,50 @@ export async function POST(req: Request) {
     marks = q.marks ?? 3;
   }
 
-  if (!stem) return NextResponse.json({ error: "No question provided" }, { status: 400 });
+  let result: MarkResult;
 
-  let result;
-  try {
-    result = await markOpenEnded({ stem, marks, studentAnswer: body.answer });
-  } catch (e) {
-    return NextResponse.json({ error: friendlyGeminiError(e) }, { status: 502 });
+  // Bank question with a stored scheme → hybrid keyword+AI marking.
+  const scheme = body.bankId && !body.questionId ? await getBankScheme(body.bankId) : null;
+  if (scheme && scheme.scheme.length > 0) {
+    stem = scheme.stem || stem;
+    marks = scheme.marks || marks;
+    const { result: kw, borderline } = markAgainstScheme({
+      scheme: scheme.scheme,
+      modelAnswer: scheme.modelAnswer,
+      marks,
+      studentAnswer: body.answer,
+    });
+    if (borderline && isGeminiConfigured) {
+      try {
+        result = await markAnswer({
+          stem: stem ?? scheme.stem,
+          marks,
+          markingPoints: scheme.scheme.map((p) => p.point),
+          acceptedKeywords: scheme.scheme.flatMap((p) => p.keywords),
+          modelAnswer: scheme.modelAnswer,
+          studentAnswer: body.answer,
+        });
+      } catch {
+        result = kw; // AI busy — keep the free keyword result rather than failing
+      }
+    } else {
+      result = kw;
+    }
+  } else {
+    if (!stem) return NextResponse.json({ error: "No question provided" }, { status: 400 });
+    try {
+      result = await markOpenEnded({ stem, marks, studentAnswer: body.answer });
+    } catch (e) {
+      return NextResponse.json({ error: friendlyGeminiError(e) }, { status: 502 });
+    }
   }
 
-  // Ad-hoc generated practice (no assignment question id): log it for review.
+  // Ad-hoc / bank practice (no assignment question id): log it for review.
   if (!body.questionId) {
     await supabase.from("practice_log").insert({
       student_id: user.id,
       topic_id: body.topicId ?? null,
+      question_id: body.bankId ?? null,
       stem,
       marks,
       answer: body.answer,

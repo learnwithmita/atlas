@@ -573,6 +573,185 @@ Return only the questions.`;
   }
 }
 
+// ── Question bank: generate questions WITH their mark schemes ─────────────────
+
+export type SchemePoint = { point: string; keywords: string[] };
+export type BankQuestionGen = {
+  stem: string;
+  marks: number;
+  type: "structured" | "open_ended" | "data_based";
+  commandWords: string[];
+  topic: string;
+  markScheme: SchemePoint[];
+  modelAnswer: string;
+};
+
+/**
+ * Generate bank questions that each carry their own mark scheme + model answer,
+ * so they can be stored once and marked for every student without a fresh call
+ * to derive a scheme. Same grounding/fairness rules as generateExamQuestions.
+ */
+export async function generateBankBatch(
+  topics: TopicContext[],
+  count: number
+): Promise<BankQuestionGen[]> {
+  if (!isGeminiConfigured) throw new Error("GEMINI_API_KEY missing");
+
+  const topicBlocks = topics
+    .map((t) => {
+      const outcomes = t.outcomes.length
+        ? t.outcomes.map((o) => `  • ${o}`).join("\n")
+        : "  (use the standard SEAB syllabus content for this topic)";
+      const examples = t.examples.length
+        ? `\n Example questions from real papers (match STYLE, don't copy):\n${t.examples
+            .map((e) => `  • ${e}`)
+            .join("\n")}`
+        : "";
+      return `TOPIC: ${t.name}\n Syllabus outcomes you may test:\n${outcomes}${examples}`;
+    })
+    .join("\n\n");
+
+  const prompt = `You are writing a fair Singapore SEAB science practice bank for a G3 (upper-secondary) student, WITH a mark scheme for each question.
+
+Write ${count} questions spread evenly across the topics below.
+
+${topicBlocks}
+
+For EACH question provide:
+- stem: the question. SCOPE: only ideas in the outcomes above; no obscure/out-of-syllabus specifics (e.g. the internal structure of a named bacterium). SELF-CONTAINED: never depend on a diagram/figure/table not written into the stem.
+- marks: 1–5.
+- type: structured | open_ended | data_based (no MCQ).
+- commandWords: the SEAB command words used.
+- topic: copied verbatim from a TOPIC line above.
+- markScheme: an array with exactly one entry PER MARK (so a 3-mark question has 3 entries). Each entry: { point: the creditable idea in examiner language, keywords: 2–5 short accept-words/phrases a marker would look for }.
+- modelAnswer: a concise full-marks answer.
+Write maths/chemistry in LaTeX ($...$, $\\ce{...}$). Return only the questions.`;
+
+  const res = await genContent({
+    model: CHAT_MODEL,
+    contents: prompt,
+    config: {
+      temperature: 0.9,
+      maxOutputTokens: 32768,
+      responseMimeType: "application/json",
+      responseSchema: {
+        type: Type.ARRAY,
+        items: {
+          type: Type.OBJECT,
+          properties: {
+            stem: { type: Type.STRING },
+            marks: { type: Type.NUMBER },
+            type: {
+              type: Type.STRING,
+              enum: ["structured", "open_ended", "data_based"],
+            },
+            commandWords: { type: Type.ARRAY, items: { type: Type.STRING } },
+            topic: { type: Type.STRING },
+            markScheme: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  point: { type: Type.STRING },
+                  keywords: { type: Type.ARRAY, items: { type: Type.STRING } },
+                },
+                required: ["point", "keywords"],
+              },
+            },
+            modelAnswer: { type: Type.STRING },
+          },
+          required: ["stem", "marks", "topic", "markScheme"],
+        },
+      },
+    },
+  });
+
+  try {
+    const parsed = JSON.parse(res.text ?? "[]");
+    if (!Array.isArray(parsed)) return [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return parsed
+      .map((q: any) => ({
+        stem: String(q.stem ?? ""),
+        marks: Math.max(1, Math.min(5, Math.round(Number(q.marks) || 2))),
+        type: q.type ?? "structured",
+        commandWords: Array.isArray(q.commandWords) ? q.commandWords : [],
+        topic: String(q.topic ?? ""),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        markScheme: (Array.isArray(q.markScheme) ? q.markScheme : [])
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          .map((p: any) => ({
+            point: String(p.point ?? ""),
+            keywords: Array.isArray(p.keywords) ? p.keywords.map(String) : [],
+          }))
+          .filter((p: SchemePoint) => p.point),
+        modelAnswer: String(q.modelAnswer ?? ""),
+      }))
+      .filter((q: BankQuestionGen) => q.stem && q.markScheme.length > 0);
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Free, offline keyword marking against a stored scheme. Awards a mark for a
+ * scheme point when the answer contains at least one of its keywords. Returns
+ * the mark result plus a `borderline` flag: true when the score is partial and
+ * the answer is substantive enough that a nuanced AI re-mark is worthwhile.
+ */
+export function markAgainstScheme(input: {
+  scheme: SchemePoint[];
+  modelAnswer: string;
+  marks: number;
+  studentAnswer: string;
+}): { result: MarkResult; borderline: boolean } {
+  const ans = input.studentAnswer.toLowerCase();
+  const max = input.marks || input.scheme.length || 1;
+  const awardedPoints: string[] = [];
+  const missingPoints: string[] = [];
+  let nearMisses = 0;
+
+  const norm = (s: string) => s.toLowerCase().trim();
+  for (const p of input.scheme) {
+    const kws = p.keywords.map(norm).filter(Boolean);
+    const hit = kws.some((k) => k.length > 0 && ans.includes(k));
+    if (hit) awardedPoints.push(p.point);
+    else {
+      missingPoints.push(p.point);
+      // Partial-word overlap suggests the idea may be there in other words.
+      const words = ans.split(/\W+/);
+      const partial = kws.some((k) =>
+        k.split(/\s+/).some((tok) => tok.length > 3 && words.includes(tok))
+      );
+      if (partial) nearMisses++;
+    }
+  }
+
+  const awarded = Math.min(max, awardedPoints.length);
+  const trivial = ans.replace(/\s+/g, "").length < 8;
+  // Worth an AI second look when it's a partial score with real content, or a
+  // zero on a non-trivial answer (likely paraphrased rather than wrong).
+  const borderline =
+    !trivial && ((awarded > 0 && awarded < max) || (awarded === 0 && nearMisses > 0) || (awarded === 0 && ans.length > 60));
+
+  return {
+    result: {
+      awarded,
+      max,
+      awardedPoints,
+      missingPoints,
+      errorType: awarded === max ? "none" : "knowledge",
+      modelAnswer: input.modelAnswer,
+      improvedAnswer: input.modelAnswer,
+      feedback:
+        awarded === max
+          ? "Full marks — you covered every marking point."
+          : `You earned ${awarded}/${max}. Missing: ${missingPoints.join("; ") || "—"}.`,
+    },
+    borderline,
+  };
+}
+
 export type GeneratedCloze = { text: string; answer: string };
 
 /** Generate fill-in-the-blank items for a subtopic. */

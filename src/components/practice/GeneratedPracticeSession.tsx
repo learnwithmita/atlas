@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 
 export type GenQuestion = {
   id: string;
+  bankId?: string | null;
   stem: string;
   marks: number;
   type: string;
@@ -79,7 +80,7 @@ export function GeneratedPracticeSession({
       const res = await fetch("/api/mark-open", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ stem: q.stem, marks: q.marks, answer: st.answer, topicId: q.topicId }),
+        body: JSON.stringify({ stem: q.stem, marks: q.marks, answer: st.answer, topicId: q.topicId, bankId: q.bankId ?? null }),
       });
       const data = await res.json();
       if (res.ok) set(q.id, { result: data });

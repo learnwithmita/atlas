@@ -49,7 +49,7 @@ setup message) so you can browse the UI. Add the keys below to make it live.
 2. **Settings → API** → copy into `.env.local`:
    - `NEXT_PUBLIC_SUPABASE_URL`
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-   - `SUPABASE_SERVICE_ROLE_KEY` (optional for this slice)
+   - `SUPABASE_SERVICE_ROLE_KEY` (server-only; used to write AI questions to the shared bank)
 3. **SQL Editor** → run these files **in order** (each is re-runnable):
    1. `supabase/migrations/0001_init.sql` (core schema + RLS + triggers)
    2. `supabase/migrations/0002_demo_progress.sql` (demo-progress RPC)
@@ -65,7 +65,8 @@ setup message) so you can browse the UI. Add the keys below to make it live.
    12. `supabase/migrations/0012_lock_admin_signup.sql` (security: no self-serve admin)
    13. `supabase/migrations/0013_syllabus_ingest.sql` (subject level/track + syllabus auto-ingest)
    14. `supabase/migrations/0014_flashcard_authoring.sql` (student/tutor card editing + class assignment)
-   15. `supabase/seed.sql` (SEAB content + flashcards + cloze items)
+   15. `supabase/migrations/0015_question_bank.sql` (shared reusable question bank + mark schemes)
+   16. `supabase/seed.sql` (SEAB content + flashcards + cloze items)
 4. **Auth → Providers → Email**: for easy testing, turn **off** "Confirm email"
    so signup logs you straight in.
 

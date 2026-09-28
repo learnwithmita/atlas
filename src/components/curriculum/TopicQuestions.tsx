@@ -10,11 +10,13 @@ export function TopicQuestions({
   subject,
   questions,
   backHref,
+  builder,
 }: {
   topicName: string;
   subject: string;
   questions: BankQuestion[];
   backHref: string;
+  builder?: React.ReactNode;
 }) {
   const bank = questions.filter((q) => q.origin === "bank");
   const extracted = questions.filter((q) => q.origin === "extracted");
@@ -34,6 +36,8 @@ export function TopicQuestions({
           {questions.length} questions · {bank.length} curated · {extracted.length} from papers
         </p>
       </header>
+
+      {builder}
 
       {questions.length === 0 ? (
         <Card className="p-8 text-center text-ink-2">

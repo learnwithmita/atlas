@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
+import { createServiceClient, isServiceConfigured } from "@/lib/supabase/admin";
 import { toGrade } from "@/lib/utils";
 
 export type Profile = {
@@ -1411,6 +1412,217 @@ export async function getBackupExamQuestions(
     [out[i], out[j]] = [out[j], out[i]];
   }
   return out.slice(0, n);
+}
+
+// ── Shared question bank ─────────────────────────────────────────────────────
+
+export type ServedQuestion = {
+  id: string;
+  bankId: string | null; // generated_questions id (has a stored scheme) or null
+  stem: string;
+  marks: number;
+  type: string;
+  commandWords: string[];
+  topic: string;
+  topicId: string | null;
+  source: string | null;
+};
+
+/**
+ * Serve practice questions from the shared bank for these topics: stored
+ * AI-generated questions first (they carry mark schemes), then adapted
+ * questions from uploaded papers. Excludes ones this student has already
+ * attempted, and shuffles. Returns up to `n`.
+ */
+export async function serveBankQuestions(
+  topicIds: string[],
+  n: number
+): Promise<ServedQuestion[]> {
+  if (!isSupabaseConfigured || topicIds.length === 0) return [];
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  // Which bank questions has this student already attempted?
+  const seen = new Set<string>();
+  if (user) {
+    const { data: log } = await supabase
+      .from("practice_log")
+      .select("question_id")
+      .eq("student_id", user.id)
+      .not("question_id", "is", null)
+      .limit(1000);
+    for (const r of log ?? []) if (r.question_id) seen.add(r.question_id as string);
+  }
+
+  const topicName = new Map<string, string>();
+  const { data: topics } = await supabase.from("topics").select("id, name").in("id", topicIds);
+  for (const t of topics ?? []) topicName.set(t.id, t.name as string);
+
+  const out: ServedQuestion[] = [];
+
+  // 1) AI-generated bank rows (with schemes), least-served first.
+  const { data: genRows } = await supabase
+    .from("generated_questions")
+    .select("id, topic_id, stem, marks, type, command_words")
+    .in("topic_id", topicIds)
+    .order("times_served", { ascending: true })
+    .limit(300);
+  for (const q of genRows ?? []) {
+    if (seen.has(q.id)) continue;
+    out.push({
+      id: q.id,
+      bankId: q.id,
+      stem: q.stem,
+      marks: q.marks ?? 2,
+      type: q.type ?? "structured",
+      commandWords: q.command_words ?? [],
+      topic: topicName.get(q.topic_id) ?? "",
+      topicId: q.topic_id ?? null,
+      source: null,
+    });
+  }
+
+  // 2) Adapted questions from uploaded papers (no stored scheme → AI marks).
+  const { data: exRows } = await supabase
+    .from("extracted_questions")
+    .select(
+      "id, topic_id, stem, marks, type, command_words, question_number, resource:resources(school, year, paper_type, title)"
+    )
+    .in("topic_id", topicIds)
+    .limit(300);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  for (const q of (exRows ?? []) as any[]) {
+    const r = q.resource ?? {};
+    const src =
+      [r.school || r.title, [r.paper_type, r.year].filter(Boolean).join(" "), q.question_number ? `Q${q.question_number}` : ""]
+        .filter(Boolean)
+        .join(" · ") || null;
+    out.push({
+      id: q.id,
+      bankId: null,
+      stem: q.stem,
+      marks: q.marks ?? 2,
+      type: q.type ?? "structured",
+      commandWords: q.command_words ?? [],
+      topic: topicName.get(q.topic_id) ?? "",
+      topicId: q.topic_id ?? null,
+      source: src,
+    });
+  }
+
+  // Shuffle and take n.
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out.slice(0, n);
+}
+
+/** Look up a bank question's stored scheme for marking. */
+export async function getBankScheme(
+  id: string
+): Promise<{ scheme: { point: string; keywords: string[] }[]; modelAnswer: string; marks: number; stem: string } | null> {
+  if (!isSupabaseConfigured) return null;
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("generated_questions")
+    .select("stem, marks, mark_scheme, model_answer")
+    .eq("id", id)
+    .maybeSingle();
+  if (!data) return null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const scheme = (Array.isArray(data.mark_scheme) ? data.mark_scheme : []) as any[];
+  return {
+    stem: data.stem,
+    marks: data.marks ?? 2,
+    modelAnswer: data.model_answer ?? "",
+    scheme: scheme.map((p) => ({
+      point: String(p.point ?? ""),
+      keywords: Array.isArray(p.keywords) ? p.keywords.map(String) : [],
+    })),
+  };
+}
+
+export type NewBankRow = {
+  topicId: string | null;
+  subjectId: string | null;
+  stem: string;
+  marks: number;
+  type: string;
+  commandWords: string[];
+  markScheme: { point: string; keywords: string[] }[];
+  modelAnswer: string;
+  createdBy: string | null;
+};
+
+/**
+ * Write new AI-generated questions into the shared bank using the service-role
+ * client (bypasses RLS) so a student's top-up request can persist rows without
+ * granting students write access. Returns the inserted rows' ids.
+ */
+export async function insertBankQuestions(
+  rows: NewBankRow[]
+): Promise<{ id: string; stem: string; marks: number; type: string; commandWords: string[]; topicId: string | null }[]> {
+  if (rows.length === 0 || !isServiceConfigured) return [];
+  const svc = createServiceClient();
+  const payload = rows.map((r) => ({
+    topic_id: r.topicId,
+    subject_id: r.subjectId,
+    stem: r.stem,
+    marks: r.marks,
+    type: r.type,
+    command_words: r.commandWords,
+    mark_scheme: r.markScheme,
+    model_answer: r.modelAnswer,
+    source: "ai",
+    created_by: r.createdBy,
+  }));
+  const { data, error } = await svc
+    .from("generated_questions")
+    .insert(payload)
+    .select("id, stem, marks, type, command_words, topic_id");
+  if (error) {
+    console.error("[bank] insert failed:", error.message);
+    return [];
+  }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (data ?? []).map((r: any) => ({
+    id: r.id,
+    stem: r.stem,
+    marks: r.marks,
+    type: r.type,
+    commandWords: r.command_words ?? [],
+    topicId: r.topic_id ?? null,
+  }));
+}
+
+/** Best-effort: bump how many times bank questions have been served. */
+export async function bumpTimesServed(ids: string[]): Promise<void> {
+  if (ids.length === 0 || !isServiceConfigured) return;
+  const svc = createServiceClient();
+  await svc.rpc("increment_times_served", { p_ids: ids }).then(
+    () => {},
+    () => {} // RPC optional; ignore if not present
+  );
+}
+
+/** How many bank questions exist per topic (for the admin bank builder). */
+export async function getBankCounts(topicIds: string[]): Promise<Map<string, number>> {
+  const counts = new Map<string, number>();
+  if (!isSupabaseConfigured || topicIds.length === 0) return counts;
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("generated_questions")
+    .select("topic_id")
+    .in("topic_id", topicIds)
+    .limit(5000);
+  for (const r of data ?? []) {
+    const k = r.topic_id as string;
+    counts.set(k, (counts.get(k) ?? 0) + 1);
+  }
+  return counts;
 }
 
 /**
