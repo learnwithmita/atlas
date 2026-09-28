@@ -2,11 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check, RotateCw } from "lucide-react";
+import { Check, RotateCw, Zap } from "lucide-react";
 import type { StudyCard } from "@/lib/data";
 import { Button } from "@/components/ui/Button";
 import { MathText } from "@/components/ui/MathText";
-import { reviewFlashcard } from "@/app/(app)/actions";
+import { recordActivity, reviewFlashcard } from "@/app/(app)/actions";
 import { cn } from "@/lib/utils";
 
 const GRADES = [
@@ -26,12 +26,23 @@ export function FlashcardStudy({
   const [idx, setIdx] = useState(0);
   const [flipped, setFlipped] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [xp, setXp] = useState(0); // running XP earned this session
+  const [earnedXp, setEarnedXp] = useState<number | null>(null);
   const card = cards[idx];
 
   async function grade(g: "again" | "hard" | "good" | "easy") {
     if (busy || !card) return;
     setBusy(true);
     await reviewFlashcard(card.id, g);
+    // Reward engagement, a little more for confident recall.
+    const gained = g === "easy" ? 3 : g === "good" ? 2 : 1;
+    const total = xp + gained;
+    setXp(total);
+    const last = idx + 1 >= cards.length;
+    if (last) {
+      await recordActivity(total, 3);
+      setEarnedXp(total);
+    }
     setBusy(false);
     setFlipped(false);
     setIdx((i) => i + 1);
@@ -44,6 +55,11 @@ export function FlashcardStudy({
           <Check className="text-mint" size={26} />
         </div>
         <h2 className="text-2xl font-semibold text-ink mb-1">Deck complete</h2>
+        {earnedXp != null && earnedXp > 0 && (
+          <p className="inline-flex items-center gap-1.5 text-flame font-semibold mb-2">
+            <Zap size={16} className="fill-flame" /> +{earnedXp} XP
+          </p>
+        )}
         <p className="text-ink-2 mb-6">
           Nicely done. Cards will resurface just before you&apos;d forget them.
         </p>

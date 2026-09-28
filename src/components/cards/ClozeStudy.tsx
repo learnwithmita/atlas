@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRight, Check, X } from "lucide-react";
+import { ArrowRight, Check, X, Zap } from "lucide-react";
 import type { ClozeItem } from "@/lib/data";
 import { Button } from "@/components/ui/Button";
 import { MathText } from "@/components/ui/MathText";
@@ -37,6 +37,7 @@ export function ClozeStudy({
   const [checked, setChecked] = useState(false);
   const [score, setScore] = useState(0);
   const [done, setDone] = useState(false);
+  const [earnedXp, setEarnedXp] = useState(0);
 
   const item = items[idx];
   const parts = useMemo(() => (item ? parse(item.text) : null), [item]);
@@ -50,7 +51,9 @@ export function ClozeStudy({
 
   async function next() {
     if (idx + 1 >= items.length) {
-      await recordActivity(10 + score, 3);
+      const xp = 10 + score;
+      await recordActivity(xp, 3);
+      setEarnedXp(xp);
       setDone(true);
       return;
     }
@@ -68,6 +71,11 @@ export function ClozeStudy({
         <h2 className="text-2xl font-semibold text-ink mb-1">
           {items.length === 0 ? "No items yet" : "Nice work"}
         </h2>
+        {done && earnedXp > 0 && (
+          <p className="inline-flex items-center gap-1.5 text-flame font-semibold mb-2">
+            <Zap size={16} className="fill-flame" /> +{earnedXp} XP
+          </p>
+        )}
         <p className="text-ink-2 mb-6">
           {items.length === 0
             ? "Generate a set with AI to start."
