@@ -30,7 +30,7 @@ language sql security definer set search_path = public as $$
   join topics t on t.id = pl.topic_id
   left join subjects s on s.id = t.subject_id
   group by t.id, t.name, s.name
-  order by avg_pct asc nulls last;
+  order by 5 asc nulls last;  -- 5th column (avg_pct); order by name isn't allowed here
 $$;
 
 -- Per-student summary (weakest first). Members with no practice sort last.
@@ -53,5 +53,5 @@ language sql security definer set search_path = public as $$
   left join practice_log pl on pl.student_id = m.student_id
   where m.classroom_id = p_classroom_id
   group by p.id, p.full_name, p.email
-  order by avg_pct asc nulls last;
+  order by 4 asc nulls last;  -- 4th column (avg_pct)
 $$;
