@@ -438,11 +438,20 @@ export async function getQuestionBank(): Promise<BankTopic[]> {
   if (!isSupabaseConfigured) return [];
   const supabase = await createClient();
 
-  const [{ data: topics }, { data: bankQ }, { data: exQ }] = await Promise.all([
-    supabase.from("topics").select("id, name, sort_order, subject:subjects(name)").order("sort_order"),
-    supabase.from("questions").select("id, subtopic:subtopics(topic_id)"),
-    supabase.from("extracted_questions").select("topic_id"),
-  ]);
+  const [{ data: topics }, { data: bankQ }, { data: genQ }, { data: exQ }] =
+    await Promise.all([
+      supabase.from("topics").select("id, name, sort_order, subject:subjects(name)").order("sort_order"),
+      supabase.from("questions").select("id, subtopic:subtopics(topic_id)"),
+      supabase.from("generated_questions").select("topic_id").limit(10000),
+      supabase.from("extracted_questions").select("topic_id, detected_topic_name").limit(10000),
+    ]);
+
+  // Map lowercased topic name -> id, to rescue extracted rows whose topic_id
+  // is null (extracted before the syllabus existed) via their detected name.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const idByName = new Map<string, string>(
+    (topics ?? []).map((t: any) => [String(t.name).toLowerCase(), t.id as string])
+  );
 
   const bankByTopic = new Map<string, number>();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -450,9 +459,17 @@ export async function getQuestionBank(): Promise<BankTopic[]> {
     const tid = q.subtopic?.topic_id;
     if (tid) bankByTopic.set(tid, (bankByTopic.get(tid) ?? 0) + 1);
   }
+  // The reusable AI bank (generated_questions) counts as "bank" too.
+  for (const q of genQ ?? []) {
+    if (q.topic_id) bankByTopic.set(q.topic_id, (bankByTopic.get(q.topic_id) ?? 0) + 1);
+  }
   const exByTopic = new Map<string, number>();
-  for (const q of exQ ?? []) {
-    if (q.topic_id) exByTopic.set(q.topic_id, (exByTopic.get(q.topic_id) ?? 0) + 1);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  for (const q of (exQ ?? []) as any[]) {
+    const tid =
+      q.topic_id ??
+      (q.detected_topic_name ? idByName.get(String(q.detected_topic_name).toLowerCase()) : null);
+    if (tid) exByTopic.set(tid, (exByTopic.get(tid) ?? 0) + 1);
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -891,7 +908,7 @@ export type BankQuestion = {
   marks: number | null;
   type: string;
   commandWords: string[];
-  origin: "bank" | "extracted";
+  origin: "bank" | "extracted" | "generated";
   source: string | null; // for extracted: "School · Type Year · Q3"
 };
 
@@ -928,12 +945,41 @@ export async function getTopicQuestions(
     }));
   }
 
-  // Extracted questions for this topic (with paper provenance).
-  const { data: exRows } = await supabase
-    .from("extracted_questions")
-    .select("id, stem, marks, type, command_words, question_number, resource:resources(school, year, paper_type, title)")
+  // AI question bank for this topic (reusable generated questions).
+  const { data: genRows } = await supabase
+    .from("generated_questions")
+    .select("id, stem, marks, type, command_words")
     .eq("topic_id", topicId)
     .limit(300);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const genQ: BankQuestion[] = (genRows ?? []).map((q: any) => ({
+    id: q.id,
+    stem: q.stem,
+    marks: q.marks,
+    type: q.type,
+    commandWords: q.command_words ?? [],
+    origin: "generated" as const,
+    source: null,
+  }));
+
+  // Extracted questions: matched by topic_id, plus (for older rows extracted
+  // before the syllabus existed, so topic_id is null) by the detected topic
+  // name. Two queries — safer than embedding names in a PostgREST or-filter.
+  const topicName = topic?.name ?? "";
+  const sel =
+    "id, stem, marks, type, command_words, question_number, resource:resources(school, year, paper_type, title)";
+  const [byId, byName] = await Promise.all([
+    supabase.from("extracted_questions").select(sel).eq("topic_id", topicId).limit(300),
+    topicName
+      ? supabase
+          .from("extracted_questions")
+          .select(sel)
+          .is("topic_id", null)
+          .ilike("detected_topic_name", topicName)
+          .limit(300)
+      : Promise.resolve({ data: [] as unknown[] }),
+  ]);
+  const exRows = [...(byId.data ?? []), ...((byName.data as unknown[]) ?? [])];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const exQ: BankQuestion[] = (exRows ?? []).map((q: any) => {
     const r = q.resource ?? {};
@@ -955,9 +1001,9 @@ export async function getTopicQuestions(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const subjectName = (topic as any)?.subject?.name ?? "";
   return {
-    topicName: topic?.name ?? "",
+    topicName,
     subject: subjectName,
-    questions: [...bankQ, ...exQ],
+    questions: [...genQ, ...bankQ, ...exQ],
   };
 }
 

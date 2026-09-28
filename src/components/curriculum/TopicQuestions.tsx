@@ -18,6 +18,7 @@ export function TopicQuestions({
   backHref: string;
   builder?: React.ReactNode;
 }) {
+  const generated = questions.filter((q) => q.origin === "generated");
   const bank = questions.filter((q) => q.origin === "bank");
   const extracted = questions.filter((q) => q.origin === "extracted");
 
@@ -33,7 +34,8 @@ export function TopicQuestions({
         <p className="text-sm text-ink-3">{subject}</p>
         <h1 className="text-3xl font-semibold text-ink mt-1">{topicName}</h1>
         <p className="text-ink-2 mt-1">
-          {questions.length} questions · {bank.length} curated · {extracted.length} from papers
+          {questions.length} questions · {generated.length} AI bank ·{" "}
+          {bank.length} curated · {extracted.length} from papers
         </p>
       </header>
 
@@ -64,8 +66,20 @@ export function TopicQuestions({
                         [{q.marks} {q.marks === 1 ? "mark" : "marks"}]
                       </span>
                     ) : null}
-                    <Badge tone={q.origin === "extracted" ? "mint" : "neutral"}>
-                      {q.origin === "extracted" ? "from paper" : "curated"}
+                    <Badge
+                      tone={
+                        q.origin === "extracted"
+                          ? "mint"
+                          : q.origin === "generated"
+                            ? "accent"
+                            : "neutral"
+                      }
+                    >
+                      {q.origin === "extracted"
+                        ? "from paper"
+                        : q.origin === "generated"
+                          ? "AI bank"
+                          : "curated"}
                     </Badge>
                   </div>
                   {q.source && (
