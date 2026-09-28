@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { friendlyGeminiError, generateExamQuestions } from "@/lib/gemini";
-import { getBackupExamQuestions } from "@/lib/data";
+import { getBackupExamQuestions, getTopicGenerationContext } from "@/lib/data";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -24,13 +24,11 @@ export async function POST(req: Request) {
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Not signed in" }, { status: 401 });
 
-  const { data: topics } = await supabase
-    .from("topics")
-    .select("id, name")
-    .in("id", topicIds ?? []);
-  const names = (topics ?? []).map((t) => t.name);
-  const idByName = new Map((topics ?? []).map((t) => [t.name.toLowerCase(), t.id]));
-  if (names.length === 0) {
+  // Gather syllabus outcomes (scope) + example stems from uploaded papers
+  // (style) so generation is grounded and fair, not random/obscure.
+  const context = await getTopicGenerationContext(topicIds ?? []);
+  const idByName = new Map(context.map((t) => [t.name.toLowerCase(), t.id]));
+  if (context.length === 0) {
     return NextResponse.json({ error: "Pick at least one topic." }, { status: 400 });
   }
 
@@ -44,7 +42,10 @@ export async function POST(req: Request) {
   }
 
   try {
-    const generated = await generateExamQuestions(names, n);
+    const generated = await generateExamQuestions(
+      context.map((t) => ({ name: t.name, outcomes: t.outcomes, examples: t.examples })),
+      n
+    );
     if (generated.length === 0) {
       const fb = await backup(
         "Showing questions from your uploaded papers and bank while the AI writer is busy."

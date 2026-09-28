@@ -335,6 +335,36 @@ export async function getStudyCards(
   return { subtopicName: st?.name ?? "", cards: mapped };
 }
 
+export type EditableCard = {
+  id: string;
+  front: string;
+  back: string;
+  classroomId: string | null;
+};
+
+/** The current user's own cards in a subtopic deck (for the deck editor). */
+export async function getEditableCards(subtopicId: string): Promise<EditableCard[]> {
+  if (!isSupabaseConfigured) return [];
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+  const { data } = await supabase
+    .from("flashcards")
+    .select("id, front, back, classroom_id")
+    .eq("subtopic_id", subtopicId)
+    .eq("created_by", user.id)
+    .order("created_at", { ascending: true });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (data ?? []).map((c: any) => ({
+    id: c.id,
+    front: c.front,
+    back: c.back,
+    classroomId: c.classroom_id ?? null,
+  }));
+}
+
 // ── Cloze (fill-in-the-blank) ────────────────────────────────────────────────
 export type ClozeDeck = {
   subtopicId: string;
@@ -1381,6 +1411,54 @@ export async function getBackupExamQuestions(
     [out[i], out[j]] = [out[j], out[i]];
   }
   return out.slice(0, n);
+}
+
+/**
+ * For each topic, gather the syllabus learning outcomes (scope) and a few real
+ * question stems from uploaded papers (style) that ground fresh generation.
+ */
+export async function getTopicGenerationContext(
+  topicIds: string[]
+): Promise<{ id: string; name: string; outcomes: string[]; examples: string[] }[]> {
+  if (!isSupabaseConfigured || topicIds.length === 0) return [];
+  const supabase = await createClient();
+
+  const { data: topics } = await supabase
+    .from("topics")
+    .select("id, name")
+    .in("id", topicIds);
+
+  const out: { id: string; name: string; outcomes: string[]; examples: string[] }[] = [];
+  for (const t of topics ?? []) {
+    // Outcomes via subtopics under the topic.
+    const { data: subs } = await supabase
+      .from("subtopics")
+      .select("id, learning_outcomes(statement)")
+      .eq("topic_id", t.id);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const outcomes: string[] = (subs ?? [])
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .flatMap((s: any) => (s.learning_outcomes ?? []).map((o: any) => o.statement))
+      .filter(Boolean)
+      .slice(0, 12);
+
+    // Example stems from uploaded papers for this topic (style inspiration).
+    const { data: exRows } = await supabase
+      .from("extracted_questions")
+      .select("stem")
+      .eq("topic_id", t.id)
+      .limit(30);
+    const allStems = (exRows ?? []).map((r) => r.stem as string).filter(Boolean);
+    // Shuffle and take a handful so each generation draws different exemplars.
+    for (let i = allStems.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [allStems[i], allStems[j]] = [allStems[j], allStems[i]];
+    }
+    const examples = allStems.slice(0, 4).map((s) => s.slice(0, 400));
+
+    out.push({ id: t.id, name: t.name, outcomes, examples });
+  }
+  return out;
 }
 
 /** Current authenticated user's profile (or null). */

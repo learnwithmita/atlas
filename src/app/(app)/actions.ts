@@ -148,3 +148,81 @@ export async function recordActivity(xp = 10, minutes = 1) {
   revalidatePath("/learn");
   return { ok: true };
 }
+
+// ── Flashcard authoring ──────────────────────────────────────────────────────
+
+/**
+ * Add a card to a subtopic deck. Students add to their own study set; tutors
+ * can attach a classroom_id to assign the card to every student in that class.
+ */
+export async function addFlashcard(input: {
+  subtopicId: string;
+  front: string;
+  back: string;
+  classroomId?: string | null;
+}): Promise<{ error?: string; ok?: boolean }> {
+  if (!isSupabaseConfigured) return { error: "Supabase not connected." };
+  const front = input.front.trim();
+  const back = input.back.trim();
+  if (!front || !back) return { error: "Both the term and the definition are needed." };
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not signed in." };
+
+  const { data: st } = await supabase
+    .from("subtopics")
+    .select("topic_id")
+    .eq("id", input.subtopicId)
+    .single();
+
+  const { error } = await supabase.from("flashcards").insert({
+    subtopic_id: input.subtopicId,
+    topic_id: st?.topic_id ?? null,
+    front,
+    back,
+    created_by: user.id,
+    classroom_id: input.classroomId || null,
+  });
+  if (error) return { error: error.message };
+  revalidatePath(`/cards/${input.subtopicId}`);
+  revalidatePath("/cards");
+  return { ok: true };
+}
+
+/** Edit a card you created (RLS blocks editing others'). */
+export async function updateFlashcard(input: {
+  id: string;
+  subtopicId: string;
+  front: string;
+  back: string;
+}): Promise<{ error?: string; ok?: boolean }> {
+  if (!isSupabaseConfigured) return { error: "Supabase not connected." };
+  const front = input.front.trim();
+  const back = input.back.trim();
+  if (!front || !back) return { error: "Both the term and the definition are needed." };
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("flashcards")
+    .update({ front, back })
+    .eq("id", input.id);
+  if (error) return { error: error.message };
+  revalidatePath(`/cards/${input.subtopicId}`);
+  return { ok: true };
+}
+
+/** Delete a card you created. */
+export async function deleteFlashcard(
+  id: string,
+  subtopicId: string
+): Promise<{ error?: string; ok?: boolean }> {
+  if (!isSupabaseConfigured) return { error: "Supabase not connected." };
+  const supabase = await createClient();
+  const { error } = await supabase.from("flashcards").delete().eq("id", id);
+  if (error) return { error: error.message };
+  revalidatePath(`/cards/${subtopicId}`);
+  revalidatePath("/cards");
+  return { ok: true };
+}

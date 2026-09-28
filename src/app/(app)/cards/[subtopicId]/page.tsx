@@ -1,7 +1,13 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { getStudyCards } from "@/lib/data";
+import {
+  getEditableCards,
+  getProfile,
+  getStudyCards,
+  getTutorClassrooms,
+} from "@/lib/data";
 import { FlashcardStudy } from "@/components/cards/FlashcardStudy";
+import { DeckEditor } from "@/components/cards/DeckEditor";
 
 export const metadata = { title: "Study · Atlas" };
 export const dynamic = "force-dynamic";
@@ -12,7 +18,17 @@ export default async function StudyDeckPage({
   params: Promise<{ subtopicId: string }>;
 }) {
   const { subtopicId } = await params;
-  const { subtopicName, cards } = await getStudyCards(subtopicId);
+  const [{ subtopicName, cards }, profile, editable] = await Promise.all([
+    getStudyCards(subtopicId),
+    getProfile(),
+    getEditableCards(subtopicId),
+  ]);
+
+  const role = (profile?.role ?? "student") as "student" | "tutor" | "admin";
+  const classrooms =
+    role === "tutor" || role === "admin"
+      ? (await getTutorClassrooms()).map((c) => ({ id: c.id, name: c.name }))
+      : [];
 
   return (
     <div className="pt-6">
@@ -25,6 +41,12 @@ export default async function StudyDeckPage({
         </Link>
       </div>
       <FlashcardStudy subtopicName={subtopicName} cards={cards} />
+      <DeckEditor
+        subtopicId={subtopicId}
+        cards={editable}
+        role={role}
+        classrooms={classrooms}
+      />
     </div>
   );
 }

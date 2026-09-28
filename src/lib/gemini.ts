@@ -14,27 +14,54 @@ function client() {
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
+// When the primary model is overloaded (503), fall through to lighter models
+// that are far less contended. Override with GEMINI_FALLBACK_MODELS (CSV).
+const FALLBACK_MODELS = (
+  process.env.GEMINI_FALLBACK_MODELS ??
+  "gemini-flash-lite-latest,gemini-2.5-flash,gemini-2.5-flash-lite"
+)
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
+
+const isOverloaded = (msg: string) =>
+  /503|UNAVAILABLE|overloaded|high demand/i.test(msg);
+const isQuota = (msg: string) => /429|RESOURCE_EXHAUSTED|quota/i.test(msg);
+
 /**
- * Call Gemini with a short retry/backoff on transient overload (503 /
- * UNAVAILABLE / "high demand"), which the free tier returns often. Other errors
- * (bad key, quota, 404) fail fast — retrying them is pointless. Callers still
- * catch the final throw and fall back to bank/paper questions.
+ * Call Gemini resiliently:
+ *  - retry the primary model on transient overload (503),
+ *  - fall through to lighter fallback models when the primary is overloaded
+ *    (503) OR its per-model free-tier quota is exhausted (429) — each model has
+ *    its own quota bucket, so a sibling model often still works,
+ *  - fail fast on hard errors (bad key, 404).
+ * Callers still catch the final throw and fall back to bank/paper questions.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function genContent(params: any, retries = 2): Promise<any> {
-  let attempt = 0;
-  // eslint-disable-next-line no-constant-condition
-  while (true) {
-    try {
-      return await client().models.generateContent(params);
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      const transient = /503|UNAVAILABLE|overloaded|high demand/i.test(msg);
-      if (!transient || attempt >= retries) throw e;
-      await sleep(700 * (attempt + 1)); // 0.7s, 1.4s
-      attempt++;
+async function genContent(params: any, perModelRetries = 1): Promise<any> {
+  const primary = params.model as string;
+  const chain = [primary, ...FALLBACK_MODELS.filter((m) => m !== primary)];
+  let lastErr: unknown;
+  for (const model of chain) {
+    for (let attempt = 0; attempt <= perModelRetries; attempt++) {
+      try {
+        return await client().models.generateContent({ ...params, model });
+      } catch (e) {
+        lastErr = e;
+        const msg = e instanceof Error ? e.message : String(e);
+        const overloaded = isOverloaded(msg);
+        const quota = isQuota(msg);
+        if (!overloaded && !quota) throw e; // hard error — stop entirely
+        // Quota won't clear in seconds, so don't retry the same model — move on.
+        if (quota) break;
+        if (attempt < perModelRetries) await sleep(600 * (attempt + 1));
+      }
+    }
+    if (model !== chain[chain.length - 1]) {
+      console.warn(`[gemini] ${model} unavailable — falling back to next model`);
     }
   }
+  throw lastErr;
 }
 
 /** Turn a raw Gemini SDK error into a short, human message. */
@@ -229,7 +256,7 @@ Extract its full structure. Return:
 - examBody: "SEAB".
 - topics: the ordered list of main topics/themes in the syllabus. For each:
   - name: the topic name as printed (e.g. "Cells and the Chemistry of Life", "The Particulate Nature of Matter").
-  - subtopics: the sub-sections under it. For each:
+  - subtopics: the sub-sections/headings under the topic. Most topics have SEVERAL subtopics — break them out as printed; do NOT collapse a whole topic into a single subtopic. For each:
     - name: the subtopic name.
     - outcomes: the numbered learning outcomes / learning objectives listed. For each:
       - code: the outcome reference/number as printed (e.g. "1.1", "3.2a"), else "".
@@ -447,23 +474,51 @@ export type GeneratedExamQuestion = {
   topic: string;
 };
 
-/** Generate fresh SEAB-style exam questions spread across the given topics. */
+/** A topic plus the context that grounds question generation. */
+export type TopicContext = {
+  name: string;
+  outcomes: string[]; // syllabus learning outcomes = the scope we may test
+  examples: string[]; // stems from real uploaded papers = the style to match
+};
+
+/**
+ * Generate fresh practice questions grounded in the syllabus outcomes and
+ * styled after real uploaded papers. Deliberately fair: only tests content in
+ * the given outcomes, and never requires a diagram/figure the student can't see.
+ */
 export async function generateExamQuestions(
-  topics: string[],
+  topics: TopicContext[],
   count: number
 ): Promise<GeneratedExamQuestion[]> {
   if (!isGeminiConfigured) throw new Error("GEMINI_API_KEY missing");
 
-  const prompt = `You are setting a Singapore O-Level (SEAB) science practice paper.
+  const topicBlocks = topics
+    .map((t) => {
+      const outcomes = t.outcomes.length
+        ? t.outcomes.map((o) => `  • ${o}`).join("\n")
+        : "  (use the standard SEAB syllabus content for this topic)";
+      const examples = t.examples.length
+        ? `\n Example questions from real school papers (match this STYLE and difficulty — do NOT copy them):\n${t.examples
+            .map((e) => `  • ${e}`)
+            .join("\n")}`
+        : "";
+      return `TOPIC: ${t.name}\n Syllabus outcomes you may test:\n${outcomes}${examples}`;
+    })
+    .join("\n\n");
 
-Write ${count} exam questions, spread as evenly as possible across these topics:
-${topics.map((t) => `- ${t}`).join("\n")}
+  const prompt = `You are setting a fair Singapore SEAB science practice paper for a G3 (upper-secondary) student.
+
+Write ${count} exam questions, spread as evenly as possible across the topics below.
+
+${topicBlocks}
 
 Rules:
+- SCOPE: test ONLY ideas covered by the syllabus outcomes listed for each topic. Do NOT ask about named species, brand names, obscure facts, or details a G3 student would not have studied (e.g. the internal structure of a specific named bacterium).
+- SELF-CONTAINED: every question must be fully answerable from its own text. Do NOT write a question that depends on reading a diagram, figure, graph, image or table that is not written into the question. If data is needed, state the numbers in words within the question.
 - Mix command words (state, describe, explain, suggest, calculate, define) and mark values (1–5).
-- Make them genuinely varied — different contexts, data, scenarios and numbers each time. Do NOT reuse the same stock textbook question repeatedly.
+- Make them genuinely varied — different contexts, data and scenarios each time; match the phrasing style of the example questions above.
 - type is one of: structured, open_ended, data_based (no MCQ).
-- topic must be copied verbatim from the list above.
+- topic must be copied verbatim from a TOPIC line above.
 - Write any maths/chemistry in LaTeX ($...$, $\\ce{...}$).
 Return only the questions.`;
 

@@ -64,7 +64,8 @@ setup message) so you can browse the UI. Add the keys below to make it live.
    11. `supabase/migrations/0011_notes.sql` (topic notes + editable student notes)
    12. `supabase/migrations/0012_lock_admin_signup.sql` (security: no self-serve admin)
    13. `supabase/migrations/0013_syllabus_ingest.sql` (subject level/track + syllabus auto-ingest)
-   14. `supabase/seed.sql` (SEAB content + flashcards + cloze items)
+   14. `supabase/migrations/0014_flashcard_authoring.sql` (student/tutor card editing + class assignment)
+   15. `supabase/seed.sql` (SEAB content + flashcards + cloze items)
 4. **Auth → Providers → Email**: for easy testing, turn **off** "Confirm email"
    so signup logs you straight in.
 
