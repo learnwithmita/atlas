@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Check, Pencil, Plus, Trash2, Users, X } from "lucide-react";
+import { Check, ImagePlus, Loader2, Pencil, Plus, Trash2, Users, X } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
@@ -38,7 +38,29 @@ export function DeckEditor({
   const [editBack, setEditBack] = useState("");
 
   const isTutor = role === "tutor" || role === "admin";
+  const isAdmin = role === "admin";
   const classById = new Map(classrooms.map((c) => [c.id, c.name]));
+  const [imgBusy, setImgBusy] = useState<string | null>(null);
+  const [imgErr, setImgErr] = useState<string | null>(null);
+
+  async function makeDiagram(id: string) {
+    setImgBusy(id);
+    setImgErr(null);
+    try {
+      const res = await fetch("/api/flashcards/image", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cardId: id }),
+      });
+      const data = await res.json();
+      if (res.ok) router.refresh();
+      else setImgErr(data.error ?? "Couldn't generate the diagram.");
+    } catch {
+      setImgErr("Network error.");
+    } finally {
+      setImgBusy(null);
+    }
+  }
 
   function add() {
     setError(null);
@@ -141,8 +163,9 @@ export function DeckEditor({
       {cards.length > 0 && (
         <>
           <p className="text-sm font-medium text-ink-2 mb-2 px-1">
-            Your cards ({cards.length})
+            {isAdmin ? "Cards" : "Your cards"} ({cards.length})
           </p>
+          {imgErr && <p className="text-sm text-danger mb-2 px-1">{imgErr}</p>}
           <div className="space-y-2">
             {cards.map((c) => (
               <Card key={c.id} className="p-4">
@@ -174,16 +197,41 @@ export function DeckEditor({
                   </div>
                 ) : (
                   <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="font-medium text-ink">{c.front}</p>
-                      <p className="text-sm text-ink-2 mt-0.5">{c.back}</p>
-                      {c.classroomId && (
-                        <Badge tone="mint" className="mt-2">
-                          Assigned · {classById.get(c.classroomId) ?? "class"}
-                        </Badge>
+                    <div className="min-w-0 flex items-start gap-3">
+                      {c.imageUrl && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={c.imageUrl}
+                          alt=""
+                          className="h-14 w-14 shrink-0 rounded-lg border border-hairline object-cover bg-white"
+                        />
                       )}
+                      <div className="min-w-0">
+                        <p className="font-medium text-ink">{c.front}</p>
+                        <p className="text-sm text-ink-2 mt-0.5">{c.back}</p>
+                        {c.classroomId && (
+                          <Badge tone="mint" className="mt-2">
+                            Assigned · {classById.get(c.classroomId) ?? "class"}
+                          </Badge>
+                        )}
+                      </div>
                     </div>
                     <div className="flex gap-1 shrink-0">
+                      {isAdmin && (
+                        <button
+                          aria-label="Generate diagram"
+                          title={c.imageUrl ? "Regenerate diagram" : "Generate diagram"}
+                          disabled={imgBusy !== null}
+                          onClick={() => makeDiagram(c.id)}
+                          className="p-2 rounded-lg text-ink-3 hover:text-accent hover:bg-surface-2 disabled:opacity-50"
+                        >
+                          {imgBusy === c.id ? (
+                            <Loader2 size={15} className="animate-spin" />
+                          ) : (
+                            <ImagePlus size={15} />
+                          )}
+                        </button>
+                      )}
                       <button
                         aria-label="Edit card"
                         onClick={() => {

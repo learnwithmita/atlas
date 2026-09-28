@@ -289,7 +289,14 @@ export async function getFlashcardDecks(): Promise<FlashcardDeck[]> {
   return [...decks.values()].sort((a, b) => b.due - a.due);
 }
 
-export type StudyCard = { id: string; front: string; back: string; isNew: boolean; due: boolean };
+export type StudyCard = {
+  id: string;
+  front: string;
+  back: string;
+  imageUrl: string | null;
+  isNew: boolean;
+  due: boolean;
+};
 
 export async function getStudyCards(
   subtopicId: string
@@ -308,7 +315,7 @@ export async function getStudyCards(
 
   const { data: cards } = await supabase
     .from("flashcards")
-    .select("id, front, back")
+    .select("id, front, back, image_url")
     .eq("subtopic_id", subtopicId);
 
   const reviewByCard = new Map<string, number>();
@@ -321,12 +328,14 @@ export async function getStudyCards(
       reviewByCard.set(r.flashcard_id, new Date(r.due_at).getTime());
   }
   const now = Date.now();
-  const mapped: StudyCard[] = (cards ?? []).map((c) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const mapped: StudyCard[] = (cards ?? []).map((c: any) => {
     const has = reviewByCard.has(c.id);
     return {
       id: c.id,
       front: c.front,
       back: c.back,
+      imageUrl: c.image_url ?? null,
       isNew: !has,
       due: !has || (reviewByCard.get(c.id) ?? 0) <= now,
     };
@@ -341,9 +350,14 @@ export type EditableCard = {
   front: string;
   back: string;
   classroomId: string | null;
+  imageUrl: string | null;
 };
 
-/** The current user's own cards in a subtopic deck (for the deck editor). */
+/**
+ * Cards in a subtopic deck the current user can edit: their own always, plus
+ * the shared (curated) cards when they're an admin — so admins can attach
+ * diagrams to the shared organelle decks.
+ */
 export async function getEditableCards(subtopicId: string): Promise<EditableCard[]> {
   if (!isSupabaseConfigured) return [];
   const supabase = await createClient();
@@ -351,18 +365,24 @@ export async function getEditableCards(subtopicId: string): Promise<EditableCard
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return [];
-  const { data } = await supabase
+  const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
+  const isAdmin = profile?.role === "admin";
+
+  let query = supabase
     .from("flashcards")
-    .select("id, front, back, classroom_id")
-    .eq("subtopic_id", subtopicId)
-    .eq("created_by", user.id)
-    .order("created_at", { ascending: true });
+    .select("id, front, back, classroom_id, image_url, created_by")
+    .eq("subtopic_id", subtopicId);
+  query = isAdmin
+    ? query.or(`created_by.eq.${user.id},created_by.is.null`)
+    : query.eq("created_by", user.id);
+  const { data } = await query.order("created_at", { ascending: true });
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return (data ?? []).map((c: any) => ({
     id: c.id,
     front: c.front,
     back: c.back,
     classroomId: c.classroom_id ?? null,
+    imageUrl: c.image_url ?? null,
   }));
 }
 

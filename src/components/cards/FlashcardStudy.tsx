@@ -100,6 +100,14 @@ export function FlashcardStudy({
         <div className="text-xl text-ink leading-relaxed">
           <MathText>{flipped ? card.back : card.front}</MathText>
         </div>
+        {flipped && card.imageUrl && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={card.imageUrl}
+            alt=""
+            className="mt-5 max-h-48 w-auto rounded-[12px] border border-hairline bg-white"
+          />
+        )}
         {!flipped && (
           <span className="mt-6 inline-flex items-center gap-1.5 text-sm text-ink-3">
             <RotateCw size={14} /> Tap to reveal

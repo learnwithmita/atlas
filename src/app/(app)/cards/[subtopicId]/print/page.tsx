@@ -51,6 +51,14 @@ export default async function PrintDeckPage({
               </td>
               <td className="border border-hairline px-3 py-2.5 align-top text-ink-2">
                 <MathText>{c.back}</MathText>
+                {c.imageUrl && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={c.imageUrl}
+                    alt=""
+                    className="mt-2 max-h-32 w-auto border border-hairline bg-white"
+                  />
+                )}
               </td>
             </tr>
           ))}

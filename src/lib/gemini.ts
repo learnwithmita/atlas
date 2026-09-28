@@ -752,6 +752,48 @@ export function markAgainstScheme(input: {
   };
 }
 
+const IMAGE_MODELS = (
+  process.env.GEMINI_IMAGE_MODELS ??
+  "gemini-2.5-flash-image,gemini-3.1-flash-image"
+)
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
+
+/**
+ * Generate a clean black-and-white educational diagram for a term (e.g. an
+ * organelle) suitable for a flashcard and for black-and-white printing.
+ * Returns the raw image bytes (base64) or null if unavailable.
+ */
+export async function generateDiagram(
+  term: string,
+  subject: string
+): Promise<{ data: string; mimeType: string } | null> {
+  if (!isGeminiConfigured) throw new Error("GEMINI_API_KEY missing");
+  const prompt = `A clean, simple, black-and-white educational line-art diagram of "${term}" for a ${subject} revision flashcard. Clearly labelled with thin black lines on a white background, minimal shading, no colour, textbook style, suitable for printing in black and white.`;
+
+  let lastErr: unknown;
+  for (const model of IMAGE_MODELS) {
+    try {
+      const res = await client().models.generateContent({ model, contents: prompt });
+      const parts = res.candidates?.[0]?.content?.parts ?? [];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const img = parts.find((p: any) => p.inlineData?.data);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const inline = (img as any)?.inlineData;
+      if (inline?.data) {
+        return { data: inline.data as string, mimeType: (inline.mimeType as string) ?? "image/png" };
+      }
+    } catch (e) {
+      lastErr = e;
+      const msg = e instanceof Error ? e.message : String(e);
+      if (!isOverloaded(msg) && !isQuota(msg) && !isNotFound(msg)) throw e;
+    }
+  }
+  if (lastErr) throw lastErr;
+  return null;
+}
+
 export type GeneratedCloze = { text: string; answer: string };
 
 /** Generate fill-in-the-blank items for a subtopic. */
