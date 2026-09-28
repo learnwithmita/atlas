@@ -22,6 +22,7 @@ export default async function TeachBankTopicPage({
       questions={questions}
       backHref="/teach/bank"
       builder={<BankBuilder topicId={topicId} count={counts.get(topicId) ?? 0} />}
+      printHref={`/teach/bank/${topicId}/print`}
     />
   );
 }

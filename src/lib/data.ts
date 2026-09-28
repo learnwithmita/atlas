@@ -1007,6 +1007,73 @@ export async function getTopicQuestions(
   };
 }
 
+export type PrintableQuestion = {
+  n: number;
+  stem: string;
+  marks: number | null;
+  answer: string | null; // model answer / mark-scheme points (bank only)
+  source: string | null;
+};
+
+/** A topic's questions formatted for a printable worksheet (with answers). */
+export async function getPrintableQuestions(
+  topicId: string
+): Promise<{ topicName: string; subject: string; questions: PrintableQuestion[] }> {
+  if (!isSupabaseConfigured) return { topicName: "", subject: "", questions: [] };
+  const supabase = await createClient();
+
+  const { data: topic } = await supabase
+    .from("topics")
+    .select("name, subject:subjects(name)")
+    .eq("id", topicId)
+    .single();
+  const topicName = topic?.name ?? "";
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const subject = (topic as any)?.subject?.name ?? "";
+
+  const out: PrintableQuestion[] = [];
+
+  // AI bank — has model answers + mark schemes.
+  const { data: gen } = await supabase
+    .from("generated_questions")
+    .select("stem, marks, model_answer, mark_scheme")
+    .eq("topic_id", topicId)
+    .limit(500);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  for (const q of (gen ?? []) as any[]) {
+    const scheme = Array.isArray(q.mark_scheme) ? q.mark_scheme : [];
+    const schemeText = scheme.map((p: { point: string }) => `• ${p.point}`).join("\n");
+    const answer = [q.model_answer, schemeText].filter(Boolean).join("\n\n") || null;
+    out.push({ n: 0, stem: q.stem, marks: q.marks ?? null, answer, source: null });
+  }
+
+  // Extracted paper questions (no stored answer) — matched by id or name.
+  const sel = "stem, marks, question_number, resource:resources(school, year, paper_type, title)";
+  const [byId, byName] = await Promise.all([
+    supabase.from("extracted_questions").select(sel).eq("topic_id", topicId).limit(500),
+    topicName
+      ? supabase
+          .from("extracted_questions")
+          .select(sel)
+          .is("topic_id", null)
+          .ilike("detected_topic_name", topicName)
+          .limit(500)
+      : Promise.resolve({ data: [] as unknown[] }),
+  ]);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  for (const q of ([...(byId.data ?? []), ...((byName.data as any[]) ?? [])] as any[])) {
+    const r = q.resource ?? {};
+    const src =
+      [r.school || r.title, [r.paper_type, r.year].filter(Boolean).join(" ")]
+        .filter(Boolean)
+        .join(" · ") || null;
+    out.push({ n: 0, stem: q.stem, marks: q.marks ?? null, answer: null, source: src });
+  }
+
+  out.forEach((q, i) => (q.n = i + 1));
+  return { topicName, subject, questions: out };
+}
+
 export type AdminAnalytics = {
   totalStudents: number;
   activeThisWeek: number;

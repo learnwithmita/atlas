@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Printer } from "lucide-react";
 import type { BankQuestion } from "@/lib/data";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
@@ -11,12 +11,14 @@ export function TopicQuestions({
   questions,
   backHref,
   builder,
+  printHref,
 }: {
   topicName: string;
   subject: string;
   questions: BankQuestion[];
   backHref: string;
   builder?: React.ReactNode;
+  printHref?: string;
 }) {
   const generated = questions.filter((q) => q.origin === "generated");
   const bank = questions.filter((q) => q.origin === "bank");
@@ -37,6 +39,22 @@ export function TopicQuestions({
           {questions.length} questions · {generated.length} AI bank ·{" "}
           {bank.length} curated · {extracted.length} from papers
         </p>
+        {printHref && questions.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2 mt-3">
+            <Link
+              href={printHref}
+              className="inline-flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-full border border-hairline text-ink-2 hover:border-accent hover:text-accent"
+            >
+              <Printer size={14} /> Print questions
+            </Link>
+            <Link
+              href={`${printHref}?answers=1`}
+              className="inline-flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-full border border-hairline text-ink-2 hover:border-accent hover:text-accent"
+            >
+              <Printer size={14} /> Print with answers
+            </Link>
+          </div>
+        )}
       </header>
 
       {builder}

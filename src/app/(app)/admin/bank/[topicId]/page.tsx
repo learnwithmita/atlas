@@ -22,6 +22,7 @@ export default async function AdminBankTopicPage({
       questions={questions}
       backHref="/admin/bank"
       builder={<BankBuilder topicId={topicId} count={counts.get(topicId) ?? 0} />}
+      printHref={`/admin/bank/${topicId}/print`}
     />
   );
 }
