@@ -149,6 +149,57 @@ export async function recordActivity(xp = 10, minutes = 1) {
   return { ok: true };
 }
 
+// ── Curriculum editing (admin) ───────────────────────────────────────────────
+// RLS (content_admin_*) means only an admin's calls actually mutate rows.
+
+async function adminMutate(
+  fn: (
+    supabase: Awaited<ReturnType<typeof createClient>>
+  ) => PromiseLike<{ error: { message: string } | null }>
+): Promise<{ error?: string; ok?: boolean }> {
+  if (!isSupabaseConfigured) return { error: "Supabase not connected." };
+  const supabase = await createClient();
+  const { error } = await fn(supabase);
+  if (error) return { error: error.message };
+  revalidatePath("/admin/curriculum");
+  revalidatePath("/admin/syllabus");
+  return { ok: true };
+}
+
+/** Delete a whole subject/syllabus (cascades to topics, subtopics, outcomes). */
+export async function deleteCurriculumSubject(id: string) {
+  return adminMutate(async (s) => {
+    await s.from("syllabuses").delete().eq("subject_id", id);
+    return s.from("subjects").delete().eq("id", id);
+  });
+}
+
+export async function deleteCurriculumTopic(id: string) {
+  return adminMutate((s) => s.from("topics").delete().eq("id", id));
+}
+
+export async function deleteCurriculumSubtopic(id: string) {
+  return adminMutate((s) => s.from("subtopics").delete().eq("id", id));
+}
+
+export async function deleteCurriculumOutcome(id: string) {
+  return adminMutate((s) => s.from("learning_outcomes").delete().eq("id", id));
+}
+
+export async function renameCurriculumTopic(id: string, name: string) {
+  const n = name.trim();
+  if (!n) return { error: "Enter a name." };
+  return adminMutate((s) => s.from("topics").update({ name: n }).eq("id", id));
+}
+
+export async function updateCurriculumOutcome(id: string, statement: string) {
+  const n = statement.trim();
+  if (!n) return { error: "Enter the outcome text." };
+  return adminMutate((s) =>
+    s.from("learning_outcomes").update({ statement: n }).eq("id", id)
+  );
+}
+
 // ── Account / profile ────────────────────────────────────────────────────────
 
 /** Update the signed-in user's display name. */

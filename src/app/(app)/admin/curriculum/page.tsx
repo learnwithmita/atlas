@@ -1,5 +1,5 @@
 import { getFullCurriculum } from "@/lib/data";
-import { CurriculumTree } from "@/components/curriculum/CurriculumTree";
+import { CurriculumEditor } from "@/components/curriculum/CurriculumEditor";
 
 export const metadata = { title: "Curriculum · Atlas Admin" };
 export const dynamic = "force-dynamic";
@@ -12,11 +12,12 @@ export default async function AdminCurriculumPage() {
         <p className="text-sm text-ink-3">Platform</p>
         <h1 className="text-3xl font-semibold text-ink mt-1">Curriculum</h1>
         <p className="text-ink-2 mt-1">
-          The SEAB syllabus spine powering the app. Every question and lesson
-          maps to a learning outcome here.
+          The SEAB syllabus spine powering the app. Rename or delete topics and
+          outcomes, or remove a whole syllabus — e.g. strip the Physics topics
+          that came in with Combined Science, or retire the old O-Level subject.
         </p>
       </header>
-      <CurriculumTree subjects={subjects} />
+      <CurriculumEditor subjects={subjects} />
     </div>
   );
 }
