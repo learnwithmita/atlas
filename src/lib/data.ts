@@ -1007,6 +1007,65 @@ export async function getTopicQuestions(
   };
 }
 
+export type TopicStudio = {
+  topicName: string;
+  subject: string;
+  outcomeCount: number;
+  flashcardCount: number; // shared cards
+  hasNotes: boolean;
+  firstSubtopicId: string | null;
+};
+
+/** Study-content status for a topic (admin studio). */
+export async function getTopicStudio(topicId: string): Promise<TopicStudio> {
+  const empty = {
+    topicName: "",
+    subject: "",
+    outcomeCount: 0,
+    flashcardCount: 0,
+    hasNotes: false,
+    firstSubtopicId: null,
+  };
+  if (!isSupabaseConfigured) return empty;
+  const supabase = await createClient();
+
+  const { data: topic } = await supabase
+    .from("topics")
+    .select("name, subject:subjects(name), subtopics(id, learning_outcomes(id))")
+    .eq("id", topicId)
+    .single();
+  if (!topic) return empty;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const subs = ((topic as any).subtopics ?? []) as any[];
+  const subIds = subs.map((s) => s.id);
+  const outcomeCount = subs.reduce((n, s) => n + (s.learning_outcomes?.length ?? 0), 0);
+
+  let flashcardCount = 0;
+  if (subIds.length) {
+    const { count } = await supabase
+      .from("flashcards")
+      .select("id", { count: "exact", head: true })
+      .in("subtopic_id", subIds)
+      .is("created_by", null);
+    flashcardCount = count ?? 0;
+  }
+  const { data: notes } = await supabase
+    .from("topic_notes")
+    .select("topic_id")
+    .eq("topic_id", topicId)
+    .maybeSingle();
+
+  return {
+    topicName: topic.name,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    subject: (topic as any).subject?.name ?? "",
+    outcomeCount,
+    flashcardCount,
+    hasNotes: !!notes,
+    firstSubtopicId: subIds[0] ?? null,
+  };
+}
+
 export type PrintableQuestion = {
   n: number;
   stem: string;

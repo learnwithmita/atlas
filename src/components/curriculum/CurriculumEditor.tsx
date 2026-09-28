@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Check, ChevronRight, Pencil, Trash2, X } from "lucide-react";
+import { Check, ChevronRight, Pencil, Sparkles, Trash2, X } from "lucide-react";
 import type { CurriculumSubject } from "@/lib/data";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
@@ -110,6 +111,15 @@ export function CurriculumEditor({ subjects }: { subjects: CurriculumSubject[] }
                         <span className="text-xs text-ink-3 tabular-nums mr-1">
                           {topic.outcomeCount} outcomes
                         </span>
+                        <Link
+                          href={`/admin/studio/${topic.id}`}
+                          onClick={(e) => e.stopPropagation()}
+                          className="p-1 text-ink-3 hover:text-accent inline-flex items-center gap-1 text-xs"
+                          aria-label="Study content"
+                          title="Flashcards & notes"
+                        >
+                          <Sparkles size={14} /> Content
+                        </Link>
                         <button
                           onClick={(e) => {
                             e.preventDefault();
