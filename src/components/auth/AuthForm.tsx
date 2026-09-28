@@ -43,11 +43,10 @@ export function AuthForm({ mode }: { mode: "signin" | "signup" }) {
 
           <div>
             <p className="text-xs font-medium text-ink-3 mb-2 px-1">I am a…</p>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 gap-2">
               {[
                 { v: "student", label: "Student" },
                 { v: "tutor", label: "Tutor" },
-                { v: "admin", label: "Admin" },
               ].map((o) => (
                 <button
                   key={o.v}

@@ -50,7 +50,10 @@ export async function signUp(
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
   const fullName = String(formData.get("full_name") ?? "").trim();
-  const role = String(formData.get("role") ?? "student");
+  // Public signup may only create students or tutors. Admins are promoted
+  // manually (SQL) — never self-assigned, since admin RLS reads all data.
+  const requested = String(formData.get("role") ?? "student");
+  const role = requested === "tutor" ? "tutor" : "student";
 
   if (password.length < 8) {
     return { error: "Use at least 8 characters for your password." };
@@ -71,7 +74,7 @@ export async function signUp(
         "Account created. Check your email to confirm, then sign in. (Tip: for testing, disable email confirmation in Supabase → Auth → Providers → Email.)",
     };
   }
-  redirect(role === "admin" ? "/admin" : role === "tutor" ? "/teach" : "/learn");
+  redirect(role === "tutor" ? "/teach" : "/learn");
 }
 
 export async function signOut() {

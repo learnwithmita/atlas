@@ -61,7 +61,8 @@ setup message) so you can browse the UI. Add the keys below to make it live.
    9. `supabase/migrations/0009_practice_log.sql` (practice review history)
    10. `supabase/migrations/0010_paper_attribution.sql` (paper provenance)
    11. `supabase/migrations/0011_notes.sql` (topic notes + editable student notes)
-   12. `supabase/seed.sql` (SEAB content + flashcards + cloze items)
+   12. `supabase/migrations/0012_lock_admin_signup.sql` (security: no self-serve admin)
+   13. `supabase/seed.sql` (SEAB content + flashcards + cloze items)
 4. **Auth → Providers → Email**: for easy testing, turn **off** "Confirm email"
    so signup logs you straight in.
 
