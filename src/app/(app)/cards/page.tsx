@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Layers } from "lucide-react";
+import { Layers, Printer } from "lucide-react";
 import { getFlashcardDecks, getFullCurriculum } from "@/lib/data";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
@@ -45,8 +45,8 @@ export default async function CardsPage() {
       ) : (
         <div className="grid sm:grid-cols-2 gap-4">
           {decks.map((d) => (
-            <Link key={d.subtopicId} href={`/cards/${d.subtopicId}`} className="group">
-              <Card className="p-5 h-full hover:border-accent transition-colors">
+            <Card key={d.subtopicId} className="p-5 h-full hover:border-accent transition-colors">
+              <Link href={`/cards/${d.subtopicId}`} className="block group">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <p className="font-semibold text-ink">{d.subtopicName}</p>
@@ -60,9 +60,17 @@ export default async function CardsPage() {
                     <Badge tone="mint">done</Badge>
                   )}
                 </div>
-                <p className="text-sm text-ink-3 mt-4">{d.total} cards</p>
-              </Card>
-            </Link>
+              </Link>
+              <div className="flex items-center justify-between mt-4">
+                <span className="text-sm text-ink-3">{d.total} cards</span>
+                <Link
+                  href={`/cards/${d.subtopicId}/print`}
+                  className="inline-flex items-center gap-1 text-sm text-ink-3 hover:text-accent"
+                >
+                  <Printer size={14} /> Print
+                </Link>
+              </div>
+            </Card>
           ))}
         </div>
       )}

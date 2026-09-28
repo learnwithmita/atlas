@@ -28,7 +28,7 @@ export async function POST(req: Request) {
   const outcomes = ((st as any).learning_outcomes ?? []).map((o: any) => o.statement);
 
   try {
-    const cards = await generateFlashcards(st.name, outcomes, 8);
+    const cards = await generateFlashcards(st.name, outcomes, 12);
     if (cards.length === 0) {
       return NextResponse.json({ error: "No cards generated. Try again." }, { status: 502 });
     }

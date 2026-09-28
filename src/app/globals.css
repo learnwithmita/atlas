@@ -132,6 +132,25 @@ h3 {
   background-clip: content-box;
 }
 
+/* Print: hide app chrome so a flashcard sheet prints / exports to PDF cleanly */
+@media print {
+  aside,
+  header,
+  nav,
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: #fff;
+  }
+  main {
+    padding: 0 !important;
+  }
+  .print-sheet {
+    display: block !important;
+  }
+}
+
 @keyframes fade-up {
   from {
     opacity: 0;

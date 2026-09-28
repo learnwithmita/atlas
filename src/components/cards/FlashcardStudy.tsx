@@ -11,9 +11,8 @@ import { cn } from "@/lib/utils";
 
 const GRADES = [
   { g: "again", label: "Again", cls: "bg-danger text-white" },
-  { g: "hard", label: "Hard", cls: "bg-flame text-white" },
-  { g: "good", label: "Good", cls: "bg-accent text-white" },
-  { g: "easy", label: "Easy", cls: "bg-mint text-white" },
+  { g: "good", label: "Unsure", cls: "bg-flame text-white" },
+  { g: "easy", label: "Confident", cls: "bg-mint text-white" },
 ] as const;
 
 export function FlashcardStudy({
@@ -93,7 +92,7 @@ export function FlashcardStudy({
       </button>
 
       {flipped ? (
-        <div className="grid grid-cols-4 gap-2 mt-6">
+        <div className="grid grid-cols-3 gap-2 mt-6">
           {GRADES.map((g) => (
             <button
               key={g.g}

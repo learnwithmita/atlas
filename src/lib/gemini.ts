@@ -245,10 +245,13 @@ export async function generateFlashcards(
 ): Promise<GeneratedCard[]> {
   if (!isGeminiConfigured) throw new Error("GEMINI_API_KEY missing");
 
-  const prompt = `Create ${count} concise exam-revision flashcards for the SEAB O-Level topic "${subtopicName}".
-${outcomes.length ? `Cover these learning outcomes:\n${outcomes.map((o) => `- ${o}`).join("\n")}` : ""}
+  const prompt = `Create ${count} exam-revision flashcards for the SEAB "${subtopicName}" topic, in the style of Quizlet definition cards.
+${outcomes.length ? `Base them on these learning outcomes:\n${outcomes.map((o) => `- ${o}`).join("\n")}` : ""}
 
-Rules: front = a short recall question or key term; back = the precise SEAB-keyword answer a student must know. Use British spelling. Write any maths/chemistry in LaTeX ($...$, and $\\ce{...}$ for formulae).`;
+Rules:
+- FRONT = a key TERM, structure, definition prompt or short recall question (e.g. an organelle name, "Define diffusion", a keyword). BACK = the precise SEAB-keyword answer/definition/function a student must know.
+- Prefer term→definition and structure→function pairs (e.g. front "Mitochondrion" / back "Site of aerobic respiration; releases energy for the cell"). Cover every important term, structure, definition and process in the topic.
+- Keep each side short and exam-precise. British spelling. Maths/chemistry in LaTeX ($...$, $\\ce{...}$).`;
 
   const res = await client().models.generateContent({
     model: CHAT_MODEL,
