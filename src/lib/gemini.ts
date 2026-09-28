@@ -575,6 +575,61 @@ Return only the questions.`;
 
 // ── Question bank: generate questions WITH their mark schemes ─────────────────
 
+export type QuestionAnswer = { modelAnswer: string; points: string[] };
+
+/**
+ * Generate model answers + mark-scheme points for a batch of questions (e.g.
+ * questions extracted from a paper that have no stored answer). Returns one
+ * answer per input question, in order.
+ */
+export async function generateAnswersForQuestions(
+  items: { stem: string; marks: number }[],
+  subject: string
+): Promise<QuestionAnswer[]> {
+  if (!isGeminiConfigured) throw new Error("GEMINI_API_KEY missing");
+  if (items.length === 0) return [];
+
+  const prompt = `You are a Singapore SEAB ${subject} teacher writing an answer key. For each question below, give a concise full-marks model answer and the mark-scheme points (one per mark). Use British spelling; write maths/chemistry in LaTeX ($...$, $\\ce{...}$).
+
+Questions:
+${items.map((q, i) => `${i + 1}. (${q.marks} mark${q.marks === 1 ? "" : "s"}) ${q.stem}`).join("\n\n")}
+
+Return an array with exactly ${items.length} entries, in the same order.`;
+
+  const res = await genContent({
+    model: MARK_MODEL,
+    contents: prompt,
+    config: {
+      temperature: 0.2,
+      maxOutputTokens: 32768,
+      responseMimeType: "application/json",
+      responseSchema: {
+        type: Type.ARRAY,
+        items: {
+          type: Type.OBJECT,
+          properties: {
+            modelAnswer: { type: Type.STRING },
+            points: { type: Type.ARRAY, items: { type: Type.STRING } },
+          },
+          required: ["modelAnswer"],
+        },
+      },
+    },
+  });
+
+  try {
+    const parsed = JSON.parse(res.text ?? "[]");
+    if (!Array.isArray(parsed)) return [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return parsed.map((a: any) => ({
+      modelAnswer: String(a.modelAnswer ?? ""),
+      points: Array.isArray(a.points) ? a.points.map(String) : [],
+    }));
+  } catch {
+    return [];
+  }
+}
+
 export type SchemePoint = { point: string; keywords: string[] };
 export type BankQuestionGen = {
   stem: string;

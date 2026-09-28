@@ -1,6 +1,7 @@
 import { getBankCounts, getTopicQuestions } from "@/lib/data";
 import { TopicQuestions } from "@/components/curriculum/TopicQuestions";
 import { BankBuilder } from "@/components/curriculum/BankBuilder";
+import { GenerateAnswers } from "@/components/curriculum/GenerateAnswers";
 
 export const metadata = { title: "Topic · Atlas Admin" };
 export const dynamic = "force-dynamic";
@@ -21,7 +22,12 @@ export default async function AdminBankTopicPage({
       subject={subject}
       questions={questions}
       backHref="/admin/bank"
-      builder={<BankBuilder topicId={topicId} count={counts.get(topicId) ?? 0} />}
+      builder={
+        <>
+          <BankBuilder topicId={topicId} count={counts.get(topicId) ?? 0} />
+          <GenerateAnswers topicId={topicId} />
+        </>
+      }
       printHref={`/admin/bank/${topicId}/print`}
     />
   );

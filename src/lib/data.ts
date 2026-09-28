@@ -984,7 +984,7 @@ export type BankQuestion = {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function fetchExtractedForTopic(supabase: any, topicId: string, topicName: string): Promise<any[]> {
   const full =
-    "id, stem, marks, type, command_words, question_number, resource:resources(school, year, paper_type, title)";
+    "id, stem, marks, type, command_words, question_number, model_answer, mark_scheme, resource:resources(school, year, paper_type, title)";
   const basic = "id, stem, marks, type, command_words, question_number";
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const run = async (sel: string) => {
@@ -1076,6 +1076,9 @@ export async function getTopicQuestions(
       [r.school || r.title, [r.paper_type, r.year].filter(Boolean).join(" "), q.question_number ? `Q${q.question_number}` : ""]
         .filter(Boolean)
         .join(" · ") || null;
+    const points = Array.isArray(q.mark_scheme) ? q.mark_scheme : [];
+    const schemeText = points.map((p: string) => `• ${p}`).join("\n");
+    const answer = [q.model_answer, schemeText].filter(Boolean).join("\n\n") || null;
     return {
       id: q.id,
       stem: q.stem,
@@ -1084,7 +1087,7 @@ export async function getTopicQuestions(
       commandWords: q.command_words ?? [],
       origin: "extracted" as const,
       source: src,
-      answer: null,
+      answer,
     };
   });
 
@@ -1198,7 +1201,8 @@ export async function getPrintableQuestions(
 
   // Extracted paper questions (no stored answer) — matched by id or name.
   // Tolerate the 0010 provenance columns not existing yet.
-  const pFull = "stem, marks, question_number, resource:resources(school, year, paper_type, title)";
+  const pFull =
+    "stem, marks, question_number, model_answer, mark_scheme, resource:resources(school, year, paper_type, title)";
   const pBasic = "stem, marks, question_number";
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const pRun = async (sel: string) => {
@@ -1219,7 +1223,10 @@ export async function getPrintableQuestions(
       [r.school || r.title, [r.paper_type, r.year].filter(Boolean).join(" ")]
         .filter(Boolean)
         .join(" · ") || null;
-    out.push({ n: 0, stem: q.stem, marks: q.marks ?? null, answer: null, source: src });
+    const points = Array.isArray(q.mark_scheme) ? q.mark_scheme : [];
+    const schemeText = points.map((p: string) => `• ${p}`).join("\n");
+    const answer = [q.model_answer, schemeText].filter(Boolean).join("\n\n") || null;
+    out.push({ n: 0, stem: q.stem, marks: q.marks ?? null, answer, source: src });
   }
 
   out.forEach((q, i) => (q.n = i + 1));

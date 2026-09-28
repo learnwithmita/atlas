@@ -69,7 +69,8 @@ setup message) so you can browse the UI. Add the keys below to make it live.
    16. `supabase/migrations/0016_tutor_insights.sql` (tutor weak-area aggregates)
    17. `supabase/migrations/0017_flashcard_images.sql` (flashcard diagrams + image bucket)
    18. `supabase/migrations/0018_topic_discipline.sql` (Combined Science → Bio/Chem split)
-   19. `supabase/seed.sql` (SEAB content + flashcards + cloze items)
+   19. `supabase/migrations/0019_extracted_answers.sql` (answers for paper questions)
+   20. `supabase/seed.sql` (SEAB content + flashcards + cloze items)
 4. **Auth → Providers → Email**: for easy testing, turn **off** "Confirm email"
    so signup logs you straight in.
 
