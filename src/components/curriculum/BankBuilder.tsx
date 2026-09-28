@@ -17,6 +17,9 @@ export function BankBuilder({ topicId, count }: { topicId: string; count: number
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [n, setN] = useState(20);
+  // Track the count locally so it updates instantly after building, regardless
+  // of when the server component re-renders.
+  const [liveCount, setLiveCount] = useState(count);
 
   async function build() {
     setBusy(true);
@@ -30,7 +33,12 @@ export function BankBuilder({ topicId, count }: { topicId: string; count: number
       });
       const data = await res.json();
       if (res.ok) {
-        setMsg(`Added ${data.added} questions to the bank.`);
+        setLiveCount((c) => c + (data.added ?? 0));
+        setMsg(
+          data.added > 0
+            ? `Added ${data.added} questions to the bank.`
+            : "No questions were added — Gemini may be busy. Try again in a moment."
+        );
         router.refresh();
       } else setErr(data.error ?? "Couldn't build the bank.");
     } catch {
@@ -47,8 +55,9 @@ export function BankBuilder({ topicId, count }: { topicId: string; count: number
         <h2 className="text-lg font-semibold text-ink">Reusable question bank</h2>
       </div>
       <p className="text-sm text-ink-2 mb-4">
-        <strong className="text-ink tabular-nums">{count}</strong> AI questions
-        stored for this topic (each with its own mark scheme). Students draw from
+        <strong className="text-ink tabular-nums">{liveCount}</strong> AI
+        questions stored for this topic (each with its own mark scheme). Students
+        draw from
         these instead of generating fresh ones — so they&apos;re written once and
         reused, not re-billed per student.
       </p>
