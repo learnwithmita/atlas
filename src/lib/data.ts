@@ -460,7 +460,7 @@ export async function getQuestionBank(): Promise<BankTopic[]> {
 
   const [{ data: topics }, { data: bankQ }, { data: genQ }, { data: exQ }] =
     await Promise.all([
-      supabase.from("topics").select("id, name, sort_order, subject:subjects(name)").order("sort_order"),
+      supabase.from("topics").select("id, name, sort_order, discipline, subject:subjects(name)").order("sort_order"),
       supabase.from("questions").select("id, subtopic:subtopics(topic_id)"),
       supabase.from("generated_questions").select("topic_id").limit(10000),
       supabase.from("extracted_questions").select("topic_id, detected_topic_name").limit(10000),
@@ -492,11 +492,21 @@ export async function getQuestionBank(): Promise<BankTopic[]> {
     if (tid) exByTopic.set(tid, (exByTopic.get(tid) ?? 0) + 1);
   }
 
+  // For Combined Science, present tagged topics under "Science (Biology)" /
+  // "Science (Chemistry)" so the two disciplines are browsable separately.
+  const displaySubject = (subjectName: string, discipline: string | null) => {
+    if (subjectName.toLowerCase().includes("combined") && discipline) {
+      const label = discipline.charAt(0).toUpperCase() + discipline.slice(1);
+      return `Science (${label})`;
+    }
+    return subjectName;
+  };
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return (topics ?? []).map((t: any) => ({
     topicId: t.id,
     topicName: t.name,
-    subject: t.subject?.name ?? "",
+    subject: displaySubject(t.subject?.name ?? "", t.discipline ?? null),
     bankCount: bankByTopic.get(t.id) ?? 0,
     extractedCount: exByTopic.get(t.id) ?? 0,
   }));
@@ -699,7 +709,7 @@ export async function getAssignment(id: string): Promise<AssignmentDetail | null
 
 export type CurriculumOutcome = { id: string; code: string | null; statement: string; frequency: number };
 export type CurriculumSubtopic = { id: string; name: string; outcomes: CurriculumOutcome[] };
-export type CurriculumTopic = { id: string; name: string; subtopics: CurriculumSubtopic[]; outcomeCount: number };
+export type CurriculumTopic = { id: string; name: string; subtopics: CurriculumSubtopic[]; outcomeCount: number; discipline: string | null };
 export type CurriculumSubject = { id: string; name: string; code: string | null; topics: CurriculumTopic[] };
 
 /** Full curriculum tree for the admin browser. */
@@ -710,7 +720,7 @@ export async function getFullCurriculum(): Promise<CurriculumSubject[]> {
   const [{ data: subjects }, { data: topics }, { data: subtopics }, { data: outcomes }] =
     await Promise.all([
       supabase.from("subjects").select("id, name, syllabus_code, sort_order").order("sort_order"),
-      supabase.from("topics").select("id, subject_id, name, sort_order").order("sort_order"),
+      supabase.from("topics").select("id, subject_id, name, sort_order, discipline").order("sort_order"),
       supabase.from("subtopics").select("id, topic_id, name, sort_order").order("sort_order"),
       supabase.from("learning_outcomes").select("id, subtopic_id, code, statement, frequency_score"),
     ]);
@@ -737,6 +747,7 @@ export async function getFullCurriculum(): Promise<CurriculumSubject[]> {
       name: t.name,
       subtopics: sts,
       outcomeCount: sts.reduce((n, s) => n + s.outcomes.length, 0),
+      discipline: t.discipline ?? null,
     });
     topicsBySubject.set(t.subject_id, list);
   }

@@ -14,6 +14,7 @@ import {
   deleteCurriculumSubtopic,
   deleteCurriculumTopic,
   renameCurriculumTopic,
+  setTopicDiscipline,
   updateCurriculumOutcome,
 } from "@/app/(app)/actions";
 
@@ -52,6 +53,7 @@ export function CurriculumEditor({ subjects }: { subjects: CurriculumSubject[] }
     <div className="space-y-6">
       {subjects.map((subject) => {
         const outcomes = subject.topics.reduce((n, t) => n + t.outcomeCount, 0);
+        const isCombined = subject.name.toLowerCase().includes("combined");
         return (
           <Card key={subject.id} className="p-6">
             <div className="flex items-center justify-between gap-3 mb-1">
@@ -111,6 +113,22 @@ export function CurriculumEditor({ subjects }: { subjects: CurriculumSubject[] }
                         <span className="text-xs text-ink-3 tabular-nums mr-1">
                           {topic.outcomeCount} outcomes
                         </span>
+                        {isCombined && (
+                          <select
+                            value={topic.discipline ?? ""}
+                            onClick={(e) => e.preventDefault()}
+                            onChange={(e) =>
+                              run(() => setTopicDiscipline(topic.id, e.target.value))
+                            }
+                            className="text-xs rounded-lg bg-surface-2 border border-hairline px-1.5 py-1 text-ink-2"
+                            title="Discipline"
+                          >
+                            <option value="">— discipline</option>
+                            <option value="biology">Biology</option>
+                            <option value="chemistry">Chemistry</option>
+                            <option value="physics">Physics</option>
+                          </select>
+                        )}
                         <Link
                           href={`/admin/studio/${topic.id}`}
                           onClick={(e) => e.stopPropagation()}

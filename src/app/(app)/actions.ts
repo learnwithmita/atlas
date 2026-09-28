@@ -192,6 +192,13 @@ export async function renameCurriculumTopic(id: string, name: string) {
   return adminMutate((s) => s.from("topics").update({ name: n }).eq("id", id));
 }
 
+/** Tag a topic's discipline (biology/chemistry/physics) — used to split
+ *  Combined Science into "Science (Biology)" / "Science (Chemistry)". */
+export async function setTopicDiscipline(id: string, discipline: string) {
+  const d = ["biology", "chemistry", "physics"].includes(discipline) ? discipline : null;
+  return adminMutate((s) => s.from("topics").update({ discipline: d }).eq("id", id));
+}
+
 export async function updateCurriculumOutcome(id: string, statement: string) {
   const n = statement.trim();
   if (!n) return { error: "Enter the outcome text." };
