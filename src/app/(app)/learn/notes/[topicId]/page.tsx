@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, PenLine } from "lucide-react";
+import { ArrowLeft, PenLine, Printer } from "lucide-react";
 import { getTopicNotes } from "@/lib/data";
 import { NotesView } from "@/components/notes/NotesView";
 import { LinkButton } from "@/components/ui/Button";
@@ -31,9 +31,14 @@ export default async function TopicNotesPage({
           <h1 className="text-3xl font-semibold text-ink mt-1">{data.topicName}</h1>
           <p className="text-ink-2 mt-1">Revision notes for this topic.</p>
         </div>
-        <LinkButton href={`/practice/topic/${topicId}`} size="sm" variant="secondary">
-          <PenLine size={15} /> Practise
-        </LinkButton>
+        <div className="flex items-center gap-2 shrink-0">
+          <LinkButton href={`/learn/notes/${topicId}/print`} size="sm" variant="secondary">
+            <Printer size={15} /> Print
+          </LinkButton>
+          <LinkButton href={`/practice/topic/${topicId}`} size="sm" variant="secondary">
+            <PenLine size={15} /> Practise
+          </LinkButton>
+        </div>
       </header>
       <NotesView topicId={topicId} data={data} />
     </div>
