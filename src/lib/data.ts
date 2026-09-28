@@ -941,6 +941,7 @@ export type BankQuestion = {
   commandWords: string[];
   origin: "bank" | "extracted" | "generated";
   source: string | null; // for extracted: "School · Type Year · Q3"
+  answer: string | null; // model answer / mark scheme (AI bank only)
 };
 
 export async function getTopicQuestions(
@@ -973,25 +974,32 @@ export async function getTopicQuestions(
       commandWords: q.command_words ?? [],
       origin: "bank" as const,
       source: null,
+      answer: null,
     }));
   }
 
-  // AI question bank for this topic (reusable generated questions).
+  // AI question bank for this topic (reusable generated questions + schemes).
   const { data: genRows } = await supabase
     .from("generated_questions")
-    .select("id, stem, marks, type, command_words")
+    .select("id, stem, marks, type, command_words, model_answer, mark_scheme")
     .eq("topic_id", topicId)
     .limit(300);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const genQ: BankQuestion[] = (genRows ?? []).map((q: any) => ({
-    id: q.id,
-    stem: q.stem,
-    marks: q.marks,
-    type: q.type,
-    commandWords: q.command_words ?? [],
-    origin: "generated" as const,
-    source: null,
-  }));
+  const genQ: BankQuestion[] = (genRows ?? []).map((q: any) => {
+    const scheme = Array.isArray(q.mark_scheme) ? q.mark_scheme : [];
+    const schemeText = scheme.map((p: { point: string }) => `• ${p.point}`).join("\n");
+    const answer = [q.model_answer, schemeText].filter(Boolean).join("\n\n") || null;
+    return {
+      id: q.id,
+      stem: q.stem,
+      marks: q.marks,
+      type: q.type,
+      commandWords: q.command_words ?? [],
+      origin: "generated" as const,
+      source: null,
+      answer,
+    };
+  });
 
   // Extracted questions: matched by topic_id, plus (for older rows extracted
   // before the syllabus existed, so topic_id is null) by the detected topic
@@ -1026,6 +1034,7 @@ export async function getTopicQuestions(
       commandWords: q.command_words ?? [],
       origin: "extracted" as const,
       source: src,
+      answer: null,
     };
   });
 

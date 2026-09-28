@@ -4,6 +4,7 @@ import type { BankQuestion } from "@/lib/data";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { MathText } from "@/components/ui/MathText";
+import { AnswerReveal } from "@/components/curriculum/AnswerReveal";
 
 export function TopicQuestions({
   topicName,
@@ -103,6 +104,7 @@ export function TopicQuestions({
                   {q.source && (
                     <p className="text-xs text-ink-3 mt-1.5">Adapted from {q.source}</p>
                   )}
+                  {q.answer && <AnswerReveal answer={q.answer} />}
                 </div>
               </div>
             </Card>
