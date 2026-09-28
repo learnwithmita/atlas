@@ -19,12 +19,14 @@ export function TopicalPractice({
   count?: number;
 }) {
   const [questions, setQuestions] = useState<GenQuestion[] | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   const generate = useCallback(async () => {
     setLoading(true);
     setError(null);
+    setNotice(null);
     setQuestions(null);
     try {
       const res = await fetch("/api/paper/generate", {
@@ -33,8 +35,10 @@ export function TopicalPractice({
         body: JSON.stringify({ topicIds: [topicId], count }),
       });
       const data = await res.json();
-      if (res.ok) setQuestions(data.questions);
-      else setError(data.error ?? "Couldn't generate questions.");
+      if (res.ok) {
+        setQuestions(data.questions);
+        setNotice(data.notice ?? null);
+      } else setError(data.error ?? "Couldn't generate questions.");
     } catch {
       setError("Network error.");
     } finally {
@@ -84,7 +88,14 @@ export function TopicalPractice({
         </div>
       )}
       {questions && !loading && (
-        <GeneratedPracticeSession questions={questions} onRegenerate={generate} />
+        <>
+          {notice && (
+            <div className="mb-5 rounded-[14px] border border-hairline bg-surface-2 px-4 py-3 text-sm text-ink-2">
+              {notice}
+            </div>
+          )}
+          <GeneratedPracticeSession questions={questions} onRegenerate={generate} />
+        </>
       )}
     </div>
   );

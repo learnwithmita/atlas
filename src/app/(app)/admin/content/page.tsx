@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { getFullCurriculum, getResources } from "@/lib/data";
 import { Card } from "@/components/ui/Card";
 import { UploadResource } from "@/components/admin/UploadResource";
@@ -18,8 +19,12 @@ export default async function AdminContentPage() {
         <p className="text-sm text-ink-3">Platform</p>
         <h1 className="text-3xl font-semibold text-ink mt-1">Uploads</h1>
         <p className="text-ink-2 mt-1">
-          Upload the SEAB syllabus, past papers and mark schemes. Files are
-          stored privately and queued for review.
+          Upload past papers and mark schemes. Files are stored privately and
+          queued for review. To load a <strong>syllabus</strong>, use the{" "}
+          <Link href="/admin/syllabus" className="text-accent hover:underline">
+            Syllabus
+          </Link>{" "}
+          page — it builds the curriculum automatically.
         </p>
       </header>
 

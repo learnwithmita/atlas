@@ -18,6 +18,7 @@ export type GenQuestion = {
   commandWords: string[];
   topic: string;
   topicId: string | null;
+  source?: string | null;
 };
 
 type QState = { answer: string; result: MarkResult | null; marking: boolean; open: boolean };
@@ -142,6 +143,9 @@ export function GeneratedPracticeSession({
             <p className="text-[15px] text-ink mb-3">
               <MathText>{q.stem}</MathText>
             </p>
+            {q.source && (
+              <p className="text-xs text-ink-3 -mt-2 mb-3">Source: {q.source}</p>
+            )}
 
             <textarea
               value={st.answer}

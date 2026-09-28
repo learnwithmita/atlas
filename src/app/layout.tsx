@@ -5,7 +5,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Atlas — Your AI Science Tutor",
   description:
-    "A personal Biology & Chemistry tutor built on the SEAB syllabus. Marks like an examiner, adapts to what you keep getting wrong.",
+    "A personal Biology & Chemistry tutor built on the SEAB syllabus. Marks every answer against the mark scheme and adapts to what you keep getting wrong.",
   metadataBase: new URL("https://atlas.sg"),
 };
 

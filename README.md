@@ -2,8 +2,9 @@
 
 > Adaptive Tutoring & Learning for Applied Science · Biology & Chemistry (G3 first)
 
-A personal Biology & Chemistry tutor that knows the SEAB syllabus, marks like an
-examiner, and turns every mistake into an adaptive study plan. This repo is the
+A personal Biology & Chemistry tutor that knows the SEAB syllabus, marks answers
+against the syllabus mark scheme, and turns every mistake into an adaptive study
+plan. This repo is the
 first runnable slice of the [product blueprint](#whats-in-this-slice).
 
 Built with **Next.js 16 · React 19 · Tailwind v4 · Supabase · Google Gemini**.
@@ -62,7 +63,8 @@ setup message) so you can browse the UI. Add the keys below to make it live.
    10. `supabase/migrations/0010_paper_attribution.sql` (paper provenance)
    11. `supabase/migrations/0011_notes.sql` (topic notes + editable student notes)
    12. `supabase/migrations/0012_lock_admin_signup.sql` (security: no self-serve admin)
-   13. `supabase/seed.sql` (SEAB content + flashcards + cloze items)
+   13. `supabase/migrations/0013_syllabus_ingest.sql` (subject level/track + syllabus auto-ingest)
+   14. `supabase/seed.sql` (SEAB content + flashcards + cloze items)
 4. **Auth → Providers → Email**: for easy testing, turn **off** "Confirm email"
    so signup logs you straight in.
 

@@ -18,6 +18,7 @@ export function PaperBuilder({ subjects }: { subjects: CurriculumSubject[] }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [questions, setQuestions] = useState<GenQuestion[] | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
 
   const subject = useMemo(
     () => subjects.find((s) => s.id === subjectId),
@@ -44,8 +45,10 @@ export function PaperBuilder({ subjects }: { subjects: CurriculumSubject[] }) {
         body: JSON.stringify({ topicIds: [...picked], count }),
       });
       const data = await res.json();
-      if (res.ok) setQuestions(data.questions);
-      else setError(data.error ?? "Generation failed.");
+      if (res.ok) {
+        setQuestions(data.questions);
+        setNotice(data.notice ?? null);
+      } else setError(data.error ?? "Generation failed.");
     } catch {
       setError("Network error.");
     } finally {
@@ -61,9 +64,14 @@ export function PaperBuilder({ subjects }: { subjects: CurriculumSubject[] }) {
           <h1 className="text-3xl font-semibold text-ink">Your paper</h1>
           <p className="text-ink-2 mt-1">
             {questions.length} freshly generated questions. Answer each — Atlas
-            marks like an examiner.
+            marks it against the mark scheme.
           </p>
         </header>
+        {notice && (
+          <div className="mb-5 rounded-[14px] border border-hairline bg-surface-2 px-4 py-3 text-sm text-ink-2">
+            {notice}
+          </div>
+        )}
         <GeneratedPracticeSession
           questions={questions}
           onRegenerate={() => {

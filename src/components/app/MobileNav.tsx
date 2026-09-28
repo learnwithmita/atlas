@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   BarChart3,
   BookOpen,
+  GraduationCap,
   Home,
   Layers,
   Library,
@@ -32,6 +33,7 @@ export function MobileNav({
     role === "admin"
       ? [
           { href: "/admin", label: "Analytics", icon: BarChart3 },
+          { href: "/admin/syllabus", label: "Syllabus", icon: GraduationCap },
           { href: "/admin/curriculum", label: "Curriculum", icon: Library },
           { href: "/admin/content", label: "Uploads", icon: UploadCloud },
         ]

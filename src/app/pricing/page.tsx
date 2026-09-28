@@ -13,7 +13,7 @@ export default function PricingPage() {
             Cheaper than one tuition session.
           </h1>
           <p className="text-lg text-ink-2 mt-4">
-            A private examiner-grade tutor, every day of the month. Start free —
+            A private Biology & Chemistry tutor, every day of the month. Start free —
             upgrade when you feel the difference.
           </p>
         </div>

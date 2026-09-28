@@ -28,7 +28,7 @@ export default async function AssignmentPage({
         <h1 className="text-3xl font-semibold text-ink">{assignment.title}</h1>
         <p className="text-ink-2 mt-1">
           {assignment.questions.length} questions · answer each and Atlas marks
-          it like an examiner.
+          it against the mark scheme.
         </p>
       </header>
       <AssignmentSession assignment={assignment} />

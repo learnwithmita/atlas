@@ -15,7 +15,7 @@ import { getProfile } from "@/lib/data";
 const features = [
   {
     icon: FileCheck2,
-    title: "Marks like an examiner",
+    title: "Marks against the mark scheme",
     body: "Not “right or wrong” — you scored 2/4, here's the keyword you missed and how to phrase it for the mark.",
   },
   {
@@ -69,8 +69,8 @@ export default async function Landing() {
             your syllabus by heart.
           </h1>
           <p className="mx-auto max-w-xl text-lg sm:text-xl text-ink-2 mt-6 leading-relaxed">
-            Atlas marks like an SEAB examiner, remembers every mistake you make,
-            and turns it into tomorrow&apos;s study plan.
+            Atlas marks your answers against the SEAB mark scheme, remembers
+            every mistake you make, and turns it into tomorrow&apos;s study plan.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center mt-9">
             {loggedIn ? (

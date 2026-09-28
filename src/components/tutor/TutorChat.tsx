@@ -21,7 +21,7 @@ export function TutorChat({ topic }: { topic?: string }) {
       role: "model",
       text: topic
         ? `Let's work on ${topic}. Tell me what you already understand, or ask me anything — I'll give you a hint before the full answer.`
-        : "Hi, I'm Atlas. Ask me anything in Biology or Chemistry. I'll nudge you toward the answer the way an examiner would.",
+        : "Hi, I'm Atlas. Ask me anything in Biology or Chemistry. I'll nudge you toward the answer step by step, using the syllabus mark scheme.",
     },
   ]);
   const [input, setInput] = useState("");

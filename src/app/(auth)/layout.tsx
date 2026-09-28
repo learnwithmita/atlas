@@ -25,7 +25,7 @@ export default function AuthLayout({
             The tutor that knows your syllabus by heart.
           </h2>
           <p className="mt-5 text-lg text-white/60 leading-relaxed">
-            Atlas marks like an SEAB examiner, remembers every mistake you make,
+            Atlas marks your answers against the SEAB mark scheme, remembers every mistake you make,
             and turns it into tomorrow&apos;s study plan.
           </p>
         </div>

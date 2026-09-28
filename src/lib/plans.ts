@@ -30,7 +30,7 @@ export const PLANS: Plan[] = [
     annual: 144,
     highlight: true,
     features: [
-      "Unlimited practice + examiner marking",
+      "Unlimited practice + mark-scheme marking",
       "Full adaptive study plan",
       "Unlimited AI tutor",
       "Weekly progress report",

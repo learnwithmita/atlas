@@ -676,6 +676,47 @@ export async function getResources(): Promise<ResourceRow[]> {
   }));
 }
 
+export type SyllabusRow = {
+  id: string;
+  code: string | null;
+  title: string;
+  subjectName: string | null;
+  examBody: string;
+  level: string | null;
+  track: string | null;
+  topicCount: number;
+  subtopicCount: number;
+  outcomeCount: number;
+  updatedAt: string;
+};
+
+/** Which syllabus documents have been ingested (admin overview). */
+export async function getSyllabuses(): Promise<SyllabusRow[]> {
+  if (!isSupabaseConfigured) return [];
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("syllabuses")
+    .select(
+      "id, code, title, subject_name, exam_body, level, track, topic_count, subtopic_count, outcome_count, updated_at"
+    )
+    .order("subject_name", { ascending: true })
+    .limit(100);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (data ?? []).map((r: any) => ({
+    id: r.id,
+    code: r.code,
+    title: r.title,
+    subjectName: r.subject_name,
+    examBody: r.exam_body ?? "SEAB",
+    level: r.level,
+    track: r.track,
+    topicCount: r.topic_count ?? 0,
+    subtopicCount: r.subtopic_count ?? 0,
+    outcomeCount: r.outcome_count ?? 0,
+    updatedAt: r.updated_at,
+  }));
+}
+
 export type PaperView = {
   id: string;
   title: string;
@@ -1228,6 +1269,118 @@ export async function getQuestionsForTopics(
     [mapped[i], mapped[j]] = [mapped[j], mapped[i]];
   }
   return mapped.slice(0, limit);
+}
+
+/**
+ * Backup questions for the given topics, drawn from real uploaded papers first
+ * (with provenance) and the curated bank second. Used when live AI generation
+ * is unavailable (Gemini overloaded / rate-limited) so practice never dead-ends.
+ * Returns the same shape the /api/paper/generate route emits.
+ */
+export async function getBackupExamQuestions(
+  topicIds: string[],
+  n: number
+): Promise<
+  {
+    id: string;
+    stem: string;
+    marks: number;
+    type: string;
+    commandWords: string[];
+    topic: string;
+    topicId: string | null;
+    source: string | null;
+  }[]
+> {
+  if (!isSupabaseConfigured || topicIds.length === 0) return [];
+  const supabase = await createClient();
+
+  const { data: topics } = await supabase
+    .from("topics")
+    .select("id, name")
+    .in("id", topicIds);
+  const nameById = new Map((topics ?? []).map((t) => [t.id, t.name as string]));
+
+  const { data: subs } = await supabase
+    .from("subtopics")
+    .select("id, topic_id")
+    .in("topic_id", topicIds);
+  const topicBySub = new Map((subs ?? []).map((s) => [s.id, s.topic_id as string]));
+  const subIds = (subs ?? []).map((s) => s.id);
+
+  type Backup = {
+    id: string;
+    stem: string;
+    marks: number;
+    type: string;
+    commandWords: string[];
+    topic: string;
+    topicId: string | null;
+    source: string | null;
+  };
+  const out: Backup[] = [];
+
+  // 1) Real questions from uploaded papers (richest, with attribution).
+  const { data: exRows } = await supabase
+    .from("extracted_questions")
+    .select(
+      "id, stem, marks, type, command_words, topic_id, question_number, resource:resources(school, year, paper_type, title)"
+    )
+    .in("topic_id", topicIds)
+    .limit(300);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  for (const q of (exRows ?? []) as any[]) {
+    const r = q.resource ?? {};
+    const src =
+      [
+        r.school || r.title,
+        [r.paper_type, r.year].filter(Boolean).join(" "),
+        q.question_number ? `Q${q.question_number}` : "",
+      ]
+        .filter(Boolean)
+        .join(" · ") || null;
+    out.push({
+      id: q.id,
+      stem: q.stem,
+      marks: q.marks ?? 2,
+      type: q.type ?? "structured",
+      commandWords: q.command_words ?? [],
+      topic: nameById.get(q.topic_id) ?? "",
+      topicId: q.topic_id ?? null,
+      source: src,
+    });
+  }
+
+  // 2) Curated bank questions, to top up.
+  if (subIds.length) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: bankRows } = await supabase
+      .from("questions")
+      .select("id, stem, marks, type, command_words, subtopic_id")
+      .in("subtopic_id", subIds)
+      .limit(300);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    for (const q of (bankRows ?? []) as any[]) {
+      const topicId = topicBySub.get(q.subtopic_id) ?? null;
+      out.push({
+        id: q.id,
+        stem: q.stem,
+        marks: q.marks ?? 2,
+        type: q.type ?? "structured",
+        commandWords: q.command_words ?? [],
+        topic: topicId ? nameById.get(topicId) ?? "" : "",
+        topicId,
+        source: null,
+      });
+    }
+  }
+
+  // Shuffle so a repeat visit isn't identical, then take n.
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out.slice(0, n);
 }
 
 /** Current authenticated user's profile (or null). */

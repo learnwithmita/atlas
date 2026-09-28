@@ -40,6 +40,7 @@ const tutorNav: NavItem[] = [
 
 const adminNav: NavItem[] = [
   { href: "/admin", label: "Analytics", icon: BarChart3 },
+  { href: "/admin/syllabus", label: "Syllabus", icon: GraduationCap },
   { href: "/admin/curriculum", label: "Curriculum", icon: Library },
   { href: "/admin/bank", label: "Question Bank", icon: BookOpen },
   { href: "/admin/content", label: "Uploads", icon: UploadCloud },

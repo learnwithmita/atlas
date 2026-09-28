@@ -12,6 +12,31 @@ function client() {
   return new GoogleGenAI({ apiKey: API_KEY });
 }
 
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/**
+ * Call Gemini with a short retry/backoff on transient overload (503 /
+ * UNAVAILABLE / "high demand"), which the free tier returns often. Other errors
+ * (bad key, quota, 404) fail fast — retrying them is pointless. Callers still
+ * catch the final throw and fall back to bank/paper questions.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function genContent(params: any, retries = 2): Promise<any> {
+  let attempt = 0;
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    try {
+      return await client().models.generateContent(params);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      const transient = /503|UNAVAILABLE|overloaded|high demand/i.test(msg);
+      if (!transient || attempt >= retries) throw e;
+      await sleep(700 * (attempt + 1)); // 0.7s, 1.4s
+      attempt++;
+    }
+  }
+}
+
 /** Turn a raw Gemini SDK error into a short, human message. */
 export function friendlyGeminiError(e: unknown): string {
   const msg = e instanceof Error ? e.message : String(e);
@@ -101,7 +126,7 @@ ${topicList}
 
 Do NOT copy the paper's original wording. Adapt every question.`;
 
-  const res = await client().models.generateContent({
+  const res = await genContent({
     model: CHAT_MODEL,
     contents: [
       {
@@ -171,6 +196,135 @@ Do NOT copy the paper's original wording. Adapt every question.`;
   }
 }
 
+export type SyllabusOutcome = { code: string; statement: string };
+export type SyllabusSubtopic = { name: string; outcomes: SyllabusOutcome[] };
+export type SyllabusTopic = { name: string; subtopics: SyllabusSubtopic[] };
+export type SyllabusTree = {
+  subjectName: string; // Biology | Chemistry | Combined Science
+  code: string; // e.g. K325
+  level: string; // e.g. G3
+  track: string; // Pure | Combined
+  examBody: string; // SEAB
+  topics: SyllabusTopic[];
+};
+
+/**
+ * Read an official syllabus PDF and extract its structure — the topic →
+ * subtopic → learning-outcome tree, plus the syllabus code, subject, level and
+ * track. Used by the admin "upload syllabus" flow to seed the curriculum spine.
+ */
+export async function generateSyllabusTree(
+  fileBase64: string,
+  mimeType: string
+): Promise<SyllabusTree> {
+  if (!isGeminiConfigured) throw new Error("GEMINI_API_KEY missing");
+
+  const prompt = `You are reading an official Singapore SEAB (Singapore-Cambridge) science syllabus document.
+
+Extract its full structure. Return:
+- subjectName: the science subject — exactly "Biology", "Chemistry", or "Combined Science".
+- code: the syllabus code printed on the cover (e.g. "K325", "K324", "K328"), else "".
+- level: the level as "G3", "G2" or "G1" (SEC uses G1/G2/G3). If it says O-Level, use "G3". Else "".
+- track: "Pure" for a single-subject syllabus (Biology or Chemistry on its own), or "Combined" for Combined Science.
+- examBody: "SEAB".
+- topics: the ordered list of main topics/themes in the syllabus. For each:
+  - name: the topic name as printed (e.g. "Cells and the Chemistry of Life", "The Particulate Nature of Matter").
+  - subtopics: the sub-sections under it. For each:
+    - name: the subtopic name.
+    - outcomes: the numbered learning outcomes / learning objectives listed. For each:
+      - code: the outcome reference/number as printed (e.g. "1.1", "3.2a"), else "".
+      - statement: the learning-outcome text, lightly cleaned (British spelling, maths/chemistry in LaTeX $...$ / $\\ce{...}$). Keep it faithful to the syllabus wording.
+
+Capture every topic and subtopic. If a subtopic has no explicitly numbered outcomes, return an empty outcomes array. Do not invent content that is not in the document.`;
+
+  const res = await genContent({
+    model: CHAT_MODEL,
+    contents: [
+      {
+        role: "user",
+        parts: [{ inlineData: { mimeType, data: fileBase64 } }, { text: prompt }],
+      },
+    ],
+    config: {
+      temperature: 0.2,
+      maxOutputTokens: 32768,
+      responseMimeType: "application/json",
+      responseSchema: {
+        type: Type.OBJECT,
+        properties: {
+          subjectName: { type: Type.STRING },
+          code: { type: Type.STRING },
+          level: { type: Type.STRING },
+          track: { type: Type.STRING },
+          examBody: { type: Type.STRING },
+          topics: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                name: { type: Type.STRING },
+                subtopics: {
+                  type: Type.ARRAY,
+                  items: {
+                    type: Type.OBJECT,
+                    properties: {
+                      name: { type: Type.STRING },
+                      outcomes: {
+                        type: Type.ARRAY,
+                        items: {
+                          type: Type.OBJECT,
+                          properties: {
+                            code: { type: Type.STRING },
+                            statement: { type: Type.STRING },
+                          },
+                          required: ["statement"],
+                        },
+                      },
+                    },
+                    required: ["name"],
+                  },
+                },
+              },
+              required: ["name"],
+            },
+          },
+        },
+        required: ["subjectName", "topics"],
+      },
+    },
+  });
+
+  try {
+    const p = JSON.parse(res.text ?? "{}");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const topics: SyllabusTopic[] = (p.topics ?? []).map((t: any) => ({
+      name: String(t.name ?? "").trim(),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      subtopics: (t.subtopics ?? []).map((s: any) => ({
+        name: String(s.name ?? "").trim(),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        outcomes: (s.outcomes ?? [])
+          .map((o: any) => ({
+            code: String(o.code ?? "").trim(),
+            statement: String(o.statement ?? "").trim(),
+          }))
+          .filter((o: SyllabusOutcome) => o.statement),
+      })).filter((s: SyllabusSubtopic) => s.name),
+    })).filter((t: SyllabusTopic) => t.name);
+
+    return {
+      subjectName: String(p.subjectName ?? "").trim(),
+      code: String(p.code ?? "").trim(),
+      level: String(p.level ?? "").trim(),
+      track: String(p.track ?? "").trim(),
+      examBody: String(p.examBody ?? "SEAB").trim() || "SEAB",
+      topics,
+    };
+  } catch {
+    return { subjectName: "", code: "", level: "", track: "", examBody: "SEAB", topics: [] };
+  }
+}
+
 export type TopicNotes = {
   keyPoints: string[];
   misconceptions: { claim: string; correction: string }[];
@@ -190,7 +344,7 @@ Return:
 - keyPoints: 6–10 short bullet points of the must-know facts and exam keywords (each one line, British spelling; maths/chemistry in LaTeX $...$ / $\\ce{...}$).
 - misconceptions: 3–5 common student misconceptions, each with the wrong "claim" and the "correction".`;
 
-  const res = await client().models.generateContent({
+  const res = await genContent({
     model: CHAT_MODEL,
     contents: prompt,
     config: {
@@ -253,7 +407,7 @@ Rules:
 - Prefer term→definition and structure→function pairs (e.g. front "Mitochondrion" / back "Site of aerobic respiration; releases energy for the cell"). Cover every important term, structure, definition and process in the topic.
 - Keep each side short and exam-precise. British spelling. Maths/chemistry in LaTeX ($...$, $\\ce{...}$).`;
 
-  const res = await client().models.generateContent({
+  const res = await genContent({
     model: CHAT_MODEL,
     contents: prompt,
     config: {
@@ -313,7 +467,7 @@ Rules:
 - Write any maths/chemistry in LaTeX ($...$, $\\ce{...}$).
 Return only the questions.`;
 
-  const res = await client().models.generateContent({
+  const res = await genContent({
     model: CHAT_MODEL,
     contents: prompt,
     config: {
@@ -372,7 +526,7 @@ ${outcomes.length ? `Base them on these learning outcomes:\n${outcomes.map((o) =
 
 Rules: each sentence must state a key fact and hide ONE important keyword/phrase (the answer a student must recall) by wrapping it in double braces, e.g. "Osmosis moves water across a {{partially permeable}} membrane." The "answer" field = the exact text inside the braces. Keep sentences short and unambiguous, with only ONE blank each. Use British spelling.`;
 
-  const res = await client().models.generateContent({
+  const res = await genContent({
     model: CHAT_MODEL,
     contents: prompt,
     config: {
@@ -424,7 +578,7 @@ export async function tutorReply(
     ? `${TUTOR_SYSTEM}\n\nThe student is currently studying: ${topicContext}. Prefer this context.`
     : TUTOR_SYSTEM;
 
-  const res = await client().models.generateContent({
+  const res = await genContent({
     model: CHAT_MODEL,
     contents,
     config: {
@@ -485,7 +639,7 @@ STUDENT ANSWER: "${input.studentAnswer}"
 
 Award marks like a Singapore examiner. Be specific about which marking points the student earned and which are missing. Classify the dominant error (conceptual / careless / technique / knowledge, or "none" if full marks). Provide an improved version of THE STUDENT'S OWN answer that would score full marks.`;
 
-  const res = await client().models.generateContent({
+  const res = await genContent({
     model: MARK_MODEL,
     contents: prompt,
     config: {
@@ -573,7 +727,7 @@ STUDENT ANSWER: "${input.studentAnswer}"
 
 Award marks like a Singapore examiner (one mark per valid point, up to ${input.marks}). Return: the marking points the student earned, the ones missing, the dominant error type (conceptual/careless/technique/knowledge, or "none"), a full-marks model answer, and an improved version of the student's own answer.`;
 
-  const res = await client().models.generateContent({
+  const res = await genContent({
     model: MARK_MODEL,
     contents: prompt,
     config: {

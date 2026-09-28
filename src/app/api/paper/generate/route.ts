@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { friendlyGeminiError, generateExamQuestions } from "@/lib/gemini";
+import { getBackupExamQuestions } from "@/lib/data";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -33,18 +34,36 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Pick at least one topic." }, { status: 400 });
   }
 
+  // Backup: real questions from uploaded papers + the curated bank, used
+  // whenever live generation fails or comes back empty, so practice never
+  // dead-ends when Gemini is overloaded.
+  async function backup(notice: string) {
+    const questions = await getBackupExamQuestions(topicIds ?? [], n);
+    if (questions.length === 0) return null;
+    return NextResponse.json({ questions, source: "backup", notice });
+  }
+
   try {
     const generated = await generateExamQuestions(names, n);
     if (generated.length === 0) {
+      const fb = await backup(
+        "Showing questions from your uploaded papers and bank while the AI writer is busy."
+      );
+      if (fb) return fb;
       return NextResponse.json({ error: "Couldn't generate questions. Try again." }, { status: 502 });
     }
     const questions = generated.map((q) => ({
       id: randomUUID(),
       topicId: idByName.get(q.topic.toLowerCase()) ?? null,
+      source: null,
       ...q,
     }));
-    return NextResponse.json({ questions });
+    return NextResponse.json({ questions, source: "ai" });
   } catch (e) {
+    const fb = await backup(
+      "Gemini is busy right now — these are drawn from your uploaded papers and bank. Tap “New set” in a moment for fresh AI questions."
+    );
+    if (fb) return fb;
     return NextResponse.json({ error: friendlyGeminiError(e) }, { status: 502 });
   }
 }
