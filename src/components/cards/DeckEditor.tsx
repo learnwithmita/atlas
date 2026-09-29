@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Check, ImagePlus, Loader2, Pencil, Plus, Trash2, Users, X } from "lucide-react";
+import { Check, ImagePlus, Pencil, Plus, Trash2, Users, X } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
@@ -11,6 +11,10 @@ import {
   deleteFlashcard,
   updateFlashcard,
 } from "@/app/(app)/actions";
+import {
+  ImagePromptUpload,
+  diagramPrompt,
+} from "@/components/admin/ImagePromptUpload";
 import type { EditableCard } from "@/lib/data";
 
 const field =
@@ -40,27 +44,7 @@ export function DeckEditor({
   const isTutor = role === "tutor" || role === "admin";
   const isAdmin = role === "admin";
   const classById = new Map(classrooms.map((c) => [c.id, c.name]));
-  const [imgBusy, setImgBusy] = useState<string | null>(null);
-  const [imgErr, setImgErr] = useState<string | null>(null);
-
-  async function makeDiagram(id: string) {
-    setImgBusy(id);
-    setImgErr(null);
-    try {
-      const res = await fetch("/api/flashcards/image", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ cardId: id }),
-      });
-      const data = await res.json();
-      if (res.ok) router.refresh();
-      else setImgErr(data.error ?? "Couldn't generate the diagram.");
-    } catch {
-      setImgErr("Network error.");
-    } finally {
-      setImgBusy(null);
-    }
-  }
+  const [imgPanelId, setImgPanelId] = useState<string | null>(null);
 
   function add() {
     setError(null);
@@ -165,7 +149,6 @@ export function DeckEditor({
           <p className="text-sm font-medium text-ink-2 mb-2 px-1">
             {isAdmin ? "Cards" : "Your cards"} ({cards.length})
           </p>
-          {imgErr && <p className="text-sm text-danger mb-2 px-1">{imgErr}</p>}
           <div className="space-y-2">
             {cards.map((c) => (
               <Card key={c.id} className="p-4">
@@ -219,17 +202,12 @@ export function DeckEditor({
                     <div className="flex gap-1 shrink-0">
                       {isAdmin && (
                         <button
-                          aria-label="Generate diagram"
-                          title={c.imageUrl ? "Regenerate diagram" : "Generate diagram"}
-                          disabled={imgBusy !== null}
-                          onClick={() => makeDiagram(c.id)}
-                          className="p-2 rounded-lg text-ink-3 hover:text-accent hover:bg-surface-2 disabled:opacity-50"
+                          aria-label="Add diagram"
+                          title={c.imageUrl ? "Change diagram" : "Add diagram"}
+                          onClick={() => setImgPanelId(imgPanelId === c.id ? null : c.id)}
+                          className="p-2 rounded-lg text-ink-3 hover:text-accent hover:bg-surface-2"
                         >
-                          {imgBusy === c.id ? (
-                            <Loader2 size={15} className="animate-spin" />
-                          ) : (
-                            <ImagePlus size={15} />
-                          )}
+                          <ImagePlus size={15} />
                         </button>
                       )}
                       <button
@@ -251,6 +229,17 @@ export function DeckEditor({
                         <Trash2 size={15} />
                       </button>
                     </div>
+                  </div>
+                )}
+                {isAdmin && imgPanelId === c.id && (
+                  <div className="mt-3">
+                    <ImagePromptUpload
+                      kind="flashcard"
+                      id={c.id}
+                      hasImage={!!c.imageUrl}
+                      prompt={diagramPrompt("biology or chemistry", c.front, c.back)}
+                      onClose={() => setImgPanelId(null)}
+                    />
                   </div>
                 )}
               </Card>

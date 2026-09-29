@@ -30,6 +30,7 @@ export default async function AdminBankTopicPage({
       }
       printHref={`/admin/bank/${topicId}/print`}
       studioHref={`/admin/studio/${topicId}`}
+      admin
     />
   );
 }

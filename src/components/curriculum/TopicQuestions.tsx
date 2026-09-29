@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { MathText } from "@/components/ui/MathText";
 import { AnswerReveal } from "@/components/curriculum/AnswerReveal";
+import { QuestionImageButton } from "@/components/curriculum/QuestionImageButton";
 
 export function TopicQuestions({
   topicName,
@@ -14,6 +15,7 @@ export function TopicQuestions({
   builder,
   printHref,
   studioHref,
+  admin,
 }: {
   topicName: string;
   subject: string;
@@ -22,6 +24,7 @@ export function TopicQuestions({
   builder?: React.ReactNode;
   printHref?: string;
   studioHref?: string;
+  admin?: boolean;
 }) {
   const generated = questions.filter((q) => q.origin === "generated");
   const bank = questions.filter((q) => q.origin === "bank");
@@ -134,6 +137,14 @@ export function TopicQuestions({
                     <p className="text-xs text-ink-3 mt-1.5">Adapted from {q.source}</p>
                   )}
                   {q.answer && <AnswerReveal answer={q.answer} />}
+                  {admin && q.origin === "extracted" && (
+                    <QuestionImageButton
+                      id={q.id}
+                      stem={q.stem}
+                      subject={subject}
+                      hasImage={!!q.imageUrl}
+                    />
+                  )}
                 </div>
               </div>
             </Card>
