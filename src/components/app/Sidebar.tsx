@@ -9,7 +9,6 @@ import {
   Home,
   Layers,
   Library,
-  MessageCircle,
   PenLine,
   Sparkles,
   UploadCloud,
@@ -27,7 +26,6 @@ const studentNav: NavItem[] = [
   { href: "/learn", label: "Home", icon: Home },
   { href: "/practice", label: "Practice", icon: PenLine },
   { href: "/cards", label: "Flashcards", icon: Layers },
-  { href: "/tutor", label: "AI Tutor", icon: MessageCircle },
   { href: "/plan", label: "Study Plan", icon: BookOpen },
 ];
 

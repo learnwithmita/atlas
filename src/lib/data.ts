@@ -516,12 +516,12 @@ export async function getQuestionBank(): Promise<BankTopic[]> {
     if (tid) exByTopic.set(tid, (exByTopic.get(tid) ?? 0) + 1);
   }
 
-  // For Combined Science, present tagged topics under "Science (Biology)" /
-  // "Science (Chemistry)" so the two disciplines are browsable separately.
+  // For Combined Science, present tagged topics under "Combined Biology" /
+  // "Combined Chemistry" so the two disciplines are browsable separately.
   const displaySubject = (subjectName: string, discipline: string | null) => {
     if (subjectName.toLowerCase().includes("combined") && discipline) {
       const label = discipline.charAt(0).toUpperCase() + discipline.slice(1);
-      return `Science (${label})`;
+      return `Combined ${label}`;
     }
     return subjectName;
   };

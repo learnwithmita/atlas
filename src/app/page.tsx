@@ -4,7 +4,7 @@ import {
   BrainCircuit,
   FileCheck2,
   LineChart,
-  ScanLine,
+  ShieldCheck,
   Sparkles,
 } from "lucide-react";
 import { SiteHeader } from "@/components/site/SiteHeader";
@@ -29,9 +29,9 @@ const features = [
     body: "Atlas tracks what you keep getting wrong and rebuilds your study plan around it — every day.",
   },
   {
-    icon: ScanLine,
-    title: "Scan & mark",
-    body: "Photograph a handwritten script. Atlas reads it, marks it, and points you to the next lesson.",
+    icon: ShieldCheck,
+    title: "Vetted by a real tutor",
+    body: "Every question, flashcard and note is checked by a tutor with 5+ years' experience — AI-assisted, never AI-alone, so you only practise what's right and on-syllabus.",
   },
 ];
 
@@ -71,6 +71,14 @@ export default async function Landing() {
           <p className="mx-auto max-w-xl text-lg sm:text-xl text-ink-2 mt-6 leading-relaxed">
             Atlas marks your answers against the SEAB mark scheme, remembers
             every mistake you make, and turns it into tomorrow&apos;s study plan.
+          </p>
+          <p className="mx-auto max-w-xl mt-5 inline-flex items-center gap-2 rounded-[14px] border border-hairline bg-surface px-4 py-2.5 text-[15px] text-ink-2 shadow-xs">
+            <ShieldCheck size={18} className="text-accent shrink-0" />
+            <span>
+              AI does the heavy lifting — but every question, flashcard and note
+              is <strong className="text-ink">reviewed by an experienced tutor</strong>,
+              so nothing off-syllabus reaches you.
+            </span>
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center mt-9">
             {loggedIn ? (
@@ -128,10 +136,11 @@ export default async function Landing() {
       <section id="features" className="mx-auto max-w-6xl px-5 sm:px-8 py-20">
         <div className="text-center max-w-2xl mx-auto mb-14">
           <h2 className="text-4xl font-semibold text-ink tracking-tight">
-            Not a question bank with a chatbot.
+            Built by a tutor. Sharpened by AI.
           </h2>
           <p className="text-lg text-ink-2 mt-4">
-            Every surface feels like a tutor who remembers you.
+            The speed of AI with the judgement of an experienced teacher — every
+            surface feels like a tutor who remembers you.
           </p>
         </div>
         <div className="grid sm:grid-cols-2 gap-5">
