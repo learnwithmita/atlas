@@ -125,20 +125,25 @@ export async function POST(req: Request) {
   let subtopicCount = 0;
   let outcomeCount = 0;
 
+  // Normalise names so re-ingesting the same syllabus doesn't create numbered
+  // duplicates ("1. Cell Structure" vs "Cell Structure").
+  const clean = (s: string) => s.replace(/^\s*\d+[.)]\s*/, "").trim();
+
   for (let ti = 0; ti < tree.topics.length; ti++) {
     const t = tree.topics[ti];
-    // Find-or-create topic.
+    const topicNameClean = clean(t.name);
+    // Find-or-create topic (case-insensitive match on the cleaned name).
     const { data: exTopic } = await supabase
       .from("topics")
       .select("id")
       .eq("subject_id", subjectId)
-      .eq("name", t.name)
+      .ilike("name", topicNameClean)
       .maybeSingle();
     let topicId = exTopic?.id as string | undefined;
     if (!topicId) {
       const { data: newTopic } = await supabase
         .from("topics")
-        .insert({ subject_id: subjectId, name: t.name, sort_order: ti })
+        .insert({ subject_id: subjectId, name: topicNameClean, sort_order: ti })
         .select("id")
         .single();
       topicId = newTopic?.id;
