@@ -1130,12 +1130,15 @@ export async function getTopicStudio(topicId: string): Promise<TopicStudio> {
 
   const { data: topic } = await supabase
     .from("topics")
-    .select("name, subject:subjects(name), subtopics(id, learning_outcomes(id))")
+    .select("name, subject:subjects(name), subtopics(id, sort_order, learning_outcomes(id))")
     .eq("id", topicId)
     .single();
   if (!topic) return empty;
+  // Order by sort_order so firstSubtopicId matches the deck the generator writes.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const subs = ((topic as any).subtopics ?? []) as any[];
+  const subs = (((topic as any).subtopics ?? []) as any[]).sort(
+    (a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0)
+  );
   const subIds = subs.map((s) => s.id);
   const outcomeCount = subs.reduce((n, s) => n + (s.learning_outcomes?.length ?? 0), 0);
 
