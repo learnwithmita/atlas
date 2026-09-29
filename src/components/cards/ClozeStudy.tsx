@@ -52,8 +52,8 @@ export function ClozeStudy({
   async function next() {
     if (idx + 1 >= items.length) {
       const xp = 10 + score;
-      await recordActivity(xp, 3);
-      setEarnedXp(xp);
+      const r = await recordActivity(xp, 3);
+      if (!r?.skipped) setEarnedXp(xp);
       setDone(true);
       return;
     }

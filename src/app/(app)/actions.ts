@@ -136,10 +136,19 @@ export async function reviewFlashcard(
   return { ok: true };
 }
 
-/** Records a study action toward today's streak + XP. */
+/** Records a study action toward today's streak + XP. Students only — XP and
+ *  streaks are a student mechanic, so tutors/admins previewing content earn
+ *  nothing. */
 export async function recordActivity(xp = 10, minutes = 1) {
   if (!isSupabaseConfigured) return { error: "Supabase not connected." };
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { skipped: true };
+  const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
+  if (profile?.role !== "student") return { skipped: true };
+
   const { error } = await supabase.rpc("touch_streak", {
     p_xp: xp,
     p_minutes: minutes,

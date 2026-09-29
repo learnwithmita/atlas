@@ -40,8 +40,8 @@ export function FlashcardStudy({
     setXp(total);
     const last = idx + 1 >= cards.length;
     if (last) {
-      await recordActivity(total, 3);
-      setEarnedXp(total);
+      const r = await recordActivity(total, 3);
+      if (!r?.skipped) setEarnedXp(total);
     }
     setBusy(false);
     setFlipped(false);
