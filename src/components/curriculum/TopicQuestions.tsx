@@ -37,8 +37,15 @@ export function TopicQuestions({
         <p className="text-sm text-ink-3">{subject}</p>
         <h1 className="text-3xl font-semibold text-ink mt-1">{topicName}</h1>
         <p className="text-ink-2 mt-1">
-          {questions.length} questions · {generated.length} AI bank ·{" "}
-          {bank.length} curated · {extracted.length} from papers
+          {questions.length} questions
+          {[
+            generated.length ? `${generated.length} AI bank` : "",
+            extracted.length ? `${extracted.length} from papers` : "",
+            bank.length ? `${bank.length} starter` : "",
+          ]
+            .filter(Boolean)
+            .map((s) => ` · ${s}`)
+            .join("")}
         </p>
         {printHref && questions.length > 0 && (
           <div className="flex flex-wrap items-center gap-2 mt-3">
@@ -74,6 +81,14 @@ export function TopicQuestions({
                   <p className="text-[15px] text-ink">
                     <MathText>{q.stem}</MathText>
                   </p>
+                  {q.imageUrl && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={q.imageUrl}
+                      alt=""
+                      className="mt-3 max-h-56 w-auto rounded-[12px] border border-hairline bg-white"
+                    />
+                  )}
                   <div className="flex flex-wrap items-center gap-2 mt-2">
                     {q.commandWords.map((c) => (
                       <Badge key={c} tone="accent" className="capitalize">

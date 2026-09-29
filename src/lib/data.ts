@@ -974,6 +974,7 @@ export type BankQuestion = {
   origin: "bank" | "extracted" | "generated";
   source: string | null; // for extracted: "School · Type Year · Q3"
   answer: string | null; // model answer / mark scheme (AI bank only)
+  imageUrl: string | null; // generated diagram (extracted questions)
 };
 
 /**
@@ -984,7 +985,8 @@ export type BankQuestion = {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function fetchExtractedForTopic(supabase: any, topicId: string, topicName: string): Promise<any[]> {
   const full =
-    "id, stem, marks, type, command_words, question_number, model_answer, mark_scheme, resource:resources(school, year, paper_type, title)";
+    "id, stem, marks, type, command_words, question_number, model_answer, mark_scheme, image_url, resource:resources(school, year, paper_type, title)";
+  const withImg = "id, stem, marks, type, command_words, question_number, image_url";
   const basic = "id, stem, marks, type, command_words, question_number";
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const run = async (sel: string) => {
@@ -1002,7 +1004,8 @@ async function fetchExtractedForTopic(supabase: any, topicId: string, topicName:
     return { rows: [...(byId.data ?? []), ...(byName.data ?? [])], error: byId.error || byName.error };
   };
   let r = await run(full);
-  if (r.error) r = await run(basic);
+  if (r.error) r = await run(withImg); // 0020 present, 0010/0019 not
+  if (r.error) r = await run(basic); // nothing extra present
   return r.rows;
 }
 
@@ -1037,6 +1040,7 @@ export async function getTopicQuestions(
       origin: "bank" as const,
       source: null,
       answer: null,
+      imageUrl: null,
     }));
   }
 
@@ -1060,6 +1064,7 @@ export async function getTopicQuestions(
       origin: "generated" as const,
       source: null,
       answer,
+      imageUrl: null,
     };
   });
 
@@ -1088,6 +1093,7 @@ export async function getTopicQuestions(
       origin: "extracted" as const,
       source: src,
       answer,
+      imageUrl: q.image_url ?? null,
     };
   });
 
@@ -1743,6 +1749,7 @@ export type ServedQuestion = {
   topic: string;
   topicId: string | null;
   source: string | null;
+  imageUrl: string | null;
 };
 
 /**
@@ -1798,19 +1805,20 @@ export async function serveBankQuestions(
       topic: topicName.get(q.topic_id) ?? "",
       topicId: q.topic_id ?? null,
       source: null,
+      imageUrl: null,
     });
   }
 
   // 2) Adapted questions from uploaded papers (no stored scheme → AI marks).
-  // Tolerate the 0010 provenance columns not existing yet.
+  // Tolerate the 0010/0020 columns not existing yet.
   const exFull =
-    "id, topic_id, stem, marks, type, command_words, question_number, resource:resources(school, year, paper_type, title)";
+    "id, topic_id, stem, marks, type, command_words, question_number, image_url, resource:resources(school, year, paper_type, title)";
+  const exImg = "id, topic_id, stem, marks, type, command_words, question_number, image_url";
   const exBasic = "id, topic_id, stem, marks, type, command_words, question_number";
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let exResp: any = await supabase.from("extracted_questions").select(exFull).in("topic_id", topicIds).limit(300);
-  if (exResp.error) {
-    exResp = await supabase.from("extracted_questions").select(exBasic).in("topic_id", topicIds).limit(300);
-  }
+  if (exResp.error) exResp = await supabase.from("extracted_questions").select(exImg).in("topic_id", topicIds).limit(300);
+  if (exResp.error) exResp = await supabase.from("extracted_questions").select(exBasic).in("topic_id", topicIds).limit(300);
   const exRows = exResp.data;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   for (const q of (exRows ?? []) as any[]) {
@@ -1829,6 +1837,7 @@ export async function serveBankQuestions(
       topic: topicName.get(q.topic_id) ?? "",
       topicId: q.topic_id ?? null,
       source: src,
+      imageUrl: q.image_url ?? null,
     });
   }
 

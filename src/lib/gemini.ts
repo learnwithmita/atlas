@@ -849,6 +849,46 @@ export async function generateDiagram(
   return null;
 }
 
+/**
+ * Generate a black-and-white diagram that an exam question refers to (e.g. the
+ * micrograph/figure a paper question is based on), so students have something
+ * to work from. Best-effort: it reconstructs the described structure, not the
+ * exact original figure. Returns image bytes or null.
+ */
+export async function generateQuestionDiagram(
+  stem: string,
+  subject: string
+): Promise<{ data: string; mimeType: string } | null> {
+  if (!isGeminiConfigured) throw new Error("GEMINI_API_KEY missing");
+  const prompt = `Draw the clean, black-and-white, clearly labelled ${subject} diagram that the following exam question refers to, so a student can attempt it. Thin black lines on a white background, textbook style, no colour, suitable for black-and-white printing. Label the relevant structures.
+
+QUESTION: ${stem}`;
+
+  let lastErr: unknown;
+  for (const model of IMAGE_MODELS) {
+    try {
+      const res = await client().models.generateContent({ model, contents: prompt });
+      const parts = res.candidates?.[0]?.content?.parts ?? [];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const inline = (parts.find((p: any) => p.inlineData?.data) as any)?.inlineData;
+      if (inline?.data) return { data: inline.data as string, mimeType: (inline.mimeType as string) ?? "image/png" };
+    } catch (e) {
+      lastErr = e;
+      const msg = e instanceof Error ? e.message : String(e);
+      if (!isOverloaded(msg) && !isQuota(msg) && !isNotFound(msg)) throw e;
+    }
+  }
+  if (lastErr) throw lastErr;
+  return null;
+}
+
+/** Heuristic: does a question depend on a figure/diagram the student needs? */
+export function referencesDiagram(stem: string): boolean {
+  return /\b(diagram|figure|fig\.?|micrograph|graph|shown|labelled|labeled|image|photograph|illustration|below|following diagram)\b/i.test(
+    stem
+  );
+}
+
 export type GeneratedCloze = { text: string; answer: string };
 
 /** Generate fill-in-the-blank items for a subtopic. */

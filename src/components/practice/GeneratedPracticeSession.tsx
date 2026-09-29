@@ -20,6 +20,7 @@ export type GenQuestion = {
   topic: string;
   topicId: string | null;
   source?: string | null;
+  imageUrl?: string | null;
 };
 
 type QState = { answer: string; result: MarkResult | null; marking: boolean; open: boolean };
@@ -146,6 +147,14 @@ export function GeneratedPracticeSession({
             </p>
             {q.source && (
               <p className="text-xs text-ink-3 -mt-2 mb-3">Source: {q.source}</p>
+            )}
+            {q.imageUrl && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={q.imageUrl}
+                alt=""
+                className="mb-3 max-h-64 w-auto rounded-[12px] border border-hairline bg-white"
+              />
             )}
 
             <textarea

@@ -90,6 +90,7 @@ export async function POST(req: Request) {
           topic: r.topicId ? topicName.get(r.topicId) ?? "" : "",
           topicId: r.topicId,
           source: null,
+          imageUrl: null,
         });
       }
       if (inserted.length > 0) source = served.length > inserted.length ? "mixed" : "ai";
