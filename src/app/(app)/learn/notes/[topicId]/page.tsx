@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, PenLine, Printer } from "lucide-react";
-import { getTopicNotes } from "@/lib/data";
+import { getProfile, getTopicNotes } from "@/lib/data";
 import { NotesView } from "@/components/notes/NotesView";
 import { LinkButton } from "@/components/ui/Button";
 
@@ -14,8 +14,9 @@ export default async function TopicNotesPage({
   params: Promise<{ topicId: string }>;
 }) {
   const { topicId } = await params;
-  const data = await getTopicNotes(topicId);
+  const [data, profile] = await Promise.all([getTopicNotes(topicId), getProfile()]);
   if (!data) notFound();
+  const admin = profile?.role === "admin";
 
   return (
     <div className="mx-auto max-w-2xl px-5 sm:px-8 py-8 pb-24 md:pb-8">
@@ -40,7 +41,7 @@ export default async function TopicNotesPage({
           </LinkButton>
         </div>
       </header>
-      <NotesView topicId={topicId} data={data} />
+      <NotesView topicId={topicId} data={data} admin={admin} />
     </div>
   );
 }

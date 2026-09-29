@@ -34,6 +34,15 @@ export default async function NotesPrintPage({
         <p className="text-ink-2 text-sm mt-0.5">{data.subject} · Revision notes</p>
       </header>
 
+      {data.imageUrl && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={data.imageUrl}
+          alt=""
+          className="mb-6 max-h-80 w-auto border border-hairline bg-white break-inside-avoid"
+        />
+      )}
+
       {data.keyPoints.length > 0 && (
         <section className="mb-6 break-inside-avoid">
           <h2 className="text-lg font-semibold text-ink mb-2">Key points</h2>

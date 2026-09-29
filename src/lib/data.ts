@@ -94,6 +94,7 @@ export type TopicNotesView = {
   misconceptions: { claim: string; correction: string }[];
   hasNotes: boolean;
   studentNotes: string;
+  imageUrl: string | null;
 };
 
 export async function getTopicNotes(topicId: string): Promise<TopicNotesView | null> {
@@ -110,11 +111,21 @@ export async function getTopicNotes(topicId: string): Promise<TopicNotesView | n
     .single();
   if (!topic) return null;
 
-  const { data: notes } = await supabase
+  // image_url comes from 0022 — degrade gracefully if it isn't run.
+  let notesQ = await supabase
     .from("topic_notes")
-    .select("key_points, misconceptions")
+    .select("key_points, misconceptions, image_url")
     .eq("topic_id", topicId)
     .maybeSingle();
+  if (notesQ.error) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    notesQ = (await supabase
+      .from("topic_notes")
+      .select("key_points, misconceptions")
+      .eq("topic_id", topicId)
+      .maybeSingle()) as any;
+  }
+  const notes = notesQ.data;
 
   let studentNotes = "";
   if (user) {
@@ -137,6 +148,8 @@ export async function getTopicNotes(topicId: string): Promise<TopicNotesView | n
       (notes?.misconceptions as { claim: string; correction: string }[]) ?? [],
     hasNotes: !!notes,
     studentNotes,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    imageUrl: (notes as any)?.image_url ?? null,
   };
 }
 

@@ -7,15 +7,19 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { MathText } from "@/components/ui/MathText";
 import { saveStudentNotes } from "@/app/(app)/actions";
+import { ImagePromptUpload, diagramPrompt } from "@/components/admin/ImagePromptUpload";
 
 export function NotesView({
   topicId,
   data,
+  admin,
 }: {
   topicId: string;
   data: TopicNotesView;
+  admin?: boolean;
 }) {
   const [notes, setNotes] = useState(data);
+  const [imgOpen, setImgOpen] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [genError, setGenError] = useState<string | null>(null);
 
@@ -82,6 +86,40 @@ export function NotesView({
         </Card>
       ) : (
         <>
+          {/* Topic diagram */}
+          {(notes.imageUrl || admin) && (
+            <Card className="p-6">
+              <div className="flex items-center justify-between gap-3 mb-3">
+                <h2 className="text-lg font-semibold text-ink">Diagram</h2>
+                {admin && (
+                  <Button size="sm" variant="secondary" onClick={() => setImgOpen((o) => !o)}>
+                    {notes.imageUrl ? "Change" : "Add diagram"}
+                  </Button>
+                )}
+              </div>
+              {notes.imageUrl && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={notes.imageUrl}
+                  alt=""
+                  className="max-h-80 w-auto rounded-[12px] border border-hairline bg-white"
+                />
+              )}
+              {admin && imgOpen && (
+                <div className="mt-3">
+                  <ImagePromptUpload
+                    kind="note"
+                    id={topicId}
+                    hasImage={!!notes.imageUrl}
+                    prompt={diagramPrompt(notes.subject, notes.topicName + " — key diagram")}
+                    onClose={() => setImgOpen(false)}
+                  />
+                </div>
+              )}
+              {!notes.imageUrl && !admin && null}
+            </Card>
+          )}
+
           <Card className="p-6">
             <h2 className="text-lg font-semibold text-ink mb-4">Key points</h2>
             <ul className="space-y-2.5">
