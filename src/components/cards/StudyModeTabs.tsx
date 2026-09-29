@@ -14,7 +14,7 @@ export function StudyModeTabs({ active }: { active: "cards" | "blanks" }) {
           key={t.key}
           href={t.href}
           className={cn(
-            "h-9 px-5 rounded-full text-sm font-medium transition-all",
+            "inline-flex items-center justify-center h-9 px-5 rounded-full text-sm font-medium transition-all",
             active === t.key ? "bg-surface text-ink shadow-sm" : "text-ink-2 hover:text-ink"
           )}
         >
