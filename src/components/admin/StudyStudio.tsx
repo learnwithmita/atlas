@@ -24,12 +24,14 @@ export function StudyStudio({
   hasNotes,
   outcomeCount,
   firstSubtopicId,
+  cards = [],
 }: {
   topicId: string;
   flashcardCount: number;
   hasNotes: boolean;
   outcomeCount: number;
   firstSubtopicId: string | null;
+  cards?: { front: string; back: string }[];
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
@@ -134,6 +136,35 @@ export function StudyStudio({
           </Card>
         );
       })}
+
+      {/* Inline preview of the generated deck so you can review every card here */}
+      {cards.length > 0 && (
+        <Card className="p-5">
+          <div className="flex items-center gap-2 mb-3">
+            <Layers size={18} className="text-accent" />
+            <h2 className="text-lg font-semibold text-ink">Deck preview ({cards.length})</h2>
+          </div>
+          <div className="divide-y divide-hairline">
+            {cards.map((c, i) => (
+              <div key={i} className="flex items-start gap-3 py-2.5">
+                <span className="text-xs text-ink-3 tabular-nums w-6 shrink-0 pt-0.5">{i + 1}</span>
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-ink">{c.front}</p>
+                  <p className="text-sm text-ink-2 mt-0.5">{c.back}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+          {firstSubtopicId && (
+            <Link
+              href={`/cards/${firstSubtopicId}`}
+              className="inline-flex items-center gap-1.5 text-sm text-accent mt-3"
+            >
+              <ExternalLink size={14} /> Open as a study deck
+            </Link>
+          )}
+        </Card>
+      )}
     </div>
   );
 }

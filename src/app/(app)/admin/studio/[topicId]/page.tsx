@@ -39,6 +39,7 @@ export default async function StudioPage({
         hasNotes={s.hasNotes}
         outcomeCount={s.outcomeCount}
         firstSubtopicId={s.firstSubtopicId}
+        cards={s.cards}
       />
     </div>
   );

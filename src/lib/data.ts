@@ -1126,6 +1126,7 @@ export type TopicStudio = {
   flashcardCount: number; // shared cards
   hasNotes: boolean;
   firstSubtopicId: string | null;
+  cards: { front: string; back: string }[]; // shared deck, for preview
 };
 
 /** Study-content status for a topic (admin studio). */
@@ -1137,6 +1138,7 @@ export async function getTopicStudio(topicId: string): Promise<TopicStudio> {
     flashcardCount: 0,
     hasNotes: false,
     firstSubtopicId: null,
+    cards: [],
   };
   if (!isSupabaseConfigured) return empty;
   const supabase = await createClient();
@@ -1155,14 +1157,16 @@ export async function getTopicStudio(topicId: string): Promise<TopicStudio> {
   const subIds = subs.map((s) => s.id);
   const outcomeCount = subs.reduce((n, s) => n + (s.learning_outcomes?.length ?? 0), 0);
 
-  let flashcardCount = 0;
+  let cards: { front: string; back: string }[] = [];
   if (subIds.length) {
-    const { count } = await supabase
+    const { data } = await supabase
       .from("flashcards")
-      .select("id", { count: "exact", head: true })
+      .select("front, back")
       .in("subtopic_id", subIds)
-      .is("created_by", null);
-    flashcardCount = count ?? 0;
+      .is("created_by", null)
+      .order("created_at", { ascending: true })
+      .limit(200);
+    cards = (data ?? []).map((c) => ({ front: c.front, back: c.back }));
   }
   const { data: notes } = await supabase
     .from("topic_notes")
@@ -1175,9 +1179,10 @@ export async function getTopicStudio(topicId: string): Promise<TopicStudio> {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     subject: (topic as any).subject?.name ?? "",
     outcomeCount,
-    flashcardCount,
+    flashcardCount: cards.length,
     hasNotes: !!notes,
     firstSubtopicId: subIds[0] ?? null,
+    cards,
   };
 }
 
