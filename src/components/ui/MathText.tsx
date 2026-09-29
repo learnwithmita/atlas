@@ -2,9 +2,24 @@ import katex from "katex";
 import "katex/dist/contrib/mhchem.js"; // enables \ce{...} for chemistry
 import { cn } from "@/lib/utils";
 
+/**
+ * Repair LaTeX whose backslash-escapes were eaten by a JSON round-trip: a
+ * command like `\text` or `\rightarrow` can arrive with its `\t` / `\r` turned
+ * into a real tab / carriage-return character (and `\f` `\b` `\v` similarly).
+ * Inside math these control chars are never meaningful, so restore the command.
+ */
+function repairEscapes(tex: string): string {
+  return tex
+    .replace(/\t/g, "\\t")
+    .replace(/\r/g, "\\r")
+    .replace(/\f/g, "\\f")
+    .replace(/\x08/g, "\\b")
+    .replace(/\x0b/g, "\\v");
+}
+
 function render(tex: string, display: boolean) {
   try {
-    return katex.renderToString(tex, {
+    return katex.renderToString(repairEscapes(tex), {
       displayMode: display,
       throwOnError: false,
       output: "html",
