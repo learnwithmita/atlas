@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, BookOpen } from "lucide-react";
 import { getTopicStudio } from "@/lib/data";
 import { StudyStudio } from "@/components/admin/StudyStudio";
+import { LinkButton } from "@/components/ui/Button";
 
 export const metadata = { title: "Study content · Atlas Admin" };
 export const dynamic = "force-dynamic";
@@ -22,10 +23,15 @@ export default async function StudioPage({
       >
         <ArrowLeft size={16} /> Curriculum
       </Link>
-      <header className="mb-6">
-        <p className="text-sm text-ink-3">{s.subject}</p>
-        <h1 className="text-3xl font-semibold text-ink mt-1">{s.topicName}</h1>
-        <p className="text-ink-2 mt-1">Study content for this topic.</p>
+      <header className="mb-6 flex items-start justify-between gap-4">
+        <div>
+          <p className="text-sm text-ink-3">{s.subject}</p>
+          <h1 className="text-3xl font-semibold text-ink mt-1">{s.topicName}</h1>
+          <p className="text-ink-2 mt-1">Flashcards & notes for this topic.</p>
+        </div>
+        <LinkButton href={`/admin/bank/${topicId}`} size="sm" variant="secondary">
+          <BookOpen size={15} /> Questions
+        </LinkButton>
       </header>
       <StudyStudio
         topicId={topicId}

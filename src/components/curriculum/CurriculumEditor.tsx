@@ -134,9 +134,9 @@ export function CurriculumEditor({ subjects }: { subjects: CurriculumSubject[] }
                           onClick={(e) => e.stopPropagation()}
                           className="p-1 text-ink-3 hover:text-accent inline-flex items-center gap-1 text-xs"
                           aria-label="Study content"
-                          title="Flashcards & notes"
+                          title="Generate flashcards & notes"
                         >
-                          <Sparkles size={14} /> Content
+                          <Sparkles size={14} /> Study
                         </Link>
                         <button
                           onClick={(e) => {

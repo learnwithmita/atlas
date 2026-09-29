@@ -13,6 +13,7 @@ export function TopicQuestions({
   backHref,
   builder,
   printHref,
+  studioHref,
 }: {
   topicName: string;
   subject: string;
@@ -20,6 +21,7 @@ export function TopicQuestions({
   backHref: string;
   builder?: React.ReactNode;
   printHref?: string;
+  studioHref?: string;
 }) {
   const generated = questions.filter((q) => q.origin === "generated");
   const bank = questions.filter((q) => q.origin === "bank");
@@ -47,20 +49,32 @@ export function TopicQuestions({
             .map((s) => ` · ${s}`)
             .join("")}
         </p>
-        {printHref && questions.length > 0 && (
+        {(printHref || studioHref) && (
           <div className="flex flex-wrap items-center gap-2 mt-3">
-            <Link
-              href={printHref}
-              className="inline-flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-full border border-hairline text-ink-2 hover:border-accent hover:text-accent"
-            >
-              <Printer size={14} /> Print questions
-            </Link>
-            <Link
-              href={`${printHref}?answers=1`}
-              className="inline-flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-full border border-hairline text-ink-2 hover:border-accent hover:text-accent"
-            >
-              <Printer size={14} /> Print with answers
-            </Link>
+            {studioHref && (
+              <Link
+                href={studioHref}
+                className="inline-flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-full border border-hairline text-ink-2 hover:border-accent hover:text-accent"
+              >
+                <Sparkles size={14} /> Flashcards &amp; notes
+              </Link>
+            )}
+            {printHref && questions.length > 0 && (
+              <>
+                <Link
+                  href={printHref}
+                  className="inline-flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-full border border-hairline text-ink-2 hover:border-accent hover:text-accent"
+                >
+                  <Printer size={14} /> Print questions
+                </Link>
+                <Link
+                  href={`${printHref}?answers=1`}
+                  className="inline-flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-full border border-hairline text-ink-2 hover:border-accent hover:text-accent"
+                >
+                  <Printer size={14} /> Print with answers
+                </Link>
+              </>
+            )}
           </div>
         )}
       </header>
