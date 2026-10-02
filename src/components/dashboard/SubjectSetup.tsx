@@ -8,7 +8,7 @@ import { setStudySubjects } from "@/app/(app)/actions";
 import { cn } from "@/lib/utils";
 
 const CHOICES = [
-  { token: "combined", label: "Combined Science", blurb: "Biology + Chemistry in one subject" },
+  { token: "combined", label: "Combined Science (Bio/Chem)", blurb: "Biology + Chemistry in one subject" },
   { token: "biology", label: "Pure Biology", blurb: "Full Biology syllabus" },
   { token: "chemistry", label: "Pure Chemistry", blurb: "Full Chemistry syllabus" },
 ];

@@ -27,7 +27,7 @@ export function AuthForm({ mode }: { mode: "signin" | "signup" }) {
   const next = useSearchParams().get("next") ?? "";
 
   const SUBJECT_CHOICES = [
-    { token: "combined", label: "Combined Science" },
+    { token: "combined", label: "Combined Science (Bio/Chem)" },
     { token: "biology", label: "Pure Biology" },
     { token: "chemistry", label: "Pure Chemistry" },
   ];
