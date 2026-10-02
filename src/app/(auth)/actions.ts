@@ -2,9 +2,19 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 export type AuthState = { error?: string; message?: string };
+
+/** Best-effort origin (scheme + host) for building absolute redirect URLs. */
+async function siteOrigin(): Promise<string> {
+  const h = await headers();
+  const host = h.get("x-forwarded-host") ?? h.get("host") ?? "localhost:3000";
+  const proto =
+    h.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
+  return `${proto}://${host}`;
+}
 
 export async function signIn(
   _prev: AuthState,
@@ -75,6 +85,58 @@ export async function signUp(
     };
   }
   redirect(role === "tutor" ? "/teach" : "/learn");
+}
+
+export async function requestPasswordReset(
+  _prev: AuthState,
+  formData: FormData
+): Promise<AuthState> {
+  if (!isSupabaseConfigured) {
+    return { error: "Supabase isn't connected yet. Add your keys to .env.local and restart." };
+  }
+  const email = String(formData.get("email") ?? "").trim();
+  if (!email) return { error: "Enter the email you signed up with." };
+
+  const supabase = await createClient();
+  const origin = await siteOrigin();
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${origin}/auth/callback?next=/reset`,
+  });
+  // Don't reveal whether an account exists — always confirm.
+  if (error && !/rate limit/i.test(error.message)) {
+    return { error: error.message };
+  }
+  return {
+    message:
+      "If an account exists for that email, a reset link is on its way. Check your inbox (and spam).",
+  };
+}
+
+export async function resetPassword(
+  _prev: AuthState,
+  formData: FormData
+): Promise<AuthState> {
+  if (!isSupabaseConfigured) {
+    return { error: "Supabase isn't connected yet." };
+  }
+  const password = String(formData.get("password") ?? "");
+  if (password.length < 8) {
+    return { error: "Use at least 8 characters for your password." };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return {
+      error:
+        "This reset link has expired or was already used. Request a new one from Forgot password.",
+    };
+  }
+  const { error } = await supabase.auth.updateUser({ password });
+  if (error) return { error: error.message };
+  redirect("/learn");
 }
 
 export async function signOut() {

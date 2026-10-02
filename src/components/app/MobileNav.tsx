@@ -35,12 +35,14 @@ export function MobileNav({
           { href: "/admin", label: "Analytics", icon: BarChart3 },
           { href: "/admin/syllabus", label: "Syllabus", icon: GraduationCap },
           { href: "/admin/curriculum", label: "Curriculum", icon: Library },
+          { href: "/admin/bank", label: "Bank", icon: BookOpen },
           { href: "/admin/content", label: "Uploads", icon: UploadCloud },
         ]
       : role === "tutor"
         ? [
             { href: "/teach", label: "Classes", icon: Users },
             { href: "/teach/curriculum", label: "Curriculum", icon: Library },
+            { href: "/teach/bank", label: "Bank", icon: BookOpen },
             { href: "/teach/uploads", label: "Materials", icon: UploadCloud },
           ]
         : [

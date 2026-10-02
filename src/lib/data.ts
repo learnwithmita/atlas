@@ -870,20 +870,81 @@ export async function getSyllabuses(): Promise<SyllabusRow[]> {
     )
     .order("subject_name", { ascending: true })
     .limit(100);
+
+  // The stored topic/subtopic/outcome counts are a snapshot from ingest time,
+  // taken BEFORE any dedup or manual edits on the Curriculum page — so they
+  // drift from reality. Compute live counts per subject and prefer those, so
+  // this page always agrees with Curriculum. Falls back to the snapshot if the
+  // live query is unavailable.
+  const liveBySubject = new Map<
+    string,
+    { topics: number; subtopics: number; outcomes: number }
+  >();
+  try {
+    const [subjectsRes, topicsRes, subsRes, outsRes] = await Promise.all([
+      supabase.from("subjects").select("id, name"),
+      supabase.from("topics").select("id, subject_id"),
+      supabase.from("subtopics").select("id, topic_id"),
+      supabase.from("learning_outcomes").select("id, subtopic_id").limit(100000),
+    ]);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const subjectName = new Map<string, string>(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (subjectsRes.data ?? []).map((s: any) => [s.id, s.name])
+    );
+    const topicSubject = new Map<string, string>(); // topicId -> subjectId
+    const topicsBySubject = new Map<string, number>();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    for (const t of (topicsRes.data ?? []) as any[]) {
+      topicSubject.set(t.id, t.subject_id);
+      topicsBySubject.set(t.subject_id, (topicsBySubject.get(t.subject_id) ?? 0) + 1);
+    }
+    const subtopicSubject = new Map<string, string>(); // subtopicId -> subjectId
+    const subsBySubject = new Map<string, number>();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    for (const s of (subsRes.data ?? []) as any[]) {
+      const subj = topicSubject.get(s.topic_id);
+      if (!subj) continue;
+      subtopicSubject.set(s.id, subj);
+      subsBySubject.set(subj, (subsBySubject.get(subj) ?? 0) + 1);
+    }
+    const outsBySubject = new Map<string, number>();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    for (const o of (outsRes.data ?? []) as any[]) {
+      const subj = subtopicSubject.get(o.subtopic_id);
+      if (!subj) continue;
+      outsBySubject.set(subj, (outsBySubject.get(subj) ?? 0) + 1);
+    }
+    for (const [subjId, name] of subjectName) {
+      liveBySubject.set(name, {
+        topics: topicsBySubject.get(subjId) ?? 0,
+        subtopics: subsBySubject.get(subjId) ?? 0,
+        outcomes: outsBySubject.get(subjId) ?? 0,
+      });
+    }
+  } catch {
+    // Fall back to stored snapshot counts below.
+  }
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return (data ?? []).map((r: any) => ({
-    id: r.id,
-    code: r.code,
-    title: r.title,
-    subjectName: r.subject_name,
-    examBody: r.exam_body ?? "SEAB",
-    level: r.level,
-    track: r.track,
-    topicCount: r.topic_count ?? 0,
-    subtopicCount: r.subtopic_count ?? 0,
-    outcomeCount: r.outcome_count ?? 0,
-    updatedAt: r.updated_at,
-  }));
+  return (data ?? []).map((r: any) => {
+    const live = r.subject_name ? liveBySubject.get(r.subject_name) : undefined;
+    return {
+      id: r.id,
+      code: r.code,
+      title: r.title,
+      subjectName: r.subject_name,
+      examBody: r.exam_body ?? "SEAB",
+      level: r.level,
+      track: r.track,
+      topicCount: live && live.topics > 0 ? live.topics : r.topic_count ?? 0,
+      subtopicCount:
+        live && live.subtopics > 0 ? live.subtopics : r.subtopic_count ?? 0,
+      outcomeCount:
+        live && live.outcomes > 0 ? live.outcomes : r.outcome_count ?? 0,
+      updatedAt: r.updated_at,
+    };
+  });
 }
 
 export type PaperView = {
@@ -1805,13 +1866,34 @@ export async function serveBankQuestions(
   const { data: topics } = await supabase.from("topics").select("id, name").in("id", topicIds);
   for (const t of topics ?? []) topicName.set(t.id, t.name as string);
 
+  // Share the bank across identically-named topics in sibling subjects — e.g.
+  // "Respiration in Humans" exists as its own row under both Biology and
+  // Combined Science, and a question written for one is equally valid for the
+  // other. Expanding the id set here means a student never triggers fresh AI
+  // generation while a vetted question for that exact topic already exists under
+  // another subject. Exact-name match only, so no unrelated topics merge.
+  const requestedNames = [...new Set((topics ?? []).map((t) => t.name as string))];
+  let servingIds = topicIds;
+  if (requestedNames.length > 0) {
+    const { data: siblings } = await supabase
+      .from("topics")
+      .select("id, name")
+      .in("name", requestedNames);
+    const expanded = new Set(topicIds);
+    for (const t of siblings ?? []) {
+      expanded.add(t.id);
+      topicName.set(t.id, t.name as string);
+    }
+    servingIds = [...expanded];
+  }
+
   const out: ServedQuestion[] = [];
 
   // 1) AI-generated bank rows (with schemes), least-served first.
   const { data: genRows } = await supabase
     .from("generated_questions")
     .select("id, topic_id, stem, marks, type, command_words")
-    .in("topic_id", topicIds)
+    .in("topic_id", servingIds)
     .order("times_served", { ascending: true })
     .limit(300);
   for (const q of genRows ?? []) {
@@ -1837,9 +1919,9 @@ export async function serveBankQuestions(
   const exImg = "id, topic_id, stem, marks, type, command_words, question_number, image_url";
   const exBasic = "id, topic_id, stem, marks, type, command_words, question_number";
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let exResp: any = await supabase.from("extracted_questions").select(exFull).in("topic_id", topicIds).limit(300);
-  if (exResp.error) exResp = await supabase.from("extracted_questions").select(exImg).in("topic_id", topicIds).limit(300);
-  if (exResp.error) exResp = await supabase.from("extracted_questions").select(exBasic).in("topic_id", topicIds).limit(300);
+  let exResp: any = await supabase.from("extracted_questions").select(exFull).in("topic_id", servingIds).limit(300);
+  if (exResp.error) exResp = await supabase.from("extracted_questions").select(exImg).in("topic_id", servingIds).limit(300);
+  if (exResp.error) exResp = await supabase.from("extracted_questions").select(exBasic).in("topic_id", servingIds).limit(300);
   const exRows = exResp.data;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   for (const q of (exRows ?? []) as any[]) {

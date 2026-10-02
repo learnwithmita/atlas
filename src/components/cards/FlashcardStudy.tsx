@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check, RotateCw, Zap } from "lucide-react";
+import { Check, Layers, RotateCw, Zap } from "lucide-react";
 import type { StudyCard } from "@/lib/data";
 import { Button } from "@/components/ui/Button";
 import { MathText } from "@/components/ui/MathText";
@@ -46,6 +46,30 @@ export function FlashcardStudy({
     setBusy(false);
     setFlipped(false);
     setIdx((i) => i + 1);
+  }
+
+  // An empty deck is not a finished deck — don't show the celebration state.
+  if (cards.length === 0) {
+    return (
+      <div className="max-w-md mx-auto text-center py-20 px-6">
+        <div className="h-14 w-14 mx-auto rounded-[18px] bg-surface-2 grid place-items-center mb-5">
+          <Layers className="text-ink-3" size={26} />
+        </div>
+        <h2 className="text-2xl font-semibold text-ink mb-1">No cards yet</h2>
+        <p className="text-ink-2 mb-6">
+          This deck doesn&apos;t have any flashcards yet. Cards added here show
+          up for every student in the class.
+        </p>
+        <Button
+          onClick={() => {
+            router.push("/cards");
+            router.refresh();
+          }}
+        >
+          Back to decks
+        </Button>
+      </div>
+    );
   }
 
   if (!card) {

@@ -1,4 +1,5 @@
 import { GoogleGenAI, Type } from "@google/genai";
+import { createServiceClient, isServiceConfigured } from "@/lib/supabase/admin";
 
 const API_KEY = process.env.GEMINI_API_KEY ?? "";
 // Use the "-latest" alias so a retired version (e.g. gemini-2.5-flash was
@@ -45,15 +46,77 @@ const isNotFound = (msg: string) =>
  * If EVERY model fails, the last error is thrown; callers catch it and fall
  * back to bank/paper questions where possible.
  */
+// Approximate published Gemini Flash pricing (USD per 1M tokens). Real spend on
+// a free-tier key is $0, but logging an *estimate* at paid rates makes the admin
+// cost dashboard meaningful for capacity planning. Matched by substring.
+const PRICING: { match: RegExp; in: number; out: number }[] = [
+  { match: /image/i, in: 0.3, out: 30 }, // image output billed per-image; rough
+  { match: /lite/i, in: 0.1, out: 0.4 },
+  { match: /flash/i, in: 0.3, out: 2.5 },
+];
+function estimateCost(model: string, tokensIn: number, tokensOut: number): number {
+  const p = PRICING.find((x) => x.match.test(model)) ?? PRICING[PRICING.length - 1];
+  return (tokensIn / 1e6) * p.in + (tokensOut / 1e6) * p.out;
+}
+
+/**
+ * Record one AI call for the admin analytics dashboard. Fire-and-forget: a
+ * telemetry failure must never break a user-facing AI feature. Uses the
+ * service-role client because calls happen in server routes where there may be
+ * no user session (and ai_events RLS would otherwise block the insert).
+ */
+function logAiEvent(e: {
+  operation: string;
+  model: string;
+  tokensIn: number;
+  tokensOut: number;
+  latencyMs: number;
+}) {
+  if (!isServiceConfigured) return;
+  try {
+    const supabase = createServiceClient();
+    void supabase
+      .from("ai_events")
+      .insert({
+        operation: e.operation,
+        model: e.model,
+        tokens_in: e.tokensIn,
+        tokens_out: e.tokensOut,
+        cost_usd: estimateCost(e.model, e.tokensIn, e.tokensOut),
+        latency_ms: e.latencyMs,
+      })
+      .then(({ error }) => {
+        if (error) console.warn("[gemini] ai_events log failed:", error.message);
+      });
+  } catch {
+    // ignore — telemetry is best-effort
+  }
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function genContent(params: any, perModelRetries = 1): Promise<any> {
-  const primary = params.model as string;
+  // `op` is our own label for analytics — strip it before calling the SDK.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { op = "generate", ...sdkParams } = params as any;
+  const primary = sdkParams.model as string;
   const chain = [primary, ...FALLBACK_MODELS.filter((m) => m !== primary)];
   let lastErr: unknown;
   for (const model of chain) {
     for (let attempt = 0; attempt <= perModelRetries; attempt++) {
+      const started = Date.now();
       try {
-        return await client().models.generateContent({ ...params, model });
+        const res = await client().models.generateContent({ ...sdkParams, model });
+        const u = res?.usageMetadata ?? {};
+        logAiEvent({
+          operation: op,
+          model,
+          tokensIn: Number(u.promptTokenCount) || 0,
+          tokensOut:
+            (Number(u.candidatesTokenCount) || 0) +
+            (Number(u.thoughtsTokenCount) || 0),
+          latencyMs: Date.now() - started,
+        });
+        return res;
       } catch (e) {
         lastErr = e;
         const msg = e instanceof Error ? e.message : String(e);
@@ -161,6 +224,7 @@ ${topicList}
 Do NOT copy the paper's original wording. Adapt every question.`;
 
   const res = await genContent({
+    op: "extract",
     model: CHAT_MODEL,
     contents: [
       {
@@ -272,6 +336,7 @@ Extract its full structure. Return:
 Capture every topic and subtopic. If a subtopic has no explicitly numbered outcomes, return an empty outcomes array. Do not invent content that is not in the document.`;
 
   const res = await genContent({
+    op: "syllabus",
     model: CHAT_MODEL,
     contents: [
       {
@@ -379,6 +444,7 @@ Return:
 - misconceptions: 3–5 common student misconceptions, each with the wrong "claim" and the "correction".`;
 
   const res = await genContent({
+    op: "notes",
     model: CHAT_MODEL,
     contents: prompt,
     config: {
@@ -442,6 +508,7 @@ Rules:
 - Keep each side short and exam-precise. British spelling. Maths/chemistry in LaTeX ($...$, $\\ce{...}$).`;
 
   const res = await genContent({
+    op: "flashcards",
     model: CHAT_MODEL,
     contents: prompt,
     config: {
@@ -530,6 +597,7 @@ Rules:
 Return only the questions.`;
 
   const res = await genContent({
+    op: "paper",
     model: CHAT_MODEL,
     contents: prompt,
     config: {
@@ -597,6 +665,7 @@ ${items.map((q, i) => `${i + 1}. (${q.marks} mark${q.marks === 1 ? "" : "s"}) ${
 Return an array with exactly ${items.length} entries, in the same order.`;
 
   const res = await genContent({
+    op: "answers",
     model: MARK_MODEL,
     contents: prompt,
     config: {
@@ -683,6 +752,7 @@ For EACH question provide:
 Write maths/chemistry in LaTeX ($...$, $\\ce{...}$). Return only the questions.`;
 
   const res = await genContent({
+    op: "bank",
     model: CHAT_MODEL,
     contents: prompt,
     config: {
@@ -905,6 +975,7 @@ ${outcomes.length ? `Base them on these learning outcomes:\n${outcomes.map((o) =
 Rules: each sentence must state a key fact and hide ONE important keyword/phrase (the answer a student must recall) by wrapping it in double braces, e.g. "Osmosis moves water across a {{partially permeable}} membrane." The "answer" field = the exact text inside the braces. Keep sentences short and unambiguous, with only ONE blank each. Use British spelling.`;
 
   const res = await genContent({
+    op: "cloze",
     model: CHAT_MODEL,
     contents: prompt,
     config: {
@@ -957,6 +1028,7 @@ export async function tutorReply(
     : TUTOR_SYSTEM;
 
   const res = await genContent({
+    op: "chat",
     model: CHAT_MODEL,
     contents,
     config: {
@@ -1018,6 +1090,7 @@ STUDENT ANSWER: "${input.studentAnswer}"
 Award marks like a Singapore examiner. Be specific about which marking points the student earned and which are missing. Classify the dominant error (conceptual / careless / technique / knowledge, or "none" if full marks). Provide an improved version of THE STUDENT'S OWN answer that would score full marks.`;
 
   const res = await genContent({
+    op: "mark",
     model: MARK_MODEL,
     contents: prompt,
     config: {
@@ -1106,6 +1179,7 @@ STUDENT ANSWER: "${input.studentAnswer}"
 Award marks like a Singapore examiner (one mark per valid point, up to ${input.marks}). Return: the marking points the student earned, the ones missing, the dominant error type (conceptual/careless/technique/knowledge, or "none"), a full-marks model answer, and an improved version of the student's own answer.`;
 
   const res = await genContent({
+    op: "mark",
     model: MARK_MODEL,
     contents: prompt,
     config: {
