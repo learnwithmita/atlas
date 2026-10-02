@@ -10,14 +10,14 @@ export default async function CheckoutPage({
   searchParams: Promise<{ plan?: string; cycle?: string }>;
 }) {
   const { plan, cycle } = await searchParams;
-  if (plan !== "plus" && plan !== "pro") redirect("/pricing");
+  if (plan !== "pro") redirect("/pricing");
   const billing = cycle === "monthly" ? "monthly" : "annual";
 
   return (
     <>
       <SiteHeader />
       <main className="mx-auto max-w-6xl px-5 sm:px-8 py-14">
-        <CheckoutForm planId={plan} cycle={billing} />
+        <CheckoutForm cycle={billing} />
       </main>
     </>
   );

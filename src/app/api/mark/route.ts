@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { friendlyGeminiError, markAnswer } from "@/lib/gemini";
+import { canMarkNow } from "@/lib/entitlements";
 
 export const runtime = "nodejs";
 
@@ -26,6 +27,16 @@ export async function POST(req: Request) {
     } = await supabase.auth.getUser();
     if (!user) {
       return NextResponse.json({ error: "Not signed in" }, { status: 401 });
+    }
+
+    // Free tier: cap AI marking per day. Pro/staff: unlimited. (No-op while
+    // BILLING_ENABLED is off — everyone is Pro.)
+    const gate = await canMarkNow();
+    if (!gate.ok) {
+      return NextResponse.json(
+        { error: gate.reason, upgrade: true },
+        { status: 402 }
+      );
     }
 
     const { data: q } = await supabase

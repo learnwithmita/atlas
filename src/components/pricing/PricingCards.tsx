@@ -38,10 +38,10 @@ export function PricingCards() {
             </button>
           ))}
         </div>
-        <Badge tone="mint">Save ~33% annually</Badge>
+        <Badge tone="mint">Save 40% annually</Badge>
       </div>
 
-      <div className="grid md:grid-cols-3 gap-5 max-w-5xl mx-auto">
+      <div className="grid sm:grid-cols-2 gap-5 max-w-3xl mx-auto">
         {PLANS.map((plan) => (
           <div
             key={plan.id}
@@ -62,13 +62,13 @@ export function PricingCards() {
 
             <div className="mt-6 flex items-baseline gap-1">
               <span className="text-4xl font-semibold text-ink tabular-nums">
-                ${perMonth(plan, cycle)}
+                S${perMonth(plan, cycle)}
               </span>
               <span className="text-ink-3">/mo</span>
             </div>
             <p className="text-xs text-ink-3 mt-1 h-4">
               {plan.id !== "free" && cycle === "annual"
-                ? `billed $${plan.annual}/year`
+                ? `billed S$${plan.annual}/year`
                 : plan.id !== "free"
                 ? "billed monthly"
                 : "free forever"}

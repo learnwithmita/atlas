@@ -1,5 +1,5 @@
 export type Plan = {
-  id: "free" | "plus" | "pro";
+  id: "free" | "pro";
   name: string;
   tagline: string;
   monthly: number; // SGD
@@ -8,6 +8,9 @@ export type Plan = {
   highlight?: boolean;
 };
 
+// Two tiers only — a single, obvious upgrade decision converts far better than
+// a 3-way choice. Prices in SGD. Adjust here and in your Stripe dashboard
+// together (the Stripe Price IDs are what actually charge the card).
 export const PLANS: Plan[] = [
   {
     id: "free",
@@ -17,38 +20,24 @@ export const PLANS: Plan[] = [
     annual: 0,
     features: [
       "Diagnostic + mastery map",
-      "5 practice questions a day",
-      "AI tutor (20 messages/day)",
-      "Daily streak & goals",
-    ],
-  },
-  {
-    id: "plus",
-    name: "Plus",
-    tagline: "Study like it's your tutor",
-    monthly: 18,
-    annual: 144,
-    highlight: true,
-    features: [
-      "Unlimited practice + mark-scheme marking",
-      "Full adaptive study plan",
-      "Unlimited AI tutor",
-      "Weekly progress report",
-      "Predicted grade tracking",
+      "Practice from the question bank",
+      "Up to 10 AI-marked answers a day",
+      "Flashcards & fill-the-blanks",
+      "Adaptive study plan",
     ],
   },
   {
     id: "pro",
     name: "Pro",
-    tagline: "Everything, exam-ready",
-    monthly: 34,
-    annual: 288,
+    tagline: "Study like it's your tutor",
+    monthly: 15,
+    annual: 108, // ~S$9/mo — 40% off monthly
+    highlight: true,
     features: [
-      "Everything in Plus",
-      "Scan & mark handwritten work",
-      "Timed mock-exam modes",
-      "Likely-exam-question predictions",
-      "Priority AI (fastest models)",
+      "Everything in Free",
+      "Unlimited mark-scheme marking",
+      "Build custom WA papers from any topics",
+      "Priority support from your tutor",
     ],
   },
 ];

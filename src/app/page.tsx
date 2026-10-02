@@ -42,7 +42,7 @@ export default async function Landing() {
     profile?.role === "admin"
       ? "/admin"
       : profile?.role === "tutor"
-        ? "/tutor"
+        ? "/teach"
         : "/learn";
 
   return (

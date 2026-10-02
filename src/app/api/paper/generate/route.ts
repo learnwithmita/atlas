@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { friendlyGeminiError, generateBankBatch } from "@/lib/gemini";
+import { getEntitlement } from "@/lib/entitlements";
 import {
   bumpTimesServed,
   getTopicGenerationContext,
@@ -42,6 +43,22 @@ export async function POST(req: Request) {
     .eq("id", user.id)
     .single();
   const isStaff = profile?.role === "admin" || profile?.role === "tutor";
+
+  // Building a multi-topic custom paper is a Pro feature. Single-topic practice
+  // stays free. (No-op while BILLING_ENABLED is off — everyone is Pro.)
+  if (ids.length > 1) {
+    const ent = await getEntitlement();
+    if (!ent.isPro) {
+      return NextResponse.json(
+        {
+          error:
+            "Building custom papers from multiple topics is a Pro feature. Upgrade to mix any topics into one paper.",
+          upgrade: true,
+        },
+        { status: 402 }
+      );
+    }
+  }
 
   // 1) Serve from the shared bank first — no AI cost. Reuses questions across
   //    students (excluding ones this student has already attempted).

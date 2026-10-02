@@ -25,13 +25,28 @@ export function AccountForm({
   name,
   email,
   role,
+  isPro = false,
+  billingLive = false,
 }: {
   name: string;
   email: string;
   role: "student" | "tutor" | "admin";
+  isPro?: boolean;
+  billingLive?: boolean;
 }) {
   const router = useRouter();
   const [pending, start] = useTransition();
+  const [billingErr, setBillingErr] = useState<string | null>(null);
+
+  function openBilling() {
+    setBillingErr(null);
+    start(async () => {
+      const { startBillingPortal } = await import("@/app/checkout/actions");
+      const res = await startBillingPortal();
+      if (res.url) window.location.href = res.url;
+      else setBillingErr(res.error ?? "Couldn't open billing.");
+    });
+  }
 
   const [fullName, setFullName] = useState(name);
   const [nameMsg, setNameMsg] = useState<string | null>(null);
@@ -142,16 +157,28 @@ export function AccountForm({
             <div className="flex items-center gap-2">
               <Sparkles size={18} className="text-accent" />
               <h2 className="text-lg font-semibold text-ink">Plan</h2>
+              {isPro && <Badge tone="accent">Pro</Badge>}
             </div>
-            <Link href="/pricing">
-              <Button variant="secondary" size="sm">
-                Manage plan
+            {isPro && billingLive ? (
+              <Button variant="secondary" size="sm" onClick={openBilling} disabled={pending}>
+                Manage billing
               </Button>
-            </Link>
+            ) : !isPro ? (
+              <Link href="/pricing">
+                <Button variant="secondary" size="sm">
+                  Upgrade
+                </Button>
+              </Link>
+            ) : null}
           </div>
           <p className="text-sm text-ink-2 mt-2">
-            You&apos;re on the free plan. Upgrade for unlimited practice and marking.
+            {isPro
+              ? billingLive
+                ? "You're on Atlas Pro — unlimited marking and custom papers."
+                : "You have full access during early access."
+              : "You're on the free plan. Upgrade for unlimited marking and custom papers."}
           </p>
+          {billingErr && <p className="text-sm text-danger mt-2">{billingErr}</p>}
         </Card>
       )}
 

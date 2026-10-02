@@ -1,4 +1,5 @@
 import { getProfile } from "@/lib/data";
+import { getEntitlement, BILLING_ENABLED } from "@/lib/entitlements";
 import { AccountForm } from "@/components/app/AccountForm";
 import { SubjectSetup } from "@/components/dashboard/SubjectSetup";
 import { Card } from "@/components/ui/Card";
@@ -7,7 +8,7 @@ export const metadata = { title: "Account · Atlas" };
 export const dynamic = "force-dynamic";
 
 export default async function AccountPage() {
-  const profile = await getProfile();
+  const [profile, ent] = await Promise.all([getProfile(), getEntitlement()]);
   const name = profile?.full_name ?? "";
   const email = profile?.email ?? "";
   const role = (profile?.role ?? "student") as "student" | "tutor" | "admin";
@@ -18,7 +19,13 @@ export default async function AccountPage() {
         <h1 className="text-3xl font-semibold text-ink">Account</h1>
         <p className="text-ink-2 mt-1">Manage your profile, password and sign-out.</p>
       </header>
-      <AccountForm name={name} email={email} role={role} />
+      <AccountForm
+        name={name}
+        email={email}
+        role={role}
+        isPro={ent.isPro}
+        billingLive={BILLING_ENABLED}
+      />
 
       {role === "student" && (
         <Card className="p-6 mt-4">

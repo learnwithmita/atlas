@@ -2,57 +2,33 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
-import { ArrowLeft, Check, CreditCard, Lock, ShieldCheck } from "lucide-react";
-import { Button, LinkButton } from "@/components/ui/Button";
-import { completeCheckout } from "@/app/checkout/actions";
+import { ArrowLeft, ArrowRight, Lock, ShieldCheck } from "lucide-react";
+import { Button } from "@/components/ui/Button";
+import { startCheckout } from "@/app/checkout/actions";
 import { PLANS, priceFor, perMonth } from "@/lib/plans";
 
 export function CheckoutForm({
-  planId,
   cycle,
 }: {
-  planId: "plus" | "pro";
   cycle: "monthly" | "annual";
 }) {
-  const plan = PLANS.find((p) => p.id === planId)!;
-  const [done, setDone] = useState(false);
+  const plan = PLANS.find((p) => p.id === "pro")!;
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
 
-  function pay() {
+  function goToStripe() {
     setError(null);
     start(async () => {
-      const res = await completeCheckout(planId, cycle);
-      if (res.error) setError(res.error);
-      else setDone(true);
+      const res = await startCheckout(cycle);
+      if (res.url) window.location.href = res.url;
+      else setError(res.error ?? "Couldn't start checkout.");
     });
-  }
-
-  if (done) {
-    return (
-      <div className="max-w-md mx-auto text-center py-16 animate-fade-up">
-        <div className="h-16 w-16 mx-auto rounded-full bg-mint/15 grid place-items-center mb-6">
-          <Check className="text-mint" size={30} strokeWidth={3} />
-        </div>
-        <h1 className="text-2xl font-semibold text-ink mb-2">
-          You&apos;re on {plan.name}
-        </h1>
-        <p className="text-ink-2 mb-8">
-          This is a preview checkout — no charge was made. Your account now
-          reflects the {plan.name} tier.
-        </p>
-        <LinkButton href="/learn" size="lg">
-          Go to Atlas
-        </LinkButton>
-      </div>
-    );
   }
 
   const total = priceFor(plan, cycle);
 
   return (
     <div className="max-w-4xl mx-auto grid md:grid-cols-[1fr_360px] gap-8 items-start">
-      {/* Payment form (preview / mock) */}
       <div>
         <Link
           href="/pricing"
@@ -63,51 +39,26 @@ export function CheckoutForm({
 
         <h1 className="text-2xl font-semibold text-ink mb-1">Checkout</h1>
         <p className="text-ink-2 mb-6 flex items-center gap-1.5 text-sm">
-          <Lock size={14} /> Preview checkout — no real payment is processed.
+          <Lock size={14} /> Payment is handled securely by Stripe — we never see
+          your card details.
         </p>
 
-        <div className="space-y-4 opacity-90">
-          <Field label="Card number">
-            <div className="flex items-center gap-2">
-              <CreditCard size={18} className="text-ink-3" />
-              <input
-                disabled
-                placeholder="4242 4242 4242 4242"
-                className="flex-1 bg-transparent outline-none text-ink placeholder:text-ink-3"
-              />
-            </div>
-          </Field>
-          <div className="grid grid-cols-2 gap-4">
-            <Field label="Expiry">
-              <input
-                disabled
-                placeholder="12 / 28"
-                className="w-full bg-transparent outline-none text-ink placeholder:text-ink-3"
-              />
-            </Field>
-            <Field label="CVC">
-              <input
-                disabled
-                placeholder="123"
-                className="w-full bg-transparent outline-none text-ink placeholder:text-ink-3"
-              />
-            </Field>
-          </div>
+        <div className="rounded-[18px] border border-hairline bg-surface-2 p-5 mb-6">
+          <p className="text-ink font-medium mb-1">Atlas Pro</p>
+          <p className="text-sm text-ink-2">
+            You&apos;ll be taken to Stripe&apos;s secure page to enter payment and
+            confirm. You can cancel anytime from your account.
+          </p>
         </div>
 
-        {error && <p className="text-sm text-danger mt-4">{error}</p>}
+        {error && <p className="text-sm text-danger mb-4">{error}</p>}
 
-        <Button
-          size="lg"
-          className="w-full mt-6"
-          onClick={pay}
-          disabled={pending}
-        >
-          {pending ? "Processing…" : `Complete — pay $${total}`}
+        <Button size="lg" className="w-full" onClick={goToStripe} disabled={pending}>
+          {pending ? "Redirecting…" : "Continue to secure payment"}
+          {!pending && <ArrowRight size={18} />}
         </Button>
         <p className="text-xs text-ink-3 mt-3 flex items-center gap-1.5">
-          <ShieldCheck size={13} /> Stripe will replace this preview before
-          launch.
+          <ShieldCheck size={13} /> Powered by Stripe. Cancel anytime.
         </p>
       </div>
 
@@ -116,37 +67,18 @@ export function CheckoutForm({
         <p className="text-sm font-medium text-ink-3 mb-4">Order summary</p>
         <div className="flex items-center justify-between mb-2">
           <span className="text-ink font-medium">Atlas {plan.name}</span>
-          <span className="text-ink tabular-nums">${total}</span>
+          <span className="text-ink tabular-nums">S${total}</span>
         </div>
         <p className="text-sm text-ink-3 mb-4 capitalize">
-          {cycle} · ${perMonth(plan, cycle)}/mo
+          {cycle} · S${perMonth(plan, cycle)}/mo
         </p>
         <div className="border-t border-hairline pt-4 flex items-center justify-between">
           <span className="text-ink font-semibold">Total today</span>
           <span className="text-2xl font-semibold text-ink tabular-nums">
-            ${total}
+            S${total}
           </span>
         </div>
       </div>
     </div>
-  );
-}
-
-function Field({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <label className="block">
-      <span className="text-xs font-medium text-ink-3 mb-1.5 block">
-        {label}
-      </span>
-      <div className="h-12 px-4 flex items-center rounded-[14px] bg-surface-2 border border-hairline">
-        {children}
-      </div>
-    </label>
   );
 }
