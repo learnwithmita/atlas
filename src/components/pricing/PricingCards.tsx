@@ -38,7 +38,7 @@ export function PricingCards() {
             </button>
           ))}
         </div>
-        <Badge tone="mint">Save 40% annually</Badge>
+        <Badge tone="mint">Save 23% annually</Badge>
       </div>
 
       <div className="grid sm:grid-cols-2 gap-5 max-w-3xl mx-auto">

@@ -30,8 +30,8 @@ export const PLANS: Plan[] = [
     id: "pro",
     name: "Pro",
     tagline: "Study like it's your tutor",
-    monthly: 15,
-    annual: 108, // ~S$9/mo — 40% off monthly
+    monthly: 39,
+    annual: 360, // S$30/mo — "about S$1 a day", 23% off monthly
     highlight: true,
     features: [
       "Everything in Free",
