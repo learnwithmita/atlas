@@ -44,10 +44,11 @@ export function CheckoutForm({
         </p>
 
         <div className="rounded-[18px] border border-hairline bg-surface-2 p-5 mb-6">
-          <p className="text-ink font-medium mb-1">Atlas Pro</p>
+          <p className="text-ink font-medium mb-1">Atlas Pro · 7-day free trial</p>
           <p className="text-sm text-ink-2">
-            You&apos;ll be taken to Stripe&apos;s secure page to enter payment and
-            confirm. You can cancel anytime from your account.
+            You won&apos;t be charged today. Stripe&apos;s secure page takes your
+            details and starts a 7-day free trial — cancel anytime before it ends
+            and you pay nothing.
           </p>
         </div>
 
@@ -73,11 +74,13 @@ export function CheckoutForm({
           {cycle} · S${perMonth(plan, cycle)}/mo
         </p>
         <div className="border-t border-hairline pt-4 flex items-center justify-between">
-          <span className="text-ink font-semibold">Total today</span>
-          <span className="text-2xl font-semibold text-ink tabular-nums">
-            S${total}
-          </span>
+          <span className="text-ink font-semibold">Due today</span>
+          <span className="text-2xl font-semibold text-ink tabular-nums">S$0</span>
         </div>
+        <p className="text-xs text-ink-3 mt-2">
+          Then S${total}/{cycle === "annual" ? "year" : "month"} after your 7-day
+          free trial.
+        </p>
       </div>
     </div>
   );

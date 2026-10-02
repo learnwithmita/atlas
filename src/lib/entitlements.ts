@@ -57,7 +57,9 @@ export async function getEntitlement(): Promise<Entitlement> {
 
   const paid = sub?.tier === "plus" || sub?.tier === "pro";
   const notExpired = !sub?.period_end || new Date(sub.period_end) > new Date();
-  const active = !!sub && sub.status === "active" && paid && notExpired;
+  // "trialing" users are mid free-trial — full Pro access until it converts.
+  const live = sub?.status === "active" || sub?.status === "trialing";
+  const active = !!sub && live && paid && notExpired;
 
   return active
     ? { tier: "pro", isPro: true, periodEnd: sub!.period_end ?? null, reason: "active_sub" }

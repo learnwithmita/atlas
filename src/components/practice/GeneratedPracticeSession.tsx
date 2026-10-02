@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { MathText } from "@/components/ui/MathText";
 import { recordActivity } from "@/app/(app)/actions";
+import { UpgradeDialog } from "@/components/pricing/UpgradeDialog";
 import { cn } from "@/lib/utils";
 
 export type GenQuestion = {
@@ -41,6 +42,7 @@ export function GeneratedPracticeSession({
   const router = useRouter();
   const [states, setStates] = useState<Record<string, QState>>(() => buildStates(questions));
   const [done, setDone] = useState(false);
+  const [upgrade, setUpgrade] = useState<string | null>(null);
 
   // Reset when a new set of questions arrives (render-phase reset pattern) so
   // `states` always has an entry for every current question.
@@ -85,6 +87,7 @@ export function GeneratedPracticeSession({
       });
       const data = await res.json();
       if (res.ok) set(q.id, { result: data });
+      else if (res.status === 402 && data.upgrade) setUpgrade(data.error ?? null);
       else
         set(q.id, {
           result: { awarded: 0, max: q.marks, missingPoints: [], awardedPoints: [], errorType: "none", modelAnswer: "", improvedAnswer: "", feedback: data.error ?? "Marking failed." },
@@ -123,6 +126,7 @@ export function GeneratedPracticeSession({
 
   return (
     <div className="space-y-5">
+      <UpgradeDialog open={!!upgrade} message={upgrade} onClose={() => setUpgrade(null)} />
       {questions.map((q, i) => {
         const st = states[q.id] ?? blank;
         const r = st.result;

@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { MathText } from "@/components/ui/MathText";
 import { cn } from "@/lib/utils";
+import { UpgradeDialog } from "@/components/pricing/UpgradeDialog";
 
 const errorTone: Record<string, string> = {
   conceptual: "danger",
@@ -92,6 +93,7 @@ function QuestionCard({
   const [marking, setMarking] = useState(false);
   const [result, setResult] = useState<MarkResult | null>(null);
   const [showModel, setShowModel] = useState(false);
+  const [upgrade, setUpgrade] = useState<string | null>(null);
   const startedAt = useState(() => Date.now())[0];
 
   const isMcq = q.type === "mcq";
@@ -113,6 +115,8 @@ function QuestionCard({
       if (res.ok) {
         setResult(data);
         setSubmitted(true);
+      } else if (res.status === 402 && data.upgrade) {
+        setUpgrade(data.error ?? null);
       } else {
         setResult({
           awarded: 0,
@@ -136,6 +140,7 @@ function QuestionCard({
 
   return (
     <div className="animate-fade-up">
+      <UpgradeDialog open={!!upgrade} message={upgrade} onClose={() => setUpgrade(null)} />
       <div className="flex items-start justify-between gap-4 mb-2">
         <div className="flex flex-wrap gap-2">
           {q.commandWords.map((c) => (

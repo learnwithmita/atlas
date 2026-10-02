@@ -79,8 +79,13 @@ export function PricingCards() {
               variant={plan.highlight ? "primary" : "secondary"}
               onClick={() => choose(plan)}
             >
-              {plan.id === "free" ? "Get started" : `Choose ${plan.name}`}
+              {plan.id === "free" ? "Get started" : `Start 7-day free trial`}
             </Button>
+            {plan.id !== "free" && (
+              <p className="text-xs text-ink-3 text-center mt-2">
+                7 days free, then S${perMonth(plan, cycle)}/mo · cancel anytime
+              </p>
+            )}
 
             <ul className="mt-7 space-y-3">
               {plan.features.map((f) => (

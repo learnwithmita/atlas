@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { MathText } from "@/components/ui/MathText";
 import { submitAssignment } from "@/app/(app)/actions";
+import { UpgradeDialog } from "@/components/pricing/UpgradeDialog";
 import { cn } from "@/lib/utils";
 
 type QState = { answer: string; result: MarkResult | null; marking: boolean; open: boolean };
@@ -22,6 +23,7 @@ export function AssignmentSession({ assignment }: { assignment: AssignmentDetail
   );
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(assignment.status === "submitted");
+  const [upgrade, setUpgrade] = useState<string | null>(null);
 
   const totals = useMemo(() => {
     let awarded = 0;
@@ -56,6 +58,7 @@ export function AssignmentSession({ assignment }: { assignment: AssignmentDetail
       });
       const data = await res.json();
       if (res.ok) set(id, { result: data, open: false });
+      else if (res.status === 402 && data.upgrade) setUpgrade(data.error ?? null);
       else set(id, { result: { awarded: 0, max: 0, missingPoints: [], awardedPoints: [], errorType: "none", modelAnswer: "", improvedAnswer: "", feedback: data.error ?? "Marking failed." } });
     } finally {
       set(id, { marking: false });
@@ -89,6 +92,7 @@ export function AssignmentSession({ assignment }: { assignment: AssignmentDetail
 
   return (
     <div className="space-y-5">
+      <UpgradeDialog open={!!upgrade} message={upgrade} onClose={() => setUpgrade(null)} />
       {assignment.questions.map((q, i) => {
         const st = states[q.id];
         const r = st.result;

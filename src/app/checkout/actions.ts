@@ -55,7 +55,10 @@ export async function startCheckout(
       customer_email: customerId ? undefined : user.email ?? undefined,
       // Tie the Stripe objects back to our user — the webhook reads this.
       client_reference_id: user.id,
-      subscription_data: { metadata: { user_id: user.id } },
+      subscription_data: {
+        metadata: { user_id: user.id },
+        trial_period_days: 7, // feel the value before the first charge
+      },
       metadata: { user_id: user.id },
       allow_promotion_codes: true,
       success_url: `${origin}/account?checkout=success`,
