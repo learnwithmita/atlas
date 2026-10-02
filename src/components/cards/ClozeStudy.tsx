@@ -78,7 +78,7 @@ export function ClozeStudy({
         )}
         <p className="text-ink-2 mb-6">
           {items.length === 0
-            ? "Generate a set with AI to start."
+            ? "Your tutor is still preparing these — check back soon."
             : `You got ${score}/${items.length} right.`}
         </p>
         <Button

@@ -16,7 +16,7 @@ export default async function TopicNotesPage({
   const { topicId } = await params;
   const [data, profile] = await Promise.all([getTopicNotes(topicId), getProfile()]);
   if (!data) notFound();
-  const admin = profile?.role === "admin";
+  const admin = profile?.role === "admin" || profile?.role === "tutor";
 
   return (
     <div className="mx-auto max-w-2xl px-5 sm:px-8 py-8 pb-24 md:pb-8">

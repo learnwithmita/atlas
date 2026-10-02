@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { BookText, ChevronRight, FileText, History, SlidersHorizontal } from "lucide-react";
-import { getFullCurriculum } from "@/lib/data";
+import { getStudentCurriculum } from "@/lib/data";
 import { Card } from "@/components/ui/Card";
+import { SubjectSetup } from "@/components/dashboard/SubjectSetup";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 
 export const metadata = { title: "Practice · Atlas" };
@@ -21,7 +22,15 @@ export default async function PracticeHub() {
     );
   }
 
-  const subjects = await getFullCurriculum();
+  const { subjects, needsOnboarding } = await getStudentCurriculum();
+
+  if (needsOnboarding) {
+    return (
+      <div className="mx-auto max-w-lg px-5 sm:px-8 py-16">
+        <SubjectSetup />
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-3xl px-5 sm:px-8 py-8 pb-24 md:pb-8">

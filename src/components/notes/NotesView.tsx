@@ -67,22 +67,31 @@ export function NotesView({
             <Sparkles className="text-accent" size={22} />
           </div>
           <p className="text-ink font-medium mb-1">No notes yet for this topic</p>
-          <p className="text-ink-2 text-sm mb-5">
-            Generate a quick revision sheet with key points and common
-            misconceptions.
-          </p>
-          <Button onClick={generate} disabled={generating}>
-            {generating ? (
-              <>
-                <Loader2 size={16} className="animate-spin" /> Writing notes…
-              </>
-            ) : (
-              <>
-                <Sparkles size={16} /> Generate notes
-              </>
-            )}
-          </Button>
-          {genError && <p className="text-sm text-danger mt-3">{genError}</p>}
+          {admin ? (
+            <>
+              <p className="text-ink-2 text-sm mb-5">
+                Generate a quick revision sheet with key points and common
+                misconceptions.
+              </p>
+              <Button onClick={generate} disabled={generating}>
+                {generating ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin" /> Writing notes…
+                  </>
+                ) : (
+                  <>
+                    <Sparkles size={16} /> Generate notes
+                  </>
+                )}
+              </Button>
+              {genError && <p className="text-sm text-danger mt-3">{genError}</p>}
+            </>
+          ) : (
+            <p className="text-ink-2 text-sm">
+              Your tutor is still preparing revision notes for this topic — check
+              back soon.
+            </p>
+          )}
         </Card>
       ) : (
         <>

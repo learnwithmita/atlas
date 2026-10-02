@@ -1,6 +1,11 @@
 import Link from "next/link";
 import { Flame, Sparkles, Target, TrendingUp } from "lucide-react";
-import { getCurriculumProgress, getStudentDashboard } from "@/lib/data";
+import {
+  getCurriculumProgress,
+  getStudentDashboard,
+  getStudentSubjectScope,
+} from "@/lib/data";
+import { SubjectSetup } from "@/components/dashboard/SubjectSetup";
 import { Card } from "@/components/ui/Card";
 import { MasteryBar } from "@/components/ui/MasteryBar";
 import { Badge } from "@/components/ui/Badge";
@@ -17,10 +22,22 @@ const bucketMeta = {
 };
 
 export default async function PlanPage() {
-  const [d, curriculum] = await Promise.all([
+  const [d, allCurriculum, scope] = await Promise.all([
     getStudentDashboard(),
     getCurriculumProgress(),
+    getStudentSubjectScope(),
   ]);
+
+  if (scope.needsOnboarding) {
+    return (
+      <div className="mx-auto max-w-lg px-5 sm:px-8 py-16">
+        <SubjectSetup />
+      </div>
+    );
+  }
+  const curriculum = scope.allowAll
+    ? allCurriculum
+    : allCurriculum.filter((s) => scope.subjectIds.has(s.id));
 
   return (
     <div className="mx-auto max-w-4xl px-5 sm:px-8 py-8 pb-24 md:pb-8">

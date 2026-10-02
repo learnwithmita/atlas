@@ -65,17 +65,56 @@ export async function signUp(
   const requested = String(formData.get("role") ?? "student");
   const role = requested === "tutor" ? "tutor" : "student";
 
+  // Student subject selection + level (ignored for tutors).
+  let studySubjects: string[] = [];
+  try {
+    const parsed = JSON.parse(String(formData.get("study_subjects") ?? "[]"));
+    if (Array.isArray(parsed)) {
+      studySubjects = parsed
+        .map((s) => String(s))
+        .filter((s) => ["combined", "biology", "chemistry"].includes(s));
+    }
+  } catch {
+    studySubjects = [];
+  }
+  const level = String(formData.get("level") ?? "G3");
+
   if (password.length < 8) {
     return { error: "Use at least 8 characters for your password." };
+  }
+  if (role === "student" && studySubjects.length === 0) {
+    return { error: "Pick at least one subject you're studying." };
   }
 
   const supabase = await createClient();
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
-    options: { data: { full_name: fullName, role } },
+    options: {
+      data: {
+        full_name: fullName,
+        role,
+        ...(role === "student"
+          ? { study_subjects: studySubjects, level }
+          : {}),
+      },
+    },
   });
   if (error) return { error: error.message };
+
+  // The DB trigger reads the metadata above, but also write the profile row
+  // directly when we have a session — so the choice lands even if the trigger
+  // predates migration 0023. Best-effort; ignore if the column isn't there yet.
+  if (data.session && role === "student") {
+    try {
+      await supabase
+        .from("profiles")
+        .update({ study_subjects: studySubjects, level })
+        .eq("id", data.user?.id ?? "");
+    } catch {
+      // onboarding prompt will catch it in-app
+    }
+  }
 
   // If email confirmation is on, there's no session yet.
   if (!data.session) {

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Layers, Printer } from "lucide-react";
-import { getFlashcardDecks, getFullCurriculum } from "@/lib/data";
+import { getFlashcardDecks, getFullCurriculum, getProfile } from "@/lib/data";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { GenerateDeck } from "@/components/cards/GenerateDeck";
@@ -10,10 +10,12 @@ export const metadata = { title: "Flashcards · Atlas" };
 export const dynamic = "force-dynamic";
 
 export default async function CardsPage() {
-  const [decks, subjects] = await Promise.all([
+  const [decks, subjects, profile] = await Promise.all([
     getFlashcardDecks(),
     getFullCurriculum(),
+    getProfile(),
   ]);
+  const isStaff = profile?.role === "admin" || profile?.role === "tutor";
   const totalDue = decks.reduce((n, d) => n + d.due, 0);
 
   return (
@@ -27,7 +29,7 @@ export default async function CardsPage() {
               : "Spaced repetition keeps the keywords in long-term memory."}
           </p>
         </div>
-        <GenerateDeck subjects={subjects} />
+        {isStaff && <GenerateDeck subjects={subjects} />}
       </header>
 
       <StudyModeTabs active="cards" />
@@ -39,7 +41,9 @@ export default async function CardsPage() {
           </div>
           <h2 className="text-xl font-semibold text-ink mb-1">No decks yet</h2>
           <p className="text-ink-2">
-            Run the seed for curated cards, or generate a deck with AI above.
+            {isStaff
+              ? "Run the seed for curated cards, or generate a deck with AI above."
+              : "Your tutor is still preparing flashcards for your subjects — check back soon."}
           </p>
         </Card>
       ) : (

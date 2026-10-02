@@ -17,6 +17,13 @@ export async function POST(req: Request) {
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Not signed in" }, { status: 401 });
 
+  // Content is tutor-vetted: only staff may generate it (students practise what's
+  // already in the shared bank/decks, never trigger AI themselves).
+  const { data: __p } = await supabase.from("profiles").select("role").eq("id", user.id).single();
+  if (__p?.role !== "admin" && __p?.role !== "tutor") {
+    return NextResponse.json({ error: "Only tutors can generate content." }, { status: 403 });
+  }
+
   const { data: st } = await supabase
     .from("subtopics")
     .select("id, name, topic_id, learning_outcomes(statement)")

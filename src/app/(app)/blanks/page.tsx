@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { SquarePen } from "lucide-react";
-import { getClozeDecks, getFullCurriculum } from "@/lib/data";
+import { getClozeDecks, getFullCurriculum, getProfile } from "@/lib/data";
 import { Card } from "@/components/ui/Card";
 import { GenerateDeck } from "@/components/cards/GenerateDeck";
 import { StudyModeTabs } from "@/components/cards/StudyModeTabs";
@@ -9,10 +9,12 @@ export const metadata = { title: "Fill the blanks · Atlas" };
 export const dynamic = "force-dynamic";
 
 export default async function BlanksPage() {
-  const [decks, subjects] = await Promise.all([
+  const [decks, subjects, profile] = await Promise.all([
     getClozeDecks(),
     getFullCurriculum(),
+    getProfile(),
   ]);
+  const isStaff = profile?.role === "admin" || profile?.role === "tutor";
 
   return (
     <div className="mx-auto max-w-4xl px-5 sm:px-8 py-8 pb-24 md:pb-8">
@@ -23,11 +25,13 @@ export default async function BlanksPage() {
             Type the missing keyword — active recall for exam phrasing.
           </p>
         </div>
-        <GenerateDeck
-          subjects={subjects}
-          endpoint="/api/cloze/generate"
-          label="Generate a set"
-        />
+        {isStaff && (
+          <GenerateDeck
+            subjects={subjects}
+            endpoint="/api/cloze/generate"
+            label="Generate a set"
+          />
+        )}
       </header>
 
       <StudyModeTabs active="blanks" />
@@ -39,7 +43,9 @@ export default async function BlanksPage() {
           </div>
           <h2 className="text-xl font-semibold text-ink mb-1">No sets yet</h2>
           <p className="text-ink-2">
-            Run the seed, or generate a set with AI above.
+            {isStaff
+              ? "Run the seed, or generate a set with AI above."
+              : "Your tutor is still preparing these — check back soon."}
           </p>
         </Card>
       ) : (

@@ -1,5 +1,6 @@
-import { getFullCurriculum } from "@/lib/data";
+import { getStudentCurriculum } from "@/lib/data";
 import { PaperBuilder } from "@/components/practice/PaperBuilder";
+import { SubjectSetup } from "@/components/dashboard/SubjectSetup";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 
 export const metadata = { title: "Build a paper · Atlas" };
@@ -16,6 +17,13 @@ export default async function BuildPage() {
       </div>
     );
   }
-  const subjects = await getFullCurriculum();
+  const { subjects, needsOnboarding } = await getStudentCurriculum();
+  if (needsOnboarding) {
+    return (
+      <div className="mx-auto max-w-lg px-5 sm:px-8 py-16">
+        <SubjectSetup />
+      </div>
+    );
+  }
   return <PaperBuilder subjects={subjects} />;
 }

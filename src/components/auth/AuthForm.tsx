@@ -3,7 +3,7 @@
 import { useActionState, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Eye, EyeOff, Lock, Mail, User } from "lucide-react";
+import { Check, Eye, EyeOff, Lock, Mail, User } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { signIn, signUp, type AuthState } from "@/app/(auth)/actions";
 import { cn } from "@/lib/utils";
@@ -22,7 +22,25 @@ export function AuthForm({ mode }: { mode: "signin" | "signup" }) {
   );
   const [show, setShow] = useState(false);
   const [role, setRole] = useState("student");
+  const [subjects, setSubjects] = useState<string[]>([]);
+  const [level, setLevel] = useState("G3");
   const next = useSearchParams().get("next") ?? "";
+
+  const SUBJECT_CHOICES = [
+    { token: "combined", label: "Combined Science" },
+    { token: "biology", label: "Pure Biology" },
+    { token: "chemistry", label: "Pure Chemistry" },
+  ];
+  const LEVELS = [
+    { v: "G3", label: "Sec 3–4 (G3)" },
+    { v: "G2", label: "Sec 3–4 (G2)" },
+    { v: "G1", label: "Sec 3–4 (G1)" },
+    { v: "O", label: "O-Level" },
+  ];
+  const toggleSubject = (t: string) =>
+    setSubjects((cur) =>
+      cur.includes(t) ? cur.filter((x) => x !== t) : [...cur, t]
+    );
 
   return (
     <form action={formAction} className="space-y-4">
@@ -65,6 +83,59 @@ export function AuthForm({ mode }: { mode: "signin" | "signup" }) {
             </div>
             <input type="hidden" name="role" value={role} />
           </div>
+
+          {role === "student" && (
+            <>
+              <div>
+                <p className="text-xs font-medium text-ink-3 mb-2 px-1">
+                  What are you studying?
+                </p>
+                <div className="space-y-2">
+                  {SUBJECT_CHOICES.map((o) => {
+                    const on = subjects.includes(o.token);
+                    return (
+                      <button
+                        key={o.token}
+                        type="button"
+                        onClick={() => toggleSubject(o.token)}
+                        aria-pressed={on}
+                        className={cn(
+                          "w-full h-11 px-4 rounded-[12px] text-sm font-medium border transition-all text-left flex items-center justify-between",
+                          on
+                            ? "bg-accent text-white border-accent shadow-sm"
+                            : "bg-surface-2 text-ink-2 border-hairline hover:text-ink"
+                        )}
+                      >
+                        {o.label}
+                        {on && <Check size={16} />}
+                      </button>
+                    );
+                  })}
+                </div>
+                <input
+                  type="hidden"
+                  name="study_subjects"
+                  value={JSON.stringify(subjects)}
+                />
+              </div>
+
+              <div>
+                <p className="text-xs font-medium text-ink-3 mb-2 px-1">Level</p>
+                <select
+                  name="level"
+                  value={level}
+                  onChange={(e) => setLevel(e.target.value)}
+                  className="w-full h-11 px-3 rounded-[12px] bg-surface-2 border border-hairline text-[15px] text-ink outline-none focus:border-accent"
+                >
+                  {LEVELS.map((l) => (
+                    <option key={l.v} value={l.v}>
+                      {l.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </>
+          )}
         </>
       )}
 
@@ -118,9 +189,21 @@ export function AuthForm({ mode }: { mode: "signin" | "signup" }) {
         <p className="text-sm text-accent px-1">{state.message}</p>
       )}
 
-      <Button type="submit" size="lg" className="w-full" disabled={pending}>
+      <Button
+        type="submit"
+        size="lg"
+        className="w-full"
+        disabled={
+          pending || (isSignup && role === "student" && subjects.length === 0)
+        }
+      >
         {pending ? "One moment…" : isSignup ? "Create account" : "Sign in"}
       </Button>
+      {isSignup && role === "student" && subjects.length === 0 && (
+        <p className="text-center text-xs text-ink-3 -mt-1">
+          Pick at least one subject to continue.
+        </p>
+      )}
 
       <div className="flex items-center justify-between text-sm pt-1">
         <span className="text-ink-3">

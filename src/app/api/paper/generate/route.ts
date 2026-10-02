@@ -34,6 +34,15 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Pick at least one topic." }, { status: 400 });
   }
 
+  // Students never trigger AI generation — they only ever draw from the vetted
+  // shared bank. Only staff (admin/tutor) top it up when it runs short.
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+  const isStaff = profile?.role === "admin" || profile?.role === "tutor";
+
   // 1) Serve from the shared bank first — no AI cost. Reuses questions across
   //    students (excluding ones this student has already attempted).
   const served: ServedQuestion[] = await serveBankQuestions(ids, n);
@@ -43,9 +52,9 @@ export async function POST(req: Request) {
   let source: "bank" | "ai" | "mixed" = "bank";
 
   // 2) Only if the bank is short, generate the shortfall with the admin's key
-  //    and write it back to the bank so it's reused next time.
+  //    and write it back to the bank so it's reused next time. Staff only.
   const shortfall = n - served.length;
-  if (shortfall > 0) {
+  if (shortfall > 0 && isStaff) {
     const context = await getTopicGenerationContext(ids);
     const subjectByTopic = new Map<string, string | null>();
     {
@@ -107,7 +116,11 @@ export async function POST(req: Request) {
 
   if (served.length === 0) {
     return NextResponse.json(
-      { error: "No questions yet for these topics. An admin can build the bank, or try again in a moment." },
+      {
+        error: isStaff
+          ? "No questions yet for these topics. Build the bank, or try again in a moment."
+          : "No questions for these topics yet — your tutor is still adding them. Check back soon.",
+      },
       { status: 502 }
     );
   }

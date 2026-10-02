@@ -1,6 +1,11 @@
 import Link from "next/link";
 import { ArrowRight, BookOpen, ClipboardList, Target } from "lucide-react";
-import { getStudentAssignments, getStudentDashboard } from "@/lib/data";
+import {
+  getStudentAssignments,
+  getStudentDashboard,
+  getStudentSubjectScope,
+} from "@/lib/data";
+import { SubjectSetup } from "@/components/dashboard/SubjectSetup";
 import { ProgressRing } from "@/components/ui/ProgressRing";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
@@ -16,10 +21,22 @@ export const metadata = { title: "Home · Atlas" };
 export const dynamic = "force-dynamic";
 
 export default async function LearnHome() {
-  const [d, assignments] = await Promise.all([
+  const [d, assignments, scope] = await Promise.all([
     getStudentDashboard(),
     getStudentAssignments(),
+    getStudentSubjectScope(),
   ]);
+
+  // First thing a new student sees: pick your subjects, so the rest of the app
+  // is scoped to their syllabus.
+  if (scope.needsOnboarding) {
+    return (
+      <div className="mx-auto max-w-lg px-5 sm:px-8 py-16 animate-fade-up">
+        <SubjectSetup />
+      </div>
+    );
+  }
+
   const firstName = (d.profile?.full_name ?? "there").split(" ")[0];
   const today = new Date().toISOString().slice(0, 10);
   const goal = d.profile?.daily_goal_xp ?? 40;

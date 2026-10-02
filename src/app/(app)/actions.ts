@@ -242,6 +242,42 @@ export async function updateProfileName(
   return { ok: true };
 }
 
+const SUBJECT_TOKENS = ["combined", "biology", "chemistry"] as const;
+
+/**
+ * Save the student's chosen subjects (and optional level). Powers onboarding
+ * and the account page. Writes the profile row and keeps auth metadata in step
+ * so a later profile re-create (trigger) keeps the choice.
+ */
+export async function setStudySubjects(
+  tokens: string[],
+  level?: string
+): Promise<{ error?: string; ok?: boolean }> {
+  if (!isSupabaseConfigured) return { error: "Supabase not connected." };
+  const clean = [...new Set(tokens)].filter((t) =>
+    (SUBJECT_TOKENS as readonly string[]).includes(t)
+  );
+  if (clean.length === 0) return { error: "Pick at least one subject." };
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not signed in." };
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const patch: Record<string, any> = { study_subjects: clean };
+  if (level) patch.level = level;
+  const { error } = await supabase.from("profiles").update(patch).eq("id", user.id);
+  if (error) return { error: error.message };
+  await supabase.auth.updateUser({ data: { study_subjects: clean, ...(level ? { level } : {}) } });
+  revalidatePath("/learn");
+  revalidatePath("/practice");
+  revalidatePath("/plan");
+  revalidatePath("/account");
+  return { ok: true };
+}
+
 /** Change the signed-in user's password. */
 export async function changePassword(
   password: string

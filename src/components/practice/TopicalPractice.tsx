@@ -61,7 +61,9 @@ export function TopicalPractice({
       <header className="mb-6 flex items-end justify-between gap-4">
         <div>
           <h1 className="text-3xl font-semibold text-ink">{topicName}</h1>
-          <p className="text-ink-2 mt-1">Fresh questions on this topic, marked by Atlas.</p>
+          <p className="text-ink-2 mt-1">
+            Exam-style questions on this topic, marked instantly.
+          </p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <LinkButton href={`/learn/notes/${topicId}`} variant="secondary" size="sm">
@@ -78,7 +80,7 @@ export function TopicalPractice({
       {loading && (
         <div className="text-center py-20">
           <Loader2 size={28} className="text-accent animate-spin mx-auto mb-3" />
-          <p className="text-ink-2">Writing {count} fresh questions…</p>
+          <p className="text-ink-2">Loading your questions…</p>
         </div>
       )}
       {error && !loading && (

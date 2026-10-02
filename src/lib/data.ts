@@ -9,12 +9,25 @@ export type Profile = {
   email: string | null;
   role: "student" | "tutor" | "admin";
   level: string | null;
+  study_subjects: string[] | null;
   xp: number;
   current_streak: number;
   longest_streak: number;
   daily_goal_xp: number;
   last_active_date: string | null;
 };
+
+/** The fixed vocabulary a student picks from at signup. */
+export type StudySubjectToken = "combined" | "biology" | "chemistry";
+export const STUDY_SUBJECT_OPTIONS: {
+  token: StudySubjectToken;
+  label: string;
+  blurb: string;
+}[] = [
+  { token: "combined", label: "Combined Science", blurb: "Biology + Chemistry in one subject" },
+  { token: "biology", label: "Pure Biology", blurb: "Full Biology syllabus" },
+  { token: "chemistry", label: "Pure Chemistry", blurb: "Full Chemistry syllabus" },
+];
 
 export type OutcomeMastery = {
   outcomeId: string;
@@ -83,6 +96,86 @@ export async function getTutorClassrooms(): Promise<Classroom[]> {
     memberCount: c.classroom_members?.[0]?.count ?? 0,
     created_at: c.academic_year ?? "",
   }));
+}
+
+export type TutorOverview = {
+  classCount: number;
+  studentCount: number; // distinct students across all classes
+  totalAttempts: number;
+  avgPct: number | null; // mean across classes' answered questions
+  weakTopics: WeakTopic[]; // weakest topics aggregated across classes
+};
+
+/**
+ * Cross-class summary for the tutor landing dashboard. Aggregates the same
+ * per-class insight RPCs so the numbers always agree with each class page.
+ */
+export async function getTutorOverview(): Promise<TutorOverview> {
+  const empty: TutorOverview = {
+    classCount: 0,
+    studentCount: 0,
+    totalAttempts: 0,
+    avgPct: null,
+    weakTopics: [],
+  };
+  if (!isSupabaseConfigured) return empty;
+
+  const classes = await getTutorClassrooms();
+  if (classes.length === 0) return empty;
+
+  const perClass = await Promise.all(
+    classes.map((c) => getClassInsights(c.id))
+  );
+
+  const students = new Set<string>();
+  let totalAttempts = 0;
+  let pctSum = 0;
+  let pctWeight = 0;
+  // topicId -> weighted aggregate
+  const topicAgg = new Map<
+    string,
+    { topicName: string; subject: string; attempts: number; pctSum: number; students: number }
+  >();
+
+  for (const ins of perClass) {
+    for (const s of ins.students) {
+      students.add(s.studentId);
+      totalAttempts += s.attempts;
+      if (s.avgPct != null) {
+        pctSum += s.avgPct * Math.max(1, s.attempts);
+        pctWeight += Math.max(1, s.attempts);
+      }
+    }
+    for (const t of ins.weakTopics) {
+      const a =
+        topicAgg.get(t.topicId) ??
+        { topicName: t.topicName, subject: t.subject, attempts: 0, pctSum: 0, students: 0 };
+      a.attempts += t.attempts;
+      if (t.avgPct != null) a.pctSum += t.avgPct * Math.max(1, t.attempts);
+      a.students += t.students;
+      topicAgg.set(t.topicId, a);
+    }
+  }
+
+  const weakTopics: WeakTopic[] = [...topicAgg.entries()]
+    .map(([topicId, a]) => ({
+      topicId,
+      topicName: a.topicName,
+      subject: a.subject,
+      attempts: a.attempts,
+      avgPct: a.attempts > 0 ? Math.round(a.pctSum / Math.max(1, a.attempts)) : null,
+      students: a.students,
+    }))
+    .sort((x, y) => (x.avgPct ?? 101) - (y.avgPct ?? 101))
+    .slice(0, 6);
+
+  return {
+    classCount: classes.length,
+    studentCount: students.size,
+    totalAttempts,
+    avgPct: pctWeight > 0 ? Math.round(pctSum / pctWeight) : null,
+    weakTopics,
+  };
 }
 
 // ── Question bank ────────────────────────────────────────────────────────────
@@ -2113,14 +2206,98 @@ export async function getProfile(): Promise<Profile | null> {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return null;
-  const { data } = await supabase
+  // `study_subjects` arrives with migration 0023; fall back gracefully if the
+  // column isn't there yet so the app keeps working before it's run.
+  const full =
+    "id, full_name, email, role, level, study_subjects, xp, current_streak, longest_streak, daily_goal_xp, last_active_date";
+  const basic =
+    "id, full_name, email, role, level, xp, current_streak, longest_streak, daily_goal_xp, last_active_date";
+  let res = await supabase.from("profiles").select(full).eq("id", user.id).single();
+  if (res.error) res = await supabase.from("profiles").select(basic).eq("id", user.id).single();
+  if (!res.data) return null;
+  const row = res.data as Profile;
+  return { ...row, study_subjects: row.study_subjects ?? null };
+}
+
+/**
+ * The subjects a student has chosen to study, resolved to subject rows. Returns
+ * `needsOnboarding` when a student hasn't picked yet (so the UI can prompt).
+ * Tutors/admins always see everything. Resilient to the 0023 column missing.
+ */
+export async function getStudentSubjectScope(): Promise<{
+  needsOnboarding: boolean;
+  tokens: string[];
+  subjectIds: Set<string>;
+  subjectNames: Set<string>;
+  allowAll: boolean;
+}> {
+  const empty = {
+    needsOnboarding: false,
+    tokens: [] as string[],
+    subjectIds: new Set<string>(),
+    subjectNames: new Set<string>(),
+    allowAll: true,
+  };
+  if (!isSupabaseConfigured) return empty;
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return empty;
+
+  const profile = await getProfile();
+  if (!profile || profile.role !== "student") return empty; // staff see all
+
+  // Probe the column directly so we can tell "not chosen yet" (→ onboard) apart
+  // from "migration 0023 not run yet" (→ show everything, don't block anyone).
+  const probe = await supabase
     .from("profiles")
-    .select(
-      "id, full_name, email, role, level, xp, current_streak, longest_streak, daily_goal_xp, last_active_date"
-    )
+    .select("study_subjects")
     .eq("id", user.id)
     .single();
-  return (data as Profile) ?? null;
+  if (probe.error) return empty; // column missing → behave as before (allow all)
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const tokens: string[] = ((probe.data as any)?.study_subjects ?? []) as string[];
+  if (tokens.length === 0) {
+    return { ...empty, needsOnboarding: true, allowAll: false };
+  }
+
+  const { data: subjects } = await supabase
+    .from("subjects")
+    .select("id, name, track");
+  const subjectIds = new Set<string>();
+  const subjectNames = new Set<string>();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  for (const s of (subjects ?? []) as any[]) {
+    const name = String(s.name ?? "");
+    const track = String(s.track ?? "");
+    const isCombined = /combined/i.test(name) || /combined/i.test(track);
+    const match =
+      (tokens.includes("combined") && isCombined) ||
+      (tokens.includes("biology") && /biolog/i.test(name) && !isCombined) ||
+      (tokens.includes("chemistry") && /chem/i.test(name) && !isCombined);
+    if (match) {
+      subjectIds.add(s.id);
+      subjectNames.add(name);
+    }
+  }
+  return { needsOnboarding: false, tokens, subjectIds, subjectNames, allowAll: false };
+}
+
+/** Curriculum tree scoped to the signed-in student's chosen subjects. */
+export async function getStudentCurriculum(): Promise<{
+  needsOnboarding: boolean;
+  subjects: CurriculumSubject[];
+}> {
+  const scope = await getStudentSubjectScope();
+  const all = await getFullCurriculum();
+  if (scope.allowAll) return { needsOnboarding: false, subjects: all };
+  if (scope.needsOnboarding) return { needsOnboarding: true, subjects: [] };
+  return {
+    needsOnboarding: false,
+    subjects: all.filter((s) => scope.subjectIds.has(s.id)),
+  };
 }
 
 function buildBuckets(outcomes: OutcomeMastery[]): StudyBucket[] {
