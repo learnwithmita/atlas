@@ -5,8 +5,13 @@ const SECRET = process.env.STRIPE_SECRET_KEY ?? "";
 export const isStripeConfigured = SECRET.length > 0;
 
 /** Server-only Stripe client. Never import into a client component.
- *  Uses the SDK's built-in pinned API version. */
-export const stripe = new Stripe(SECRET, { typescript: true });
+ *  Uses the SDK's built-in pinned API version. A placeholder key is used when
+ *  Stripe isn't configured yet so importing this module (e.g. during the build,
+ *  or while billing is off) never throws — real calls are always guarded by
+ *  `isStripeConfigured`, so the placeholder is never used to reach Stripe. */
+export const stripe = new Stripe(SECRET || "sk_not_configured", {
+  typescript: true,
+});
 
 export const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET ?? "";
 
