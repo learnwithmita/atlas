@@ -1,34 +1,39 @@
 #!/usr/bin/env python3
 """
-Atlas pilot — Biology 6c: "explain how the structure of an alveolus is suited
-for its function of gaseous exchange."
+Atlas — Biology (gaseous exchange): "How the structure of an alveolus is suited
+for gaseous exchange."
 
-A silent, ~50 s, 1920x1080 (16:9) 30 fps explainer. One continuous scene whose
-key-point card cycles through the four alveolar adaptations while the matching
-part of the diagram highlights. Rendered frame-by-frame with Skia and encoded to
-H.264 / yuv420p MP4 (no audio track).
+A narrated tutor lesson, not a slideshow. ONE persistent diagram (an alveolus
+wrapped by a capillary) is built up and annotated progressively while the
+narration explains it — a continuous whiteboard, opening with a camera dive
+(lungs -> bronchiole -> a cluster of alveoli -> one alveolus) and closing on the
+four adaptations.
 
-Visual style follows docs/video/reference/STYLE.md, restyled for Atlas:
-indigo accent instead of teal, bg #F6F6F4. The drawing/motion helpers are copied
-from docs/video/reference/render.py and re-laid-out natively for 16:9 landscape.
+1920x1080 (16:9) 30 fps, H.264 / yuv420p video + AAC narration (Kokoro af_heart,
+~-16 LUFS). Rendered frame-by-frame with Skia; drawing/motion helpers are adapted
+from docs/video/reference/render.py and restyled to Atlas (indigo accent, yellow
+emphasis) per docs/video/reference/STYLE.md.
 
 Usage:
     python3 alveolus_pilot.py                 # full render -> out/alveolus_pilot.mp4
-    python3 alveolus_pilot.py --stills 5 25 50  # PNG stills -> out/stills/
+    python3 alveolus_pilot.py --stills        # 3 representative PNG stills
+    python3 alveolus_pilot.py --stills 8 40   # stills at given seconds
     python3 alveolus_pilot.py --workers 8
+
+Kokoro model files (kokoro-v1.0.onnx, voices-v1.0.bin) are read from $KOKORO_DIR
+or assets/kokoro/ and are NOT committed.
 """
-import argparse, math, os, subprocess, sys, re
+import argparse, math, os, subprocess, re
 import numpy as np
 import skia
 
 W, H, FPS = 1920, 1080, 30
 HERE = os.path.dirname(os.path.abspath(__file__))
-# repo root is two levels up from tools/video/
 ROOT = os.path.abspath(os.path.join(HERE, "..", ".."))
 OUT = os.path.join(ROOT, "out")
 
 # --------------------------------------------------------------------------
-# Palette — Atlas restyle (indigo accent, warm off-white bg)
+# Palette — Atlas restyle (indigo accent chrome, yellow emphasis, warm bg)
 # --------------------------------------------------------------------------
 PAL = dict(
     bg="#F6F6F4", card="#FFFFFF", ink="#1D2430", ink2="#5E6673", white="#FFFFFF",
@@ -40,6 +45,7 @@ PAL = dict(
     rbc="#D6434F", rbc_d="#B23340", rbc_hi="#EA7079",
     deox="#6E86B5", deox_d="#4F6690",
     moist="#CFE3EC", moist_d="#8FB3C6",
+    lung="#F3D7DC", lung_d="#D79AA6", airway="#B9BBEA",
 )
 
 
@@ -197,6 +203,11 @@ def lerp(a, b, k):
     return a + (b - a) * k
 
 
+def bump(t, a, b):
+    """0 -> 1 -> 0 over [a,b] (raised sine)."""
+    return math.sin(math.pi * lin(t, a, b))
+
+
 # --------------------------------------------------------------------------
 # Paths
 # --------------------------------------------------------------------------
@@ -275,7 +286,6 @@ def line(c, x0, y0, x1, y1, color="ink", w=3, a=1.0, dash=None):
 
 
 def cut(c, path, color, d=1.0, a=1.0, edge=True):
-    """Flat shape with a soft lift shadow and a crisp light edge."""
     drop_shadow(c, path, d, a)
     fill(c, path, color, a)
     if edge:
@@ -284,8 +294,6 @@ def cut(c, path, color, d=1.0, a=1.0, edge=True):
 
 
 class pop:
-    """'Pop-in' entrance: slide up, settle with slight overshoot, fade."""
-
     def __init__(self, c, t, t0, cx, cy, dur=0.6, dy=50, sc=0.9, rot=0.0, fade=True):
         self.c, self.k = c, clamp((t - t0) / dur)
         self.cx, self.cy, self.dy, self.sc, self.rot, self.fade = cx, cy, dy, sc, rot, fade
@@ -332,6 +340,22 @@ class alpha_layer:
         self.c.restore()
 
 
+class scale_about:
+    """Scale the canvas about (cx, cy)."""
+    def __init__(self, c, s, cx, cy):
+        self.c, self.s, self.cx, self.cy = c, s, cx, cy
+
+    def __enter__(self):
+        self.c.save()
+        if abs(self.s - 1) > 1e-4:
+            self.c.translate(self.cx, self.cy)
+            self.c.scale(self.s, self.s)
+            self.c.translate(-self.cx, -self.cy)
+
+    def __exit__(self, *a):
+        self.c.restore()
+
+
 def check_mark(c, cx, cy, s, color="white", w=None):
     p = skia.Path(); p.moveTo(cx - 0.5 * s, cy); p.lineTo(cx - 0.12 * s, cy + 0.36 * s); p.lineTo(cx + 0.55 * s, cy - 0.38 * s)
     stroke(c, p, color, w or s * 0.18)
@@ -346,23 +370,26 @@ def arrow(c, x0, y0, x1, y1, color="accent", w=5, a=1.0, head=16):
         line(c, x1, y1, ax, ay, color, w, a)
 
 
-# --------------------------------------------------------------------------
+# ==========================================================================
 # Layout — native 1920x1080 landscape. Nothing important in outer ~60 px.
-# --------------------------------------------------------------------------
+# ==========================================================================
 MARGIN = 60
 LX = 80                       # left column x
-LCOL_R = 760                  # left column right edge
+LCOL_R = 720                  # left column right edge
 TAG_Y = 84                    # tag pill top
-TITLE_Y = 214                 # title baseline (clear air below the tag)
-CAP_TOP = 320                 # key-point card top (clear gap below title)
-CHIP_Y, CHIP_H = 936, 112     # fact chips (bottom of left column)
+TITLE_Y = 214                 # title baseline
+CAP_TOP = 306                 # running caption card top
 
-# illustration region (right ~2/3); shifted down + right so the header never
-# crowds the diagram or its labels.
-ILL_L, ILL_R = 820, 1840
-CX, CY, R = 1400, 600, 250    # main alveolus centre + outer radius
+# persistent diagram (centre-right)
+ILL_L, ILL_R = 720, 1840
+CX, CY, R = 1330, 612, 250    # main alveolus centre + outer radius
 WALLT = 24                    # alveolus wall thickness
 RB = R + 70                   # capillary band centre radius
+CAP_A0, CAP_A1 = math.radians(-78), math.radians(165)   # capillary wraps right + bottom
+
+
+def P(ang, r):
+    return (CX + r * math.cos(ang), CY + r * math.sin(ang))
 
 
 def draw_background(c):
@@ -387,443 +414,508 @@ def card(c, x, y, w, h, r=26, color="card", d=0.9):
     fill(c, rr(x, y, w, h, r), color)
 
 
-# --- key-point card (left column) ----------------------------------------
-CAP_SIZE, CAP_LH = 40, 54
-CAP_X = LX + 12 + 30
-CAP_W = LCOL_R - CAP_X - 30
-
-
-def caption_height(lines):
-    return len(lines) * CAP_LH + 52
-
-
-def draw_caption(c, t, caps):
-    if not caps or t < caps[0][0]:
-        return
-    i = max(j for j, (t0, _) in enumerate(caps) if t0 <= t)
-    cur = rich_layout(caps[i][1], CAP_SIZE, CAP_W)
-    if len(cur) > 3:
-        print("WARNING: key point wraps to", len(cur), "lines:", caps[i][1], file=sys.stderr)
-    k, prev = 1.0, None
-    if i > 0:
-        k = lin(t, caps[i][0], caps[i][0] + 0.45)
-        prev = rich_layout(caps[i - 1][1], CAP_SIZE, CAP_W)
-    h = caption_height(cur) if prev is None else lerp(caption_height(prev), caption_height(cur), eio(k))
-    enter = eo(lin(t, caps[0][0], caps[0][0] + 0.5))
-    with alpha_layer(c, enter):
-        c.save(); c.translate(0, -24 * (1 - enter))
-        card(c, LX, CAP_TOP, LCOL_R - LX, h, 26, d=1.1)
-        c.save(); c.clipPath(rr(LX, CAP_TOP, LCOL_R - LX, h, 26), doAntiAlias=True)
-        fill(c, rr(LX, CAP_TOP, 12, h, 0), "accent")
-        ty = CAP_TOP + 26 + CAP_SIZE * 0.93
-        if prev is not None and k < 1:
-            rich_draw(c, prev, CAP_X, ty, CAP_SIZE, CAP_LH, a=clamp(1 - k * 2))
-            rich_draw(c, cur, CAP_X, ty, CAP_SIZE, CAP_LH, a=clamp(k * 2 - 1))
-        else:
-            rich_draw(c, cur, CAP_X, ty, CAP_SIZE, CAP_LH)
-        c.restore()
-        c.restore()
-
-
-# --- fact chips (left column bottom) --------------------------------------
-CHIPS = [("SURFACE AREA", "Large"), ("WALL", "1 cell"), ("GRADIENT", "Steep")]
-
-
-def chips(c, t, t0, active=-1):
-    gap = 16
-    w = (LCOL_R - LX - 2 * gap) / 3
-    x = LX
-    for i, (lab, val) in enumerate(CHIPS):
-        with pop(c, t, t0 + 0.1 * i, x + w / 2, CHIP_Y + CHIP_H / 2, dy=40) as v:
-            if v:
-                on = (i == active)
-                card(c, x, CHIP_Y, w, CHIP_H, 22, color=("accent_soft" if on else "card"))
-                fill(c, circ(x + 24, CHIP_Y + 32, 6), "accent")
-                if on:
-                    stroke(c, rr(x, CHIP_Y, w, CHIP_H, 22), "accent", 2.4)
-                txt(c, lab, x + 38, CHIP_Y + 40, "bold", 19, "ink2", spacing=1.6)
-                txt(c, val, x + 20, CHIP_Y + 92, "bold", fit_size(val, "bold", 42, w - 36), "ink")
-        x += w + gap
-
-
-# ==========================================================================
-# Illustration — one alveolus wrapped by a capillary
-# ==========================================================================
-def P(ang, r):
-    return (CX + r * math.cos(ang), CY + r * math.sin(ang))
-
-
-# capillary wraps the right + bottom of the alveolus
-CAP_A0, CAP_A1 = math.radians(-78), math.radians(165)
-
-
-def rbc(c, x, y, ang, s=1.0, color="rbc", a=1.0):
-    """biconcave red blood cell, tangent to its angle."""
-    c.save(); c.translate(x, y); c.rotate(math.degrees(ang) + 90)
-    drop_shadow(c, oval(0, 0, 30 * s, 20 * s), 0.4, 0.5 * a)
-    fill(c, oval(0, 0, 30 * s, 20 * s), color, a)
-    fill(c, oval(0, 0, 14 * s, 11 * s), ("deox_d" if color == "deox" else "rbc_d"), 0.55 * a)
-    fill(c, oval(-9 * s, -7 * s, 7 * s, 4 * s), ("white"), 0.22 * a)
-    c.restore()
-
-
-def draw_capillary(c, gt, build, dense):
-    """capillary band hugging the alveolus, with flowing blood cells."""
-    with alpha_layer(c, build):
-        # vessel band: wide stroked arc, pale capillary wall
-        band = arc_path(CX, CY, RB, CAP_A0, CAP_A1)
-        # shadow + wall
-        c.save(); c.translate(1.2, 4)
-        stroke(c, band, "shadow", 78, 0.16, )
-        c.restore()
-        stroke(c, band, "cap_d", 78)
-        stroke(c, band, "cap", 68)
-        # plasma lumen
-        stroke(c, band, "moist", 46, 0.5)
-        stroke(c, band, "cap", 40)
-        # flowing red blood cells, clipped to the band so they stay in the vessel
-        c.save()
-        clip = skia.Path()
-        for pp in (arc_pts(CX, CY, RB + 33, CAP_A0, CAP_A1)
-                   + arc_pts(CX, CY, RB - 33, CAP_A1, CAP_A0)):
-            if clip.isEmpty():
-                clip.moveTo(*pp)
-            else:
-                clip.lineTo(*pp)
-        clip.close()
-        c.clipPath(clip, doAntiAlias=True)
-        n = 11
-        flow = (gt * (0.16 if not dense else 0.26))
-        for i in range(n):
-            u = ((i / n) + flow) % 1.0
-            ang = CAP_A0 + (CAP_A1 - CAP_A0) * u
-            x, y = P(ang, RB)
-            # bottom half = deoxygenated (blue) entering; top-right = oxygenated (red) leaving
-            frac = u  # 0 near top-right (exit), 1 near lower-left (entry)
-            color = "deox" if frac > 0.5 else "rbc"
-            rbc(c, x, y, ang, 1.0, color)
-        c.restore()
-
-
-def o2_co2(c, gt, intensity=1.0):
-    """O2 diffusing in (alveolus -> blood), CO2 diffusing out (blood -> alveolus)."""
-    # two exchange sites on the right rim (clear of labels)
-    sites = [math.radians(8), math.radians(40)]
-    for si, ang in enumerate(sites):
-        wx, wy = P(ang, R - WALLT * 0.5)       # mid-wall point
-        inx, iny = P(ang, R - WALLT - 70)      # inside the air sac
-        outx, outy = P(ang, RB)                # in the capillary lumen
-        # O2 arrow: sac -> blood
-        arrow(c, inx, iny, outx, outy, "accent", 5, 0.9 * intensity, head=15)
-        # animated O2 dots travelling outward
-        for d in range(3):
-            u = ((gt * 0.5) + d / 3 + si * 0.2) % 1.0
-            px, py = lerp(inx, outx, u), lerp(iny, outy, u)
-            fill(c, circ(px, py, 7), "accent_soft")
-            stroke(c, circ(px, py, 7), "accent", 2, intensity)
-        txt(c, "O₂", inx - 4, iny - 16, "bold", 30, "ink", intensity, align="c")
-
-    # CO2 return site (slightly lower)
-    ang = math.radians(74)
-    inx, iny = P(ang, R - WALLT - 46)
-    outx, outy = P(ang, RB)
-    arrow(c, outx, outy, inx, iny, "ink", 5, 0.85 * intensity, head=15)
-    for d in range(3):
-        u = ((gt * 0.5) + d / 3) % 1.0
-        px, py = lerp(outx, inx, u), lerp(outy, iny, u)
-        fill(c, circ(px, py, 7), "card")
-        stroke(c, circ(px, py, 7), "ink2", 2, intensity)
-    txt(c, "CO₂", outx + 40, outy + 10, "bold", 30, "ink", intensity, align="c")
-
-
 def leader(c, tx, ty, px, py, a=1.0):
     line(c, tx, ty, px, py, "accent", 2.4, a, dash=[7.0, 6.0])
     fill(c, circ(px, py, 5), "accent", a)
 
 
-def label(c, s, lx, ly, px, py, align="l", a=1.0, size=27):
-    leader(c, lx, ly, px, py, a)
-    txt(c, s, lx, ly + 2, "semi", size, "ink", a, align=align)
+def label(c, s, lx, ly, px, py, align="l", a=1.0, size=27, sub=None):
+    """Text label with a dashed leader. The leader starts from the text edge
+    nearest the target so it never crosses the words."""
+    w = tw(s, "semi", size)
+    x0 = lx - w if align == "r" else lx
+    anchor_x = x0 + w + 14 if px >= x0 + w else (x0 - 14 if px <= x0 else (x0 + w / 2))
+    leader(c, anchor_x, ly - size * 0.33, px, py, a)
+    txt(c, s, lx, ly, "semi", size, "ink", a, align=align)
+    if sub:
+        txt(c, sub, lx, ly + 30, "med", 22, "ink2", a, align=align)
 
 
-def draw_alveolus(c, gt, phase, loc):
-    """phase: 0 title-build, 1..4 adaptations, 5 recap. loc = progress within phase."""
-    build = eo(lin(gt, 0.25, 2.4))
-    cx, cy = CX, CY
-    # --- satellite alveoli (convey "millions of alveoli") -------------------
-    # present during title build + phase 1, fade for the focused phases
-    p2s = TIMING["p_starts"][1]
-    sat_a = build * (1.0 if phase <= 1 else clamp(1 - lin(gt, p2s, p2s + 1.2)))
-    if sat_a > 0.01:
-        with alpha_layer(c, sat_a * 0.9):
-            sats = [(-150, -205, 86), (120, -210, 74), (205, -120, 70),
-                    (-225, -70, 72), (-205, 120, 66), (150, 205, 64), (-120, 205, 60)]
-            for i, (dx, dy, rr_) in enumerate(sats):
-                sx, sy = cx + dx, cy + dy
-                cut(c, circ(sx, sy, rr_), "rose", 0.7)
-                fill(c, circ(sx, sy, rr_ - 9), "air")
-                fill(c, circ(sx, sy, rr_ - 9), "rose_pale", 0.5)
-
-    # --- capillary (behind the alveolus rim) --------------------------------
-    draw_capillary(c, gt, build, dense=(phase == 4))
-
-    # --- main alveolus: wall ring + moist lining + air space ----------------
-    with alpha_layer(c, build):
-        cut(c, circ(cx, cy, R), "rose_d", 1.2)            # outer wall edge
-        fill(c, circ(cx, cy, R), "rose")                  # wall
-        fill(c, circ(cx, cy, R - WALLT), "air")           # air space base
-        fill(c, circ(cx, cy, R - WALLT), "rose_pale", 0.45)
-        # moist lining: a thin inner film (always faint; glistens in phase 3)
-        moist_a = 0.5 + 0.5 * (phase == 3) * (0.5 + 0.5 * math.sin(gt * 3))
-        stroke(c, circ(cx, cy, R - WALLT - 7), "moist", 10, clamp(moist_a))
-        stroke(c, circ(cx, cy, R - WALLT - 7), "moist_d", 2, 0.5 * clamp(moist_a))
-        # soft highlight sheen on the air sac
-        fill(c, oval(cx - 70, cy - 80, 120, 90), "white", 0.18)
-
-    # --- gas exchange arrows (always on; brightest in phase 4) --------------
-    with alpha_layer(c, build):
-        o2_co2(c, gt, intensity=(1.0 if phase >= 1 else 0.0) * (0.6 if phase != 4 else 1.0))
-
-    # --- labels -------------------------------------------------------------
-    lab_a = build * eo(lin(gt, 2.2, 3.0))
-    with alpha_layer(c, lab_a):
-        # alveolus wall (one cell thick) -> exposed main wall at the top
-        wtw = txt(c, "alveolus wall", 900, 168, "semi", 27, "ink", lab_a)
-        txt(c, "(one cell thick)", 900, 200, "med", 23, "ink2", lab_a)
-        leader(c, 900 + wtw + 16, 180, *P(math.radians(-95), R), lab_a)
-        # moist lining -> inner ring (left)
-        mx, my = P(math.radians(188), R - WALLT - 7)
-        label(c, "moist lining", 1030, 490, mx, my, align="r")
-        # capillary -> band (bottom)
-        bx, by = P(math.radians(120), RB)
-        label(c, "capillary", 1060, 1000, bx, by)
-        # red blood cell -> a cell on the lower-right band
-        rx, ry = P(math.radians(35), RB)
-        label(c, "red blood cell", 1560, 1000, rx, ry)
-
-    # --- phase-specific emphasis -------------------------------------------
-    if phase == 1:     # large surface area
-        emph_surface(c, gt, loc, build)
-    elif phase == 2:   # wall one cell thick -> short diffusion distance
-        emph_wall(c, gt, loc)
-    elif phase == 3:   # moist lining
-        emph_moist(c, gt, loc)
-    elif phase == 4:   # dense capillary network -> steep gradient
-        emph_dense(c, gt, loc)
+# ==========================================================================
+# Red blood cell + capillary + gas-exchange arrows (persistent diagram parts)
+# ==========================================================================
+def rbc(c, x, y, ang, s=1.0, color="rbc", a=1.0):
+    c.save(); c.translate(x, y); c.rotate(math.degrees(ang) + 90)
+    drop_shadow(c, oval(0, 0, 30 * s, 20 * s), 0.4, 0.5 * a)
+    fill(c, oval(0, 0, 30 * s, 20 * s), color, a)
+    fill(c, oval(0, 0, 14 * s, 11 * s), ("deox_d" if color == "deox" else "rbc_d"), 0.55 * a)
+    fill(c, oval(-9 * s, -7 * s, 7 * s, 4 * s), "white", 0.22 * a)
+    c.restore()
 
 
-def emph_surface(c, gt, loc, build):
-    a = eo(lin(loc, 0.0, 0.6)) * clamp(1 - lin(loc, 0.86, 1.0))
+def draw_capillary(c, gt, a, dense=False):
+    with alpha_layer(c, a):
+        band = arc_path(CX, CY, RB, CAP_A0, CAP_A1)
+        c.save(); c.translate(1.2, 4); stroke(c, band, "shadow", 78, 0.16); c.restore()
+        stroke(c, band, "cap_d", 78)
+        stroke(c, band, "cap", 68)
+        stroke(c, band, "moist", 46, 0.5)
+        stroke(c, band, "cap", 40)
+        # flowing red blood cells, clipped to the vessel
+        c.save()
+        clip = skia.Path()
+        for pp in (arc_pts(CX, CY, RB + 33, CAP_A0, CAP_A1)
+                   + arc_pts(CX, CY, RB - 33, CAP_A1, CAP_A0)):
+            (clip.moveTo if clip.isEmpty() else clip.lineTo)(*pp)
+        clip.close()
+        c.clipPath(clip, doAntiAlias=True)
+        n = 11
+        flow = gt * (0.26 if dense else 0.14)
+        for i in range(n):
+            u = ((i / n) + flow) % 1.0
+            ang = CAP_A0 + (CAP_A1 - CAP_A0) * u
+            x, y = P(ang, RB)
+            rbc(c, x, y, ang, 1.0, "deox" if u > 0.5 else "rbc")
+        c.restore()
+
+
+def o2_co2(c, gt, a=1.0):
+    """O2 diffusing in (alveolus -> blood); CO2 diffusing out (blood -> alveolus)."""
+    with alpha_layer(c, a):
+        for si, ang in enumerate([math.radians(6), math.radians(38)]):
+            inx, iny = P(ang, R - WALLT - 70)
+            outx, outy = P(ang, RB)
+            arrow(c, inx, iny, outx, outy, "accent", 5, 0.95, head=15)
+            for d in range(3):
+                u = ((gt * 0.5) + d / 3 + si * 0.2) % 1.0
+                px, py = lerp(inx, outx, u), lerp(iny, outy, u)
+                fill(c, circ(px, py, 7), "accent_soft")
+                stroke(c, circ(px, py, 7), "accent", 2)
+            txt(c, "O₂", inx - 4, iny - 16, "bold", 30, "ink", align="c")
+        ang = math.radians(72)
+        inx, iny = P(ang, R - WALLT - 46)
+        outx, outy = P(ang, RB)
+        arrow(c, outx, outy, inx, iny, "ink", 5, 0.9, head=15)
+        for d in range(3):
+            u = ((gt * 0.5) + d / 3) % 1.0
+            px, py = lerp(outx, inx, u), lerp(outy, iny, u)
+            fill(c, circ(px, py, 7), "card")
+            stroke(c, circ(px, py, 7), "ink2", 2)
+        txt(c, "CO₂", outx + 42, outy + 12, "bold", 30, "ink", align="c")
+
+
+def tagpill(c, cx, cy, title, sub, a=1.0, color="card"):
+    w = max(tw(title, "bold", 22), tw(sub, "semi", 20)) + 44
+    card(c, cx - w / 2, cy - 36, w, 72, 20, color, 0.7)
+    txt(c, title, cx, cy - 6, "bold", 22, "ink", a, align="c")
+    txt(c, sub, cx, cy + 22, "semi", 20, "ink2", a, align="c")
+
+
+# ==========================================================================
+# Opening camera dive:  lungs -> bronchiole -> alveoli cluster -> one alveolus
+# ==========================================================================
+def _lobe(cx, cy, w, h, side):
+    p = skia.Path()
+    p.moveTo(cx + side * 0.06 * w, cy - h / 2)
+    p.cubicTo(cx + side * 0.95 * w, cy - 0.46 * h,
+              cx + side * 0.98 * w, cy + 0.26 * h,
+              cx + side * 0.62 * w, cy + 0.50 * h)
+    p.cubicTo(cx + side * 0.34 * w, cy + 0.63 * h,
+              cx + side * 0.12 * w, cy + 0.52 * h,
+              cx + side * 0.10 * w, cy + 0.12 * h)
+    p.close()
+    return p
+
+
+def draw_lungs(c, gt, a, push):
     if a <= 0.01:
         return
-    pr = 0.5 + 0.5 * math.sin(gt * 2.2)
-    with alpha_layer(c, a):
-        stroke(c, circ(CX, CY, R + 128 + 6 * pr), "accent", 4, 0.8, dash=[14.0, 12.0])
-        # small ring badge "× millions"
-        bx, by = CX + 250, CY - 250
-        cut(c, rr(bx - 92, by - 30, 184, 60, 30), "accent", 0.7)
-        txt(c, "× millions", bx, by + 11, "bold", 28, "white", align="c")
+    with alpha_layer(c, a), scale_about(c, push, CX, CY):
+        br = 0.5 + 0.5 * math.sin(gt * 1.4)   # gentle breathing
+        with scale_about(c, 1 + 0.015 * br, CX, CY):
+            # trachea + main bronchi (airway tree)
+            stroke(c, rr(CX - 16, CY - 300, 32, 150, 16), "airway", 26)
+            line(c, CX, CY - 165, CX - 90, CY - 90, "airway", 22)
+            line(c, CX, CY - 165, CX + 90, CY - 90, "airway", 22)
+            for side in (-1, 1):
+                lobe = _lobe(CX, CY - 10, 250, 470, side)
+                cut(c, lobe, "lung", 1.0)
+                stroke(c, lobe, "lung_d", 3, 0.8)
+                # bronchial branches inside
+                bx = CX + side * 90
+                for k, (ex, ey) in enumerate([(side * 150, 40), (side * 120, 150),
+                                              (side * 80, 240), (side * 170, -60)]):
+                    line(c, bx, CY - 90, CX + ex, CY - 10 + ey, "airway", 7, 0.8)
+            # zoom target on the lower-right lobe
+            tx, ty = CX + 150, CY + 150
+            pr = 0.5 + 0.5 * math.sin(gt * 3)
+            stroke(c, circ(tx, ty, 40 + 6 * pr), "accent", 3, 0.9)
+        txt(c, "lungs", CX, CY - 330, "semi", 30, "ink", a, align="c")
 
 
-def emph_wall(c, gt, loc):
-    a = eo(lin(loc, 0.0, 0.55)) * clamp(1 - lin(loc, 0.88, 1.0))
+def draw_bronchiole(c, gt, a, push):
     if a <= 0.01:
         return
-    # magnifier inset: cross-section of the two thin walls + short distance arrow
-    zx, zy, zr = 1000, 800, 110
-    wx, wy = P(math.radians(150), R)
+    with alpha_layer(c, a), scale_about(c, push, CX, CY):
+        # a bronchiole tube branching to grape-like alveolar sacs
+        stroke(c, poly([(CX - 360, CY - 230), (CX - 150, CY - 120), (CX + 40, CY - 40)],
+                       close=False), "airway", 40)
+        tips = [(CX + 40, CY - 40), (CX - 150, CY - 120)]
+        stroke(c, poly([(CX + 40, CY - 40), (CX + 230, CY + 40)], close=False), "airway", 30)
+        stroke(c, poly([(CX + 40, CY - 40), (CX + 150, CY + 190)], close=False), "airway", 30)
+        stroke(c, poly([(CX - 150, CY - 120), (CX - 120, CY + 120)], close=False), "airway", 24)
+        clusters = [(CX + 280, CY + 70, 90), (CX + 170, CY + 240, 86),
+                    (CX - 150, CY + 190, 80), (CX - 300, CY - 40, 60)]
+        for (gx, gy, gr) in clusters:
+            for (dx, dy) in [(-0.5, -0.5), (0.5, -0.4), (0, 0.5), (0.7, 0.3), (-0.6, 0.4)]:
+                sx, sy = gx + dx * gr, gy + dy * gr
+                cut(c, circ(sx, sy, gr * 0.5), "rose", 0.7)
+                fill(c, circ(sx, sy, gr * 0.42), "rose_pale")
+        txt(c, "bronchiole", CX - 300, CY - 250, "semi", 28, "ink", a, align="c")
+
+
+def draw_cluster(c, gt, a, push):
+    if a <= 0.01:
+        return
+    with alpha_layer(c, a), scale_about(c, push, CX, CY):
+        sats = [(-250, -150, 120), (-70, -230, 110), (170, -190, 120), (300, -20, 108),
+                (250, 170, 112), (60, 250, 116), (-170, 210, 110), (-320, 40, 100),
+                (-40, 20, 150)]
+        for (dx, dy, rr_) in sats:
+            sx, sy = CX + dx, CY + dy
+            cut(c, circ(sx, sy, rr_), "rose", 0.9)
+            fill(c, circ(sx, sy, rr_ - 11), "air")
+            fill(c, circ(sx, sy, rr_ - 11), "rose_pale", 0.5)
+        txt(c, "millions of alveoli", CX, CY - 330, "semi", 30, "ink", a, align="c")
+
+
+def draw_opening(c, gt):
+    oe = TIMING["open_end"]
+    if gt >= oe:
+        return
+    push = lambda t0, t1, s0, s1: lerp(s0, s1, eo(lin(gt, t0, t1)))
+    # lungs: full first, push in and fade as we dive
+    a_l = clamp(1 - lin(gt, oe - 10.5, oe - 8.5)) * eo(lin(gt, 0.3, 1.6))
+    draw_lungs(c, gt, a_l, push(0, oe - 8.5, 1.0, 1.55))
+    # bronchiole
+    a_b = eo(lin(gt, oe - 9.8, oe - 8.3)) * clamp(1 - lin(gt, oe - 6.0, oe - 4.8))
+    draw_bronchiole(c, gt, a_b, push(oe - 9.8, oe - 4.8, 0.8, 1.5))
+    # cluster of alveoli
+    a_c = eo(lin(gt, oe - 6.0, oe - 4.8)) * clamp(1 - lin(gt, oe - 3.2, oe - 2.0))
+    draw_cluster(c, gt, a_c, push(oe - 6.0, oe - 2.0, 0.85, 1.4))
+
+
+# ==========================================================================
+# The persistent, progressively-annotated diagram
+# ==========================================================================
+def _wall_build(c, gt, a):
     with alpha_layer(c, a):
-        line(c, zx + zr * 0.7, zy - zr * 0.7, wx, wy, "accent", 2.2, 0.8, dash=[7.0, 6.0])
-        cut(c, circ(zx, zy, zr + 10), "accent", 1.2)
+        cut(c, circ(CX, CY, R), "rose_d", 1.2)
+        fill(c, circ(CX, CY, R), "rose")
+        fill(c, circ(CX, CY, R - WALLT), "air")
+        fill(c, circ(CX, CY, R - WALLT), "rose_pale", 0.45)
+        fill(c, oval(CX - 70, CY - 86, 120, 90), "white", 0.18)
+
+
+def moist_lining(c, gt, strong):
+    base = 0.55
+    glint = strong * (0.5 + 0.5 * math.sin(gt * 3))
+    av = clamp(base + 0.45 * glint)
+    stroke(c, circ(CX, CY, R - WALLT - 7), "moist", 10, av)
+    stroke(c, circ(CX, CY, R - WALLT - 7), "moist_d", 2, 0.5 * av)
+    if strong > 0.02:
+        with alpha_layer(c, strong):
+            for i, ang in enumerate([-150, -95, 150, 120, 205, 95, 40]):
+                dx, dy = P(math.radians(ang), R - WALLT - 20)
+                ph = 0.5 + 0.5 * math.sin(gt * 3 + i)
+                fill(c, circ(dx, dy, 6 + 3 * ph), "moist", 0.9)
+                fill(c, circ(dx - 2, dy - 2, 2.6), "white", 0.85)
+
+
+def wall_zoom(c, gt, a):
+    """Magnifier (top-right): cross-section of the two thin walls + short arrow."""
+    if a <= 0.01:
+        return
+    zx, zy, zr = 1706, 486, 96
+    wx, wy = P(math.radians(2), R)
+    with alpha_layer(c, a):
+        line(c, zx - zr * 0.7, zy + zr * 0.7, wx, wy, "accent", 2.2, 0.8, dash=[7.0, 6.0])
+        cut(c, circ(zx, zy, zr + 10), "accent", 1.1)
         c.save(); c.clipPath(circ(zx, zy, zr), doAntiAlias=True)
         fill(c, circ(zx, zy, zr), "air")
-        # layered cross-section (left = air sac, right = blood)
         fill(c, rr(zx - zr, zy - zr, zr * 2, zr * 2, 0), "rose_pale", 0.5)
-        fill(c, rr(zx + 6, zy - zr, zr * 2, zr * 2, 0), "cap", 0.9)             # plasma
-        fill(c, rr(zx - 10, zy - zr, 16, zr * 2, 0), "rose")                    # alveolus wall
-        fill(c, rr(zx + 6, zy - zr, 12, zr * 2, 0), "cap_d")                    # capillary wall
-        stroke(c, rr(zx - 10, zy - zr, 16, zr * 2, 0), "rose_d", 1.4)
-        rbc(c, zx + 70, zy + 8, math.radians(90), 1.15, "rbc")
-        # a couple of O2 dots crossing
+        fill(c, rr(zx + 4, zy - zr, zr * 2, zr * 2, 0), "cap", 0.95)     # plasma
+        fill(c, rr(zx - 9, zy - zr, 14, zr * 2, 0), "rose")             # alveolus wall
+        fill(c, rr(zx + 4, zy - zr, 10, zr * 2, 0), "cap_d")            # capillary wall
+        stroke(c, rr(zx - 9, zy - zr, 14, zr * 2, 0), "rose_d", 1.2)
+        rbc(c, zx + 58, zy + 6, math.radians(90), 1.0, "rbc")
         for d in range(2):
             u = ((gt * 0.6) + d / 2) % 1.0
-            px = lerp(zx - 60, zx + 60, u)
-            fill(c, circ(px, zy - 46, 7), "accent_soft")
-            stroke(c, circ(px, zy - 46, 7), "accent", 2)
-        # short-distance double arrow across the two walls
-        arrow(c, zx - 30, zy + 60, zx + 30, zy + 60, "ink", 4, 1, head=11)
-        arrow(c, zx + 30, zy + 60, zx - 30, zy + 60, "ink", 4, 1, head=11)
+            px = lerp(zx - 52, zx + 52, u)
+            fill(c, circ(px, zy - 44, 6), "accent_soft")
+            stroke(c, circ(px, zy - 44, 6), "accent", 2)
+        arrow(c, zx - 24, zy + 54, zx + 22, zy + 54, "ink", 4, 1, head=10)
+        arrow(c, zx + 22, zy + 54, zx - 24, zy + 54, "ink", 4, 1, head=10)
         c.restore()
-        txt(c, "short diffusion distance", zx, zy + zr + 36, "semi", 24, "ink", align="c")
+        txt(c, "two cells thin", zx, zy + zr + 34, "semi", 23, "ink", align="c")
 
 
-def emph_moist(c, gt, loc):
-    a = eo(lin(loc, 0.0, 0.55)) * clamp(1 - lin(loc, 0.88, 1.0))
-    if a <= 0.01:
+def draw_diagram(c, gt):
+    cue = TIMING["onsets"]
+    oe = TIMING["open_end"]
+    settle = eo(lin(gt, oe - 3.2, oe - 0.1))
+    if settle <= 0.001:
         return
-    with alpha_layer(c, a):
-        # glistening droplets around the inner lining + "gases dissolve" note
-        for i, ang in enumerate([-150, -95, 150, 120, 200, 95]):
-            dx, dy = P(math.radians(ang), R - WALLT - 20)
-            ph = 0.5 + 0.5 * math.sin(gt * 3 + i)
-            fill(c, circ(dx, dy, 7 + 3 * ph), "moist", 0.9)
-            fill(c, circ(dx - 2, dy - 2, 3), "white", 0.8)
-        bx, by = CX, CY + 20
-        cut(c, rr(bx - 150, by - 32, 300, 60, 30), "card", 0.8)
-        txt(c, "gases dissolve first", bx, by + 10, "semi", 26, "ink", align="c")
+    s_in = 0.55 + 0.45 * settle
+    # conclusion dim (keep diagram on screen for continuity)
+    dim = 1 - 0.6 * lin(gt, cue[8], cue[8] + 0.6)
+    # line-5 "widen to many alveoli" camera dip
+    wb = bump(gt, cue[4] + 0.8, cue[4] + 6.2)
+    cam = s_in * (1 - 0.30 * wb)
 
+    with alpha_layer(c, settle * dim), scale_about(c, cam, CX, CY):
+        # satellites during the widen
+        if wb > 0.01:
+            with alpha_layer(c, wb * 0.9):
+                for (dx, dy, rr_) in [(-330, -120, 150), (-170, -250, 120), (150, -250, 120),
+                                      (330, -70, 128), (300, 160, 120), (120, 280, 120),
+                                      (-170, 260, 118), (-340, 110, 110)]:
+                    sx, sy = CX + dx, CY + dy
+                    cut(c, circ(sx, sy, rr_), "rose", 0.8)
+                    fill(c, circ(sx, sy, rr_ - 10), "air")
+                    fill(c, circ(sx, sy, rr_ - 10), "rose_pale", 0.5)
 
-def emph_dense(c, gt, loc):
-    a = eo(lin(loc, 0.0, 0.55)) * clamp(1 - lin(loc, 0.9, 1.0))
-    if a <= 0.01:
-        return
-    with alpha_layer(c, a):
-        # extra capillary bands -> dense network
-        for rr_ in (RB + 48, RB + 96):
-            band = arc_path(CX, CY, rr_, math.radians(-40), math.radians(150))
-            stroke(c, band, "cap_d", 30, 0.9)
-            stroke(c, band, "cap", 22, 0.9)
-            n = 7
-            flow = gt * 0.26
-            clip = skia.Path()
-            for pp in (arc_pts(CX, CY, rr_ + 14, math.radians(-40), math.radians(150))
-                       + arc_pts(CX, CY, rr_ - 14, math.radians(150), math.radians(-40))):
-                (clip.moveTo if clip.isEmpty() else clip.lineTo)(*pp)
-            clip.close()
-            c.save(); c.clipPath(clip, doAntiAlias=True)
-            for i in range(n):
-                u = ((i / n) + flow) % 1.0
-                ang = math.radians(-40) + (math.radians(150) - math.radians(-40)) * u
-                x, y = P(ang, rr_)
-                rbc(c, x, y, ang, 0.7, "rbc" if u < 0.5 else "deox")
-            c.restore()
-        # steep gradient badge
-        bx, by = CX + 250, CY - 250
-        cut(c, rr(bx - 120, by - 30, 240, 60, 30), "accent", 0.7)
-        txt(c, "steep gradient", bx, by + 11, "bold", 28, "white", align="c")
+        draw_capillary(c, gt, 1.0, dense=(gt >= cue[7]))
+        _wall_build(c, gt, 1.0)
+        moist_lining(c, gt, strong=clamp(bump(gt, cue[6], cue[6] + (cue[7] - cue[6]))))
+
+        # in-place tags: air (high O2) / blood (low O2)  -- from line 2
+        at = eo(lin(gt, cue[1], cue[1] + 0.6))
+        if at > 0.01:
+            with alpha_layer(c, at):
+                tagpill(c, CX, CY - 150, "AIR SPACE", "high in O₂", color="accent_soft")
+                bx, by = P(math.radians(20), RB)
+                tagpill(c, bx + 2, by + 2, "BLOOD", "low in O₂")
+
+        # gas-exchange arrows -- from line 3 (intensify at line 8)
+        ga = eo(lin(gt, cue[2], cue[2] + 0.6))
+        if ga > 0.01:
+            o2_co2(c, gt, a=ga)
+
+        # magnifier cross-section -- line 6
+        wall_zoom(c, gt, clamp(bump(gt, cue[5], cue[5] + (cue[6] - cue[5]) + 1.0)))
+
+        # ---- structural labels (each in its own zone; leaders never cross) --
+        # capillary + red blood cell (from line 2 / 3)
+        la = eo(lin(gt, cue[1] + 0.3, cue[1] + 1.1))
+        with alpha_layer(c, la):
+            label(c, "capillary", 946, 1012, *P(math.radians(128), RB))
+        la3 = eo(lin(gt, cue[2] + 0.3, cue[2] + 1.1))
+        with alpha_layer(c, la3):
+            label(c, "red blood cells", 1536, 1012, *P(math.radians(44), RB))
+        # alveolus wall one cell thick (line 6)
+        law = eo(lin(gt, cue[5] + 0.2, cue[5] + 1.0))
+        with alpha_layer(c, law):
+            label(c, "alveolus wall", 752, 432, *P(math.radians(-128), R),
+                  sub="one cell thick")
+        # moist lining (line 7)
+        lam = eo(lin(gt, cue[6] + 0.2, cue[6] + 1.0))
+        with alpha_layer(c, lam):
+            label(c, "moist lining", 760, 628, *P(math.radians(184), R - WALLT - 7))
 
 
 # ==========================================================================
-# Recap card (final 3 s): the four adaptations as ticks
+# On-canvas factor chips (top row): the 3 conditions for fast diffusion
 # ==========================================================================
-RECAP = [
+FACTORS = [("Large surface area", 4, 5),     # (label, intro line idx, ticked-by line idx)
+           ("Short distance", 4, 6),
+           ("Steep gradient", 4, 8)]
+
+
+def factor_chips(c, gt):
+    cue, starts = TIMING["onsets"], TIMING["starts"]
+    intro = cue[3]
+    appear = eo(lin(gt, intro, intro + 0.6))
+    if appear <= 0.01:
+        return
+    fade = 1 - lin(gt, cue[8], cue[8] + 0.5)           # fade at conclusion
+    if fade <= 0.01:
+        return
+    n = len(FACTORS)
+    cw, gap = 300, 28
+    total = n * cw + (n - 1) * gap
+    x0 = (ILL_L + ILL_R) / 2 - total / 2
+    y, h = 128, 76
+    # tick each chip as its point is covered (gradient mid-way through line 8)
+    tick_line = {0: starts[5], 1: starts[6], 2: lerp(starts[7], starts[8], 0.72)}
+    with alpha_layer(c, fade):
+        for i, (lab, _, _) in enumerate(FACTORS):
+            x = x0 + i * (cw + gap)
+            with pop(c, gt, intro + 0.12 * i, x + cw / 2, y + h / 2, dy=26) as v:
+                if not v:
+                    continue
+                tk = eo(lin(gt, tick_line[i] - 0.4, tick_line[i] + 0.2))
+                card(c, x, y, cw, h, 20, color=("accent_soft" if tk > 0.5 else "card"))
+                cx0, cy0 = x + 36, y + h / 2
+                if tk > 0.01:
+                    cut(c, circ(cx0, cy0, 18), "accent", 0.6, a=tk)
+                    check_mark(c, cx0, cy0 + 1, 24, "white", w=4)
+                else:
+                    stroke(c, circ(cx0, cy0, 18), "ink2", 2.4, 0.5)
+                txt(c, lab, x + 66, y + h / 2 + 9, "semi",
+                    fit_size(lab, "semi", 27, cw - 86), "ink")
+
+
+# ==========================================================================
+# Running caption (left column) — the current teaching point, yellow emphasis
+# ==========================================================================
+CAP_SIZE, CAP_LH = 37, 49
+CAP_X = LX + 12 + 28
+CAP_W = LCOL_R - CAP_X - 26
+
+
+def caption_height(lines):
+    return len(lines) * CAP_LH + 50
+
+
+def draw_caption(c, gt):
+    caps = TIMING["caps"]
+    if gt >= TIMING["onsets"][8]:            # conclusion replaces the caption
+        return
+    if not caps or gt < caps[0][0]:
+        return
+    i = max(j for j, (t0, _) in enumerate(caps) if t0 <= gt)
+    cur = rich_layout(caps[i][1], CAP_SIZE, CAP_W)
+    k, prev = 1.0, None
+    if i > 0:
+        k = lin(gt, caps[i][0], caps[i][0] + 0.45)
+        prev = rich_layout(caps[i - 1][1], CAP_SIZE, CAP_W)
+    h = caption_height(cur) if prev is None else lerp(caption_height(prev), caption_height(cur), eio(k))
+    enter = eo(lin(gt, caps[0][0], caps[0][0] + 0.5))
+    with alpha_layer(c, enter):
+        c.save(); c.translate(0, -22 * (1 - enter))
+        card(c, LX, CAP_TOP, LCOL_R - LX, h, 26, d=1.1)
+        c.save(); c.clipPath(rr(LX, CAP_TOP, LCOL_R - LX, h, 26), doAntiAlias=True)
+        fill(c, rr(LX, CAP_TOP, 12, h, 0), "accent")
+        ty = CAP_TOP + 26 + CAP_SIZE * 0.9
+        if prev is not None and k < 1:
+            rich_draw(c, prev, CAP_X, ty, CAP_SIZE, CAP_LH, a=clamp(1 - k * 2))
+            rich_draw(c, cur, CAP_X, ty, CAP_SIZE, CAP_LH, a=clamp(k * 2 - 1))
+        else:
+            rich_draw(c, cur, CAP_X, ty, CAP_SIZE, CAP_LH)
+        c.restore(); c.restore()
+
+
+# ==========================================================================
+# Conclusion panel (line 9) — the four adaptations as ticks
+# ==========================================================================
+CONCLUSION = [
     "Large surface area",
-    "Thin wall — short diffusion distance",
-    "Moist lining",
+    "Walls one cell thick — short diffusion distance",
+    "Moist lining — gases dissolve",
     "Dense capillary network — steep gradient",
 ]
 
 
-def draw_recap(c, gt, t0):
-    rx, ry, rw = ILL_L + 40, 250, ILL_R - (ILL_L + 40) - 20
-    rh = 560
+def draw_conclusion(c, gt):
+    t0 = TIMING["onsets"][8]
+    if gt < t0 - 0.1:
+        return
+    rx, ry, rw, rh = LX, 300, 980, 600
     enter = eo(lin(gt, t0, t0 + 0.5))
     with alpha_layer(c, enter):
         c.save(); c.translate(0, -24 * (1 - enter))
         card(c, rx, ry, rw, rh, 30, d=1.2)
         fill(c, rr(rx, ry, 12, rh, 0), "accent")
-        txt(c, "Four adaptations for gaseous exchange", rx + 56, ry + 78, "disp",
-            fit_size("Four adaptations for gaseous exchange", "disp", 44, rw - 100), "ink")
-        for i, s in enumerate(RECAP):
-            ia = eo(lin(gt, t0 + 0.4 + i * 0.28, t0 + 0.9 + i * 0.28))
-            yy = ry + 168 + i * 92
+        txt(c, "Why the alveolus is perfect for gaseous exchange", rx + 54, ry + 74, "disp",
+            fit_size("Why the alveolus is perfect for gaseous exchange", "disp", 40, rw - 96), "ink")
+        for i, s in enumerate(CONCLUSION):
+            ia = eo(lin(gt, t0 + 0.5 + i * 0.5, t0 + 1.1 + i * 0.5))
+            yy = ry + 176 + i * 100
             with alpha_layer(c, ia):
                 c.save(); c.translate(0, 16 * (1 - ia))
-                cut(c, circ(rx + 86, yy, 30), "accent", 0.7)
-                check_mark(c, rx + 86, yy + 2, 40, "white")
-                txt(c, s, rx + 140, yy + 15, "semi",
-                    fit_size(s, "semi", 36, rw - 210), "ink")
+                cut(c, circ(rx + 82, yy, 30), "accent", 0.7)
+                check_mark(c, rx + 82, yy + 2, 40, "white")
+                txt(c, s, rx + 134, yy + 13, "semi",
+                    fit_size(s, "semi", 34, rw - 200), "ink")
                 c.restore()
         c.restore()
 
 
 # ==========================================================================
-# Narration script (Kokoro TTS, voice af_heart) + data-driven timeline
+# Narration script + synced captions + data-driven timeline
 # ==========================================================================
-# One spoken line per segment. The matching key-point card / diagram highlight
-# is on screen while its line is spoken; scene lengths stretch to the audio.
 SEG_TEXT = [
-    "Here's how one alveolus is built for gaseous exchange.",
-    "Millions of alveoli give a huge surface area, so a lot of gas diffuses at once.",
-    "Their walls are just one cell thick, a short distance for gases to cross.",
-    "A moist lining lets oxygen and carbon dioxide dissolve before they diffuse.",
-    "And a dense network of capillaries keeps a steep concentration gradient, "
-    "as oxygen moves into the blood and carbon dioxide moves out.",
-    "Large surface area, thin walls, a moist lining, and a rich blood supply. "
-    "That's what makes it so efficient.",
+    "Every cell in your body needs energy, and to release it they need oxygen, "
+    "and they make carbon dioxide as waste. So your body must keep taking in "
+    "oxygen and removing carbon dioxide. That swap happens in your lungs, in "
+    "millions of tiny air sacs called alveoli. Let's zoom in.",
+    "This swap is called gaseous exchange, and it happens by diffusion: gases "
+    "spreading from where they're crowded to where they're sparse, needing no energy.",
+    "The air in the alveolus is rich in oxygen, while the blood arriving is low "
+    "in oxygen, so oxygen diffuses into the blood. The blood is high in carbon "
+    "dioxide, so carbon dioxide diffuses out into the alveolus to be breathed out.",
+    "Here's the key idea. Diffusion is faster when three things are true: a large "
+    "surface area, a short distance to cross, and a steep concentration gradient. "
+    "The alveolus maximises all three.",
+    "First, surface area. You don't have one big balloon. You have millions of "
+    "alveoli, together about the size of a tennis court. More surface means more "
+    "oxygen crossing every second.",
+    "Second, distance. The alveolus wall is one cell thick, and so is the capillary "
+    "wall, so oxygen crosses just two thin cells. The shorter the distance, the "
+    "faster the diffusion.",
+    "Each alveolus is also lined with a thin film of moisture. Gases must dissolve "
+    "before they diffuse, and this moist lining lets oxygen dissolve first, then "
+    "pass into the blood.",
+    "Third, the gradient. Blood is always flowing, carrying absorbed oxygen away "
+    "and bringing more carbon dioxide, and every breath refreshes the air. So the "
+    "alveolus always has more oxygen than the blood, keeping the gradient steep and "
+    "diffusion fast, non-stop.",
+    "So, four features make the alveolus perfect for gaseous exchange: a large "
+    "surface area; walls one cell thick for a short diffusion distance; a moist "
+    "lining so gases dissolve; and a dense network of capillaries keeping a steep "
+    "concentration gradient.",
 ]
 
-# On-screen key-point cards for the four adaptations (emphasis = yellow only).
 CAP_TEXT = [
-    "*Large surface area* — millions of alveoli, so more gas diffuses at once.",
-    "Wall is *one cell thick* (alveolus + capillary) — a *short diffusion distance*.",
-    "*Moist lining* lets gases dissolve before diffusing across.",
-    "*Dense capillary network* keeps a *steep concentration gradient*.",
+    "Cells need *oxygen* and make *carbon dioxide*. The swap happens in the *alveoli*.",
+    "*Gaseous exchange* works by *diffusion*: gases spread from high to low.",
+    "*O₂* diffuses into the blood; *CO₂* diffuses out into the alveolus.",
+    "Diffusion is faster with a *large surface area*, a *short distance*, and a *steep gradient*.",
+    "*Surface area*: millions of alveoli — about a *tennis court*.",
+    "*Short distance*: walls just *one cell thick* — two thin cells to cross.",
+    "*Moist lining*: gases must *dissolve* before they diffuse.",
+    "*Steep gradient*: flowing blood and fresh air keep O₂ higher in the sac, *non-stop*.",
+    "Four adaptations make the alveolus *perfect* for gaseous exchange.",
 ]
 
-GAP = 0.5     # lead: the card / diagram appears, then the voice line begins
-TAIL = 0.7    # quiet beat after each spoken line
+GAP = 0.5     # lead: the card / annotation appears, then the voice line begins
+TAIL = 0.65   # quiet beat after each spoken line
 SR = 24000    # Kokoro native sample rate
-CHIP_FOR_PHASE = {1: 0, 2: 1, 4: 2}
 
-TIMING = {}   # populated by set_timing() (and copied into render workers)
+TIMING = {}
 
 
 def set_timing(durs):
-    """durs: spoken-clip length (s) per segment -> all scene start/stop times."""
     seg = [GAP + d + TAIL for d in durs]
-    seg[0] = max(seg[0], 3.2)                  # give the title build room
+    seg[0] = max(seg[0], 6.0)                 # the opening dive needs room
     starts = [0.0]
     for s in seg[:-1]:
         starts.append(starts[-1] + s)
     TIMING.clear()
     TIMING.update(
         seg=seg, starts=starts,
-        p_starts=starts[1:5], recap_t=starts[5],
-        duration=starts[5] + seg[5],
-        onsets=[starts[i] + GAP for i in range(6)],
-        caps=[(starts[1 + i], CAP_TEXT[i]) for i in range(4)],
+        onsets=[starts[i] + GAP for i in range(len(seg))],
+        open_end=starts[1],
+        duration=starts[-1] + seg[-1],
+        caps=[(starts[i] + GAP, CAP_TEXT[i]) for i in range(len(seg))],
     )
     TIMING["nframes"] = int(round(TIMING["duration"] * FPS))
     return TIMING
 
 
-def phase_of(gt):
-    ps, rt = TIMING["p_starts"], TIMING["recap_t"]
-    if gt >= rt:
-        return 5, 0.0
-    if gt < ps[0]:
-        return 0, lin(gt, 0, ps[0])
-    for i in range(len(ps) - 1, -1, -1):
-        if gt >= ps[i]:
-            end = ps[i + 1] if i + 1 < len(ps) else rt
-            return i + 1, lin(gt, ps[i], end)
-    return 0, 0.0
-
-
 def render_frame(c, gt):
     draw_background(c)
     heading(c, gt)
-    phase, loc = phase_of(gt)
-    rt = TIMING["recap_t"]
-
-    if phase == 5:
-        # recap: fade the live diagram, show recap card; keep chips
-        fade = clamp(1 - lin(gt, rt, rt + 0.4))
-        if fade > 0.01:
-            with alpha_layer(c, fade):
-                draw_alveolus(c, min(gt, rt - 0.01), 4, 0.99)
-        draw_recap(c, gt, rt)
-        chips(c, gt, 1.0, active=-1)
-        return
-
-    draw_alveolus(c, gt, phase, loc)
-    draw_caption(c, gt, TIMING["caps"])
-    chips(c, gt, 1.0, active=CHIP_FOR_PHASE.get(phase, -1))
+    draw_opening(c, gt)
+    draw_diagram(c, gt)
+    factor_chips(c, gt)
+    draw_caption(c, gt)
+    draw_conclusion(c, gt)
 
 
 # ==========================================================================
-# Narration synthesis (Kokoro af_heart) and soundtrack assembly
+# Narration synthesis (Kokoro af_heart) + soundtrack assembly
 # ==========================================================================
 def _model_dir():
     return os.environ.get("KOKORO_DIR") or os.path.join(ROOT, "assets", "kokoro")
@@ -833,13 +925,10 @@ def _trim(s, thresh=0.01):
     idx = np.where(np.abs(s) > thresh)[0]
     if len(idx) == 0:
         return s
-    a = max(0, idx[0] - int(0.03 * SR))
-    b = min(len(s), idx[-1] + int(0.12 * SR))
-    return s[a:b]
+    return s[max(0, idx[0] - int(0.03 * SR)): min(len(s), idx[-1] + int(0.14 * SR))]
 
 
 def synth_clips():
-    """Synthesize one voice clip per segment with Kokoro voice af_heart."""
     from kokoro_onnx import Kokoro
     md = _model_dir()
     onnx, voices = os.path.join(md, "kokoro-v1.0.onnx"), os.path.join(md, "voices-v1.0.bin")
@@ -851,7 +940,7 @@ def synth_clips():
     k = Kokoro(onnx, voices)
     clips = []
     for line in SEG_TEXT:
-        s, sr = k.create(line, voice="af_heart", speed=0.96, lang="en-us")
+        s, sr = k.create(line, voice="af_heart", speed=0.95, lang="en-us")
         s = np.asarray(s, dtype=np.float32)
         if sr != SR:
             n = int(round(len(s) * SR / sr))
@@ -862,7 +951,6 @@ def synth_clips():
 
 
 def build_soundtrack(clips, wav_path):
-    """Place each clip at its scheduled onset into one voice-only track."""
     import soundfile as sf
     total = int(TIMING["duration"] * SR)
     track = np.zeros(total + SR, dtype=np.float32)
@@ -877,7 +965,7 @@ def build_soundtrack(clips, wav_path):
 # ==========================================================================
 def render_segment(args):
     i0, i1, path, timing = args
-    TIMING.clear(); TIMING.update(timing)          # spawn-safe: workers get timing
+    TIMING.clear(); TIMING.update(timing)      # spawn-safe
     surf = skia.Surface(W, H)
     c = surf.getCanvas()
     cmd = ["ffmpeg", "-y", "-loglevel", "error", "-f", "rawvideo", "-pix_fmt", "bgra",
@@ -902,8 +990,8 @@ def render_still(t, path):
 
 
 def default_still_times():
-    ps, rt = TIMING["p_starts"], TIMING["recap_t"]
-    return [(ps[0] + ps[1]) / 2, (ps[1] + ps[2]) / 2, rt + 1.8]
+    cue = TIMING["onsets"]
+    return [cue[2] + 2.0, cue[5] + 2.5, cue[8] + 3.5]
 
 
 def main():
@@ -914,18 +1002,16 @@ def main():
     a = ap.parse_args()
     os.makedirs(OUT, exist_ok=True)
 
-    # Narration drives the timeline: synthesize first, then lay out to it.
     clips = synth_clips()
     durs = [len(s) / SR for s in clips]
     set_timing(durs)
     st = TIMING["starts"]
-    print("Timeline (s):  title 0.0 | p1 %.1f | p2 %.1f | p3 %.1f | p4 %.1f | recap %.1f | end %.1f"
-          % (st[1], st[2], st[3], st[4], st[5], TIMING["duration"]))
+    print("Timeline (s): " + "  ".join("L%d %.1f" % (i + 1, st[i]) for i in range(len(st)))
+          + "  end %.1f" % TIMING["duration"])
 
     if a.stills is not None:
         d = os.path.join(OUT, "stills"); os.makedirs(d, exist_ok=True)
-        times = a.stills if a.stills else default_still_times()
-        for t in times:
+        for t in (a.stills if a.stills else default_still_times()):
             p = os.path.join(d, f"alveolus_t{t:05.1f}.png"); render_still(t, p); print(p)
         return
 
@@ -946,12 +1032,10 @@ def main():
     subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-f", "concat", "-safe", "0", "-i", lst,
                     "-an", "-c:v", "copy", "-aspect", "16:9", "-movflags", "+faststart", silent], check=True)
 
-    # voice track + mux as AAC, normalized to ~ -16 LUFS
     wav = os.path.join(OUT, "narration.wav")
     build_soundtrack(clips, wav)
     subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", silent, "-i", wav,
-                    "-map", "0:v", "-map", "1:a",
-                    "-c:v", "copy", "-aspect", "16:9",
+                    "-map", "0:v", "-map", "1:a", "-c:v", "copy", "-aspect", "16:9",
                     "-af", "loudnorm=I=-16:TP=-1.5:LRA=11", "-ar", "48000",
                     "-c:a", "aac", "-b:a", "160k", "-shortest",
                     "-movflags", "+faststart", a.out], check=True)
