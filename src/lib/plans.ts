@@ -38,7 +38,6 @@ export const PLANS: Plan[] = [
     features: [
       "Everything in Free",
       "40 AI-marked answers a day",
-      "Build custom WA papers from any topics",
     ],
   },
   {
@@ -50,6 +49,7 @@ export const PLANS: Plan[] = [
     features: [
       "Everything in Pro",
       "Unlimited AI-marked answers — no daily limit",
+      "Build custom WA papers from any topics",
     ],
   },
 ];

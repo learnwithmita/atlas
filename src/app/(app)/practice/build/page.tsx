@@ -29,12 +29,12 @@ export default async function BuildPage() {
   }
 
   const ent = await getEntitlement();
-  if (!ent.isPro) {
+  if (ent.tier !== "premium") {
     return (
       <div className="mx-auto max-w-lg px-5 sm:px-8 py-16">
         <UpgradeCard
-          title="Build custom papers with Pro"
-          body="Mix any topics into one timed WA paper. Free practice is one topic at a time — upgrade to build full papers."
+          title="Build custom papers with Premium"
+          body="Mix any topics into one WA paper. Practising one topic at a time is included on every plan — building full custom papers is a Premium feature."
         />
       </div>
     );

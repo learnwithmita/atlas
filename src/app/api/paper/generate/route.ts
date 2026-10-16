@@ -44,15 +44,16 @@ export async function POST(req: Request) {
     .single();
   const isStaff = profile?.role === "admin" || profile?.role === "tutor";
 
-  // Building a multi-topic custom paper is a Pro feature. Single-topic practice
-  // stays free. (No-op while BILLING_ENABLED is off — everyone is Pro.)
+  // Building a multi-topic custom paper is a Premium feature. Single-topic
+  // practice stays free. (No-op while BILLING_ENABLED is off — everyone is
+  // Premium.)
   if (ids.length > 1) {
     const ent = await getEntitlement();
-    if (!ent.isPro) {
+    if (ent.tier !== "premium") {
       return NextResponse.json(
         {
           error:
-            "Building custom papers from multiple topics is a Pro feature. Upgrade to mix any topics into one paper.",
+            "Building custom papers from multiple topics is a Premium feature. Upgrade to Premium to mix any topics into one paper.",
           upgrade: true,
         },
         { status: 402 }
