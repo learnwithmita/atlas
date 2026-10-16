@@ -23,7 +23,7 @@ export const PLANS: Plan[] = [
     features: [
       "Diagnostic + mastery map",
       "Practice from the question bank",
-      "Up to 10 AI-marked answers a day",
+      "5 AI-marked answers a day",
       "Flashcards & fill-the-blanks",
       "Adaptive study plan",
     ],
@@ -31,29 +31,25 @@ export const PLANS: Plan[] = [
   {
     id: "pro",
     name: "Pro",
-    tagline: "Study like it's your tutor",
+    tagline: "Practise every day",
     monthly: 39,
     annual: 415,
     highlight: true,
     features: [
       "Everything in Free",
-      "Unlimited mark-scheme marking — no daily limit",
+      "40 AI-marked answers a day",
       "Build custom WA papers from any topics",
-      "Review every past answer & its feedback",
     ],
   },
   {
     id: "premium",
     name: "Premium",
-    tagline: "Exam-ready, tutor-guided",
+    tagline: "No limits",
     monthly: 79,
     annual: 840,
     features: [
       "Everything in Pro",
-      "Monthly progress report from your tutor",
-      "Priority support — your questions answered first",
-      "Exam-season revision pack",
-      "Early access to new subjects & topics",
+      "Unlimited AI-marked answers — no daily limit",
     ],
   },
 ];

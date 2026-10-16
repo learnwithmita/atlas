@@ -3,70 +3,95 @@ import { isSupabaseConfigured } from "@/lib/supabase/config";
 
 /**
  * Billing switch. While OFF (the default, and how you run before Stripe is
- * wired), EVERYONE is treated as Pro so every feature is open for testing.
- * Flip BILLING_ENABLED=true on Vercel once Stripe + the webhook are live and
- * the paywall should start enforcing.
+ * wired), EVERYONE gets unlimited access so every feature is open for testing.
+ * Flip BILLING_ENABLED=true on Vercel once Stripe + the webhook are live.
  */
 export const BILLING_ENABLED = process.env.BILLING_ENABLED === "true";
 
-/** Free tier gets this many AI-marked answers per day. Pro is unlimited. */
-export const FREE_DAILY_MARKS = Number(process.env.FREE_DAILY_MARKS ?? 10);
+// The only thing that differs across tiers: how many answers you can have
+// AI-marked per day (resets at midnight). Premium is unlimited.
+export const FREE_DAILY_MARKS = Number(process.env.FREE_DAILY_MARKS ?? 5);
+export const PRO_DAILY_MARKS = Number(process.env.PRO_DAILY_MARKS ?? 40);
 
-export type Tier = "free" | "pro";
+export type Tier = "free" | "pro" | "premium";
 export type Entitlement = {
   tier: Tier;
+  /** Paid plan (pro or premium). Kept as `isPro` so existing gates read simply. */
   isPro: boolean;
+  /** Max AI-marked answers per day; null = unlimited. */
+  dailyMarkCap: number | null;
   periodEnd: string | null;
-  /** Why they're Pro — useful for UI copy and debugging. */
   reason: "billing_off" | "staff" | "active_sub" | "free";
 };
 
-const PRO: Entitlement = { tier: "pro", isPro: true, periodEnd: null, reason: "billing_off" };
-const FREE: Entitlement = { tier: "free", isPro: false, periodEnd: null, reason: "free" };
+function capFor(tier: Tier): number | null {
+  if (tier === "premium") return null;
+  if (tier === "pro") return PRO_DAILY_MARKS;
+  return FREE_DAILY_MARKS;
+}
+
+/** Which paid tier a Stripe price belongs to (compared against the env IDs). */
+function tierForPriceId(priceId: string | null | undefined): "pro" | "premium" {
+  if (
+    priceId &&
+    (priceId === process.env.STRIPE_PRICE_PREMIUM_MONTHLY ||
+      priceId === process.env.STRIPE_PRICE_PREMIUM_ANNUAL)
+  ) {
+    return "premium";
+  }
+  return "pro";
+}
 
 /**
  * The single source of truth for what the signed-in user may access. Call this
- * on the SERVER in every gated route/action — never trust the client. Reads
- * status + period_end written by the Stripe webhook (the only writer).
+ * on the SERVER in every gated route/action — never trust the client.
  */
 export async function getEntitlement(): Promise<Entitlement> {
-  if (!BILLING_ENABLED) return PRO; // pre-launch / testing: all features open
-  if (!isSupabaseConfigured) return FREE;
+  // Pre-launch / testing: everyone unlimited.
+  if (!BILLING_ENABLED) {
+    return { tier: "premium", isPro: true, dailyMarkCap: null, periodEnd: null, reason: "billing_off" };
+  }
+  if (!isSupabaseConfigured) {
+    return { tier: "free", isPro: false, dailyMarkCap: capFor("free"), periodEnd: null, reason: "free" };
+  }
 
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return FREE;
+  if (!user) {
+    return { tier: "free", isPro: false, dailyMarkCap: capFor("free"), periodEnd: null, reason: "free" };
+  }
 
-  // Staff always have full access.
+  // Staff always have unlimited access.
   const { data: profile } = await supabase
     .from("profiles")
     .select("role")
     .eq("id", user.id)
     .single();
   if (profile?.role === "admin" || profile?.role === "tutor") {
-    return { ...PRO, reason: "staff" };
+    return { tier: "premium", isPro: true, dailyMarkCap: null, periodEnd: null, reason: "staff" };
   }
 
   const { data: sub } = await supabase
     .from("subscriptions")
-    .select("tier, status, period_end")
+    .select("tier, status, period_end, price_id")
     .eq("user_id", user.id)
     .maybeSingle();
 
   const paid = sub?.tier === "plus" || sub?.tier === "pro";
   const notExpired = !sub?.period_end || new Date(sub.period_end) > new Date();
-  // "trialing" users are mid free-trial — full Pro access until it converts.
   const live = sub?.status === "active" || sub?.status === "trialing";
   const active = !!sub && live && paid && notExpired;
 
-  return active
-    ? { tier: "pro", isPro: true, periodEnd: sub!.period_end ?? null, reason: "active_sub" }
-    : FREE;
+  if (!active) {
+    return { tier: "free", isPro: false, dailyMarkCap: capFor("free"), periodEnd: null, reason: "free" };
+  }
+  const tier = tierForPriceId(sub!.price_id);
+  return { tier, isPro: true, dailyMarkCap: capFor(tier), periodEnd: sub!.period_end ?? null, reason: "active_sub" };
 }
 
-/** How many answers the student has had AI-marked today (for the free cap). */
+/** How many answers the user has had AI-marked today (resets at midnight). */
 export async function marksUsedToday(): Promise<number> {
   if (!isSupabaseConfigured) return 0;
   const supabase = await createClient();
@@ -85,19 +110,20 @@ export async function marksUsedToday(): Promise<number> {
 }
 
 /**
- * Gate for the AI-marking endpoints. Pro → always allowed. Free → allowed until
- * the daily cap is hit. Returns a reason the caller surfaces as an upgrade nudge.
+ * Gate for the AI-marking endpoints. Unlimited tiers always pass; capped tiers
+ * pass until the daily limit, then return an upgrade nudge pointing at the next
+ * tier up.
  */
 export async function canMarkNow(): Promise<{ ok: boolean; reason?: string; isPro: boolean }> {
   const ent = await getEntitlement();
-  if (ent.isPro) return { ok: true, isPro: true };
+  if (ent.dailyMarkCap === null) return { ok: true, isPro: ent.isPro };
   const used = await marksUsedToday();
-  if (used >= FREE_DAILY_MARKS) {
-    return {
-      ok: false,
-      isPro: false,
-      reason: `You've used your ${FREE_DAILY_MARKS} free marked answers for today. Upgrade to Pro for unlimited marking.`,
-    };
+  if (used >= ent.dailyMarkCap) {
+    const reason =
+      ent.tier === "free"
+        ? `You've used your ${ent.dailyMarkCap} free marked answers for today. Upgrade to Pro for ${PRO_DAILY_MARKS} a day — or Premium for unlimited.`
+        : `You've used today's ${ent.dailyMarkCap} marked answers. Upgrade to Premium for unlimited marking.`;
+    return { ok: false, isPro: ent.isPro, reason };
   }
-  return { ok: true, isPro: false };
+  return { ok: true, isPro: ent.isPro };
 }
