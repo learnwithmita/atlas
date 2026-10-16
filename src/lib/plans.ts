@@ -1,5 +1,5 @@
 export type Plan = {
-  id: "free" | "pro";
+  id: "free" | "pro" | "premium";
   name: string;
   tagline: string;
   monthly: number; // SGD
@@ -8,9 +8,11 @@ export type Plan = {
   highlight?: boolean;
 };
 
-// Two tiers only — a single, obvious upgrade decision converts far better than
-// a 3-way choice. Prices in SGD. Adjust here and in your Stripe dashboard
-// together (the Stripe Price IDs are what actually charge the card).
+// Three tiers — Free / Pro / Premium. Pro is the one most people should land on;
+// Premium is priced ~2x to anchor Pro as the sensible middle choice, and adds
+// the human, tutor-delivered layer (not app features we don't have). Prices in
+// SGD. Change here AND in your Stripe dashboard together (Stripe Price IDs are
+// what actually charge the card).
 export const PLANS: Plan[] = [
   {
     id: "free",
@@ -31,13 +33,27 @@ export const PLANS: Plan[] = [
     name: "Pro",
     tagline: "Study like it's your tutor",
     monthly: 39,
-    annual: 360, // S$30/mo — "about S$1 a day", 23% off monthly
+    annual: 415,
     highlight: true,
     features: [
       "Everything in Free",
-      "Unlimited mark-scheme marking",
+      "Unlimited mark-scheme marking — no daily limit",
       "Build custom WA papers from any topics",
-      "Priority support from your tutor",
+      "Review every past answer & its feedback",
+    ],
+  },
+  {
+    id: "premium",
+    name: "Premium",
+    tagline: "Exam-ready, tutor-guided",
+    monthly: 79,
+    annual: 840,
+    features: [
+      "Everything in Pro",
+      "Monthly progress report from your tutor",
+      "Priority support — your questions answered first",
+      "Exam-season revision pack",
+      "Early access to new subjects & topics",
     ],
   },
 ];
@@ -48,4 +64,10 @@ export function priceFor(plan: Plan, cycle: "monthly" | "annual") {
 
 export function perMonth(plan: Plan, cycle: "monthly" | "annual") {
   return cycle === "monthly" ? plan.monthly : Math.round(plan.annual / 12);
+}
+
+/** Annual saving vs paying monthly, as a whole-number %. */
+export function annualSavingPct(plan: Plan): number {
+  if (!plan.monthly || !plan.annual) return 0;
+  return Math.round((1 - plan.annual / (plan.monthly * 12)) * 100);
 }

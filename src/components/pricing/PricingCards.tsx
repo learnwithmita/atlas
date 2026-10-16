@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Check } from "lucide-react";
-import { PLANS, perMonth, type Plan } from "@/lib/plans";
+import { PLANS, perMonth, annualSavingPct, type Plan } from "@/lib/plans";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { cn } from "@/lib/utils";
@@ -11,6 +11,9 @@ import { cn } from "@/lib/utils";
 export function PricingCards() {
   const [cycle, setCycle] = useState<"monthly" | "annual">("annual");
   const router = useRouter();
+
+  // Headline saving comes from the highlighted (Pro) plan.
+  const save = annualSavingPct(PLANS.find((p) => p.highlight) ?? PLANS[1]);
 
   function choose(plan: Plan) {
     if (plan.id === "free") {
@@ -38,10 +41,10 @@ export function PricingCards() {
             </button>
           ))}
         </div>
-        <Badge tone="mint">Save 23% annually</Badge>
+        <Badge tone="mint">Save {save}% annually</Badge>
       </div>
 
-      <div className="grid sm:grid-cols-2 gap-5 max-w-3xl mx-auto">
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 max-w-5xl mx-auto">
         {PLANS.map((plan) => (
           <div
             key={plan.id}

@@ -15,16 +15,38 @@ export const stripe = new Stripe(SECRET || "sk_not_configured", {
 
 export const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET ?? "";
 
-/** Stripe Price IDs (create these in the Stripe dashboard → Products). */
+/** Stripe Price IDs per tier + cycle (create these in the Stripe dashboard). */
 export const PRICE_IDS = {
-  monthly: process.env.STRIPE_PRICE_PRO_MONTHLY ?? "",
-  annual: process.env.STRIPE_PRICE_PRO_ANNUAL ?? "",
-};
+  pro: {
+    monthly: process.env.STRIPE_PRICE_PRO_MONTHLY ?? "",
+    annual: process.env.STRIPE_PRICE_PRO_ANNUAL ?? "",
+  },
+  premium: {
+    monthly: process.env.STRIPE_PRICE_PREMIUM_MONTHLY ?? "",
+    annual: process.env.STRIPE_PRICE_PREMIUM_ANNUAL ?? "",
+  },
+} as const;
 
-/** Map a Stripe Price ID back to our billing cycle (for the webhook). */
-export function cycleForPrice(priceId: string | null | undefined): "monthly" | "annual" | null {
+export type PaidPlanId = keyof typeof PRICE_IDS;
+
+export function priceId(plan: PaidPlanId, cycle: "monthly" | "annual"): string {
+  return PRICE_IDS[plan]?.[cycle] ?? "";
+}
+
+/** Map a Stripe Price ID back to its tier + cycle (for the webhook). */
+export function planForPrice(
+  priceId: string | null | undefined
+): { plan: PaidPlanId; cycle: "monthly" | "annual" } | null {
   if (!priceId) return null;
-  if (priceId === PRICE_IDS.monthly) return "monthly";
-  if (priceId === PRICE_IDS.annual) return "annual";
+  for (const plan of ["pro", "premium"] as const) {
+    for (const cycle of ["monthly", "annual"] as const) {
+      if (priceId === PRICE_IDS[plan][cycle]) return { plan, cycle };
+    }
+  }
   return null;
+}
+
+/** Billing cycle for a price (back-compat helper used by the webhook). */
+export function cycleForPrice(priceId: string | null | undefined): "monthly" | "annual" | null {
+  return planForPrice(priceId)?.cycle ?? null;
 }

@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createServiceClient, isServiceConfigured } from "@/lib/supabase/admin";
 import { BILLING_ENABLED } from "@/lib/entitlements";
-import { isStripeConfigured, stripe, PRICE_IDS } from "@/lib/stripe";
+import { isStripeConfigured, stripe, priceId, type PaidPlanId } from "@/lib/stripe";
 
 async function siteOrigin(): Promise<string> {
   const h = await headers();
@@ -21,6 +21,7 @@ async function siteOrigin(): Promise<string> {
  * Stripe confirms payment — the client can never grant itself a tier.
  */
 export async function startCheckout(
+  plan: PaidPlanId,
   cycle: "monthly" | "annual"
 ): Promise<{ url?: string; error?: string }> {
   if (!BILLING_ENABLED) {
@@ -29,7 +30,7 @@ export async function startCheckout(
   if (!isStripeConfigured) return { error: "Payments aren't configured yet." };
   if (!isSupabaseConfigured) return { error: "Please sign in first." };
 
-  const price = PRICE_IDS[cycle];
+  const price = priceId(plan, cycle);
   if (!price) return { error: "That plan isn't available yet." };
 
   const supabase = await createClient();

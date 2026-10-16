@@ -4,8 +4,15 @@ How Atlas charges for Pro, and exactly what to do to turn it on.
 
 ## How it works (plain English)
 
-- **Plans** live in [`src/lib/plans.ts`](src/lib/plans.ts): Free (S$0) and Pro
-  (S$39/mo or S$360/yr ≈ S$1/day). Change prices there **and** in Stripe together.
+- **Plans** live in [`src/lib/plans.ts`](src/lib/plans.ts): Free (S$0), Pro
+  (S$39/mo · S$415/yr) and Premium (S$79/mo · S$840/yr). Change prices there
+  **and** in Stripe together.
+- **Pro vs Premium:** the *app* is identical on both — both unlock everything the
+  software does. **Premium is the human layer you deliver** (monthly progress
+  report, priority support, revision pack). So the code treats both as full
+  access; `price_id` on the subscription row tells you who bought Premium so you
+  can fulfil those perks (visible in Stripe too). No app feature is Premium-only,
+  which keeps it honest.
 - **Access** is decided on the server by `getEntitlement()` in
   [`src/lib/entitlements.ts`](src/lib/entitlements.ts). Never trust the browser.
 - **The switch:** `BILLING_ENABLED`.
@@ -39,10 +46,10 @@ Enforced in: `/api/mark`, `/api/mark-open` (daily cap), `/api/paper/generate`
 1. **Run the migration** `supabase/migrations/0024_billing.sql` in the Supabase
    SQL editor. (Adds Stripe columns, one-row-per-user, and locks down RLS.)
 2. **Create a Stripe account** → switch to **Test mode** first.
-3. **Create the product**: Products → Add product → "Atlas Pro". Add **two
-   prices** (recurring, SGD):
-   - Monthly S$39 → copy its **Price ID** (`price_…`)
-   - Yearly S$360 → copy its **Price ID**
+3. **Create two products** (Products → Add product), each with a monthly and a
+   yearly recurring price in **SGD**, and copy all four **Price IDs** (`price_…`):
+   - **Atlas Pro** — Monthly **S$39**, Yearly **S$415**
+   - **Atlas Premium** — Monthly **S$79**, Yearly **S$840**
 4. **Add env vars** (Vercel → Project → Settings → Environment Variables; and
    `.env.local` for local):
    ```
@@ -50,6 +57,8 @@ Enforced in: `/api/mark`, `/api/mark-open` (daily cap), `/api/paper/generate`
    STRIPE_WEBHOOK_SECRET=whsec_…      (from step 6)
    STRIPE_PRICE_PRO_MONTHLY=price_…
    STRIPE_PRICE_PRO_ANNUAL=price_…
+   STRIPE_PRICE_PREMIUM_MONTHLY=price_…
+   STRIPE_PRICE_PREMIUM_ANNUAL=price_…
    # leave BILLING_ENABLED unset until step 7
    ```
 5. **Enable the Billing Portal**: Stripe → Settings → Billing → Customer portal →

@@ -8,18 +8,20 @@ import { startCheckout } from "@/app/checkout/actions";
 import { PLANS, priceFor, perMonth } from "@/lib/plans";
 
 export function CheckoutForm({
+  planId,
   cycle,
 }: {
+  planId: "pro" | "premium";
   cycle: "monthly" | "annual";
 }) {
-  const plan = PLANS.find((p) => p.id === "pro")!;
+  const plan = PLANS.find((p) => p.id === planId)!;
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
 
   function goToStripe() {
     setError(null);
     start(async () => {
-      const res = await startCheckout(cycle);
+      const res = await startCheckout(planId, cycle);
       if (res.url) window.location.href = res.url;
       else setError(res.error ?? "Couldn't start checkout.");
     });
@@ -44,7 +46,9 @@ export function CheckoutForm({
         </p>
 
         <div className="rounded-[18px] border border-hairline bg-surface-2 p-5 mb-6">
-          <p className="text-ink font-medium mb-1">Atlas Pro · 7-day free trial</p>
+          <p className="text-ink font-medium mb-1">
+            Atlas {plan.name} · 7-day free trial
+          </p>
           <p className="text-sm text-ink-2">
             You won&apos;t be charged today. Stripe&apos;s secure page takes your
             details and starts a 7-day free trial — cancel anytime before it ends
