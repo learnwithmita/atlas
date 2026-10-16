@@ -352,14 +352,15 @@ def arrow(c, x0, y0, x1, y1, color="accent", w=5, a=1.0, head=16):
 MARGIN = 60
 LX = 80                       # left column x
 LCOL_R = 760                  # left column right edge
-TAG_Y = 72                    # tag pill top
-TITLE_Y = 196                 # title baseline
-CAP_TOP = 258                 # key-point card top
-CHIP_Y, CHIP_H = 932, 112     # fact chips (bottom of left column)
+TAG_Y = 84                    # tag pill top
+TITLE_Y = 214                 # title baseline (clear air below the tag)
+CAP_TOP = 320                 # key-point card top (clear gap below title)
+CHIP_Y, CHIP_H = 936, 112     # fact chips (bottom of left column)
 
-# illustration region (right ~2/3)
-ILL_L, ILL_R = 800, 1840
-CX, CY, R = 1360, 560, 258    # main alveolus centre + outer radius
+# illustration region (right ~2/3); shifted down + right so the header never
+# crowds the diagram or its labels.
+ILL_L, ILL_R = 820, 1840
+CX, CY, R = 1400, 600, 250    # main alveolus centre + outer radius
 WALLT = 24                    # alveolus wall thickness
 RB = R + 70                   # capillary band centre radius
 
@@ -369,7 +370,7 @@ def draw_background(c):
 
 
 def heading(c, t):
-    tag = "GASEOUS EXCHANGE · 6c"
+    tag = "GASEOUS EXCHANGE"
     with pop(c, t, 0.05, LX + 160, TAG_Y + 26, dy=30) as v:
         if v:
             w = tw(tag, "bold", 24, 2.5)
@@ -551,7 +552,8 @@ def draw_alveolus(c, gt, phase, loc):
     cx, cy = CX, CY
     # --- satellite alveoli (convey "millions of alveoli") -------------------
     # present during title build + phase 1, fade for the focused phases
-    sat_a = build * (1.0 if phase <= 1 else clamp(1 - lin(gt, P_STARTS[1], P_STARTS[1] + 1.2)))
+    p2s = TIMING["p_starts"][1]
+    sat_a = build * (1.0 if phase <= 1 else clamp(1 - lin(gt, p2s, p2s + 1.2)))
     if sat_a > 0.01:
         with alpha_layer(c, sat_a * 0.9):
             sats = [(-150, -205, 86), (120, -210, 74), (205, -120, 70),
@@ -586,18 +588,18 @@ def draw_alveolus(c, gt, phase, loc):
     lab_a = build * eo(lin(gt, 2.2, 3.0))
     with alpha_layer(c, lab_a):
         # alveolus wall (one cell thick) -> exposed main wall at the top
-        wtw = txt(c, "alveolus wall", 828, 150, "semi", 27, "ink", lab_a)
-        txt(c, "(one cell thick)", 828, 182, "med", 23, "ink2", lab_a)
-        leader(c, 828 + wtw + 16, 162, *P(math.radians(-95), R), lab_a)
+        wtw = txt(c, "alveolus wall", 900, 168, "semi", 27, "ink", lab_a)
+        txt(c, "(one cell thick)", 900, 200, "med", 23, "ink2", lab_a)
+        leader(c, 900 + wtw + 16, 180, *P(math.radians(-95), R), lab_a)
         # moist lining -> inner ring (left)
         mx, my = P(math.radians(188), R - WALLT - 7)
-        label(c, "moist lining", 980, 470, mx, my, align="r")
+        label(c, "moist lining", 1030, 490, mx, my, align="r")
         # capillary -> band (bottom)
         bx, by = P(math.radians(120), RB)
-        label(c, "capillary", 1030, 980, bx, by)
+        label(c, "capillary", 1060, 1000, bx, by)
         # red blood cell -> a cell on the lower-right band
         rx, ry = P(math.radians(35), RB)
-        label(c, "red blood cell", 1540, 980, rx, ry)
+        label(c, "red blood cell", 1560, 1000, rx, ry)
 
     # --- phase-specific emphasis -------------------------------------------
     if phase == 1:     # large surface area
@@ -628,7 +630,7 @@ def emph_wall(c, gt, loc):
     if a <= 0.01:
         return
     # magnifier inset: cross-section of the two thin walls + short distance arrow
-    zx, zy, zr = 980, 752, 112
+    zx, zy, zr = 1000, 800, 110
     wx, wy = P(math.radians(150), R)
     with alpha_layer(c, a):
         line(c, zx + zr * 0.7, zy - zr * 0.7, wx, wy, "accent", 2.2, 0.8, dash=[7.0, 6.0])
@@ -736,67 +738,146 @@ def draw_recap(c, gt, t0):
 
 
 # ==========================================================================
-# Timeline
+# Narration script (Kokoro TTS, voice af_heart) + data-driven timeline
 # ==========================================================================
-#  0.0 - 3.0   title build
-#  3.0 -14.5   1 large surface area
-# 14.5 -26.0   2 wall one cell thick -> short diffusion distance
-# 26.0 -37.5   3 moist lining
-# 37.5 -49.0   4 dense capillary network -> steep gradient
-# 49.0 -52.0   recap ticks
-P_STARTS = [3.0, 14.5, 26.0, 37.5]
-RECAP_T = 49.0
-DURATION = 52.0
-NFRAMES = int(round(DURATION * FPS))
-
-CAPS = [
-    (P_STARTS[0], "*Large surface area* — millions of alveoli, so more gas diffuses at once."),
-    (P_STARTS[1], "Wall is *one cell thick* (alveolus + capillary) — a *short diffusion distance*."),
-    (P_STARTS[2], "*Moist lining* lets gases dissolve before diffusing across."),
-    (P_STARTS[3], "*Dense capillary network* keeps a *steep concentration gradient*."),
+# One spoken line per segment. The matching key-point card / diagram highlight
+# is on screen while its line is spoken; scene lengths stretch to the audio.
+SEG_TEXT = [
+    "Here's how one alveolus is built for gaseous exchange.",
+    "Millions of alveoli give a huge surface area, so a lot of gas diffuses at once.",
+    "Their walls are just one cell thick, a short distance for gases to cross.",
+    "A moist lining lets oxygen and carbon dioxide dissolve before they diffuse.",
+    "And a dense network of capillaries keeps a steep concentration gradient, "
+    "as oxygen moves into the blood and carbon dioxide moves out.",
+    "Large surface area, thin walls, a moist lining, and a rich blood supply. "
+    "That's what makes it so efficient.",
 ]
+
+# On-screen key-point cards for the four adaptations (emphasis = yellow only).
+CAP_TEXT = [
+    "*Large surface area* — millions of alveoli, so more gas diffuses at once.",
+    "Wall is *one cell thick* (alveolus + capillary) — a *short diffusion distance*.",
+    "*Moist lining* lets gases dissolve before diffusing across.",
+    "*Dense capillary network* keeps a *steep concentration gradient*.",
+]
+
+GAP = 0.5     # lead: the card / diagram appears, then the voice line begins
+TAIL = 0.7    # quiet beat after each spoken line
+SR = 24000    # Kokoro native sample rate
+CHIP_FOR_PHASE = {1: 0, 2: 1, 4: 2}
+
+TIMING = {}   # populated by set_timing() (and copied into render workers)
+
+
+def set_timing(durs):
+    """durs: spoken-clip length (s) per segment -> all scene start/stop times."""
+    seg = [GAP + d + TAIL for d in durs]
+    seg[0] = max(seg[0], 3.2)                  # give the title build room
+    starts = [0.0]
+    for s in seg[:-1]:
+        starts.append(starts[-1] + s)
+    TIMING.clear()
+    TIMING.update(
+        seg=seg, starts=starts,
+        p_starts=starts[1:5], recap_t=starts[5],
+        duration=starts[5] + seg[5],
+        onsets=[starts[i] + GAP for i in range(6)],
+        caps=[(starts[1 + i], CAP_TEXT[i]) for i in range(4)],
+    )
+    TIMING["nframes"] = int(round(TIMING["duration"] * FPS))
+    return TIMING
 
 
 def phase_of(gt):
-    if gt >= RECAP_T:
+    ps, rt = TIMING["p_starts"], TIMING["recap_t"]
+    if gt >= rt:
         return 5, 0.0
-    if gt < P_STARTS[0]:
-        return 0, lin(gt, 0, P_STARTS[0])
-    for i in range(len(P_STARTS) - 1, -1, -1):
-        if gt >= P_STARTS[i]:
-            end = P_STARTS[i + 1] if i + 1 < len(P_STARTS) else RECAP_T
-            return i + 1, lin(gt, P_STARTS[i], end)
+    if gt < ps[0]:
+        return 0, lin(gt, 0, ps[0])
+    for i in range(len(ps) - 1, -1, -1):
+        if gt >= ps[i]:
+            end = ps[i + 1] if i + 1 < len(ps) else rt
+            return i + 1, lin(gt, ps[i], end)
     return 0, 0.0
-
-
-CHIP_FOR_PHASE = {1: 0, 2: 1, 4: 2}
 
 
 def render_frame(c, gt):
     draw_background(c)
     heading(c, gt)
     phase, loc = phase_of(gt)
+    rt = TIMING["recap_t"]
 
     if phase == 5:
         # recap: fade the live diagram, show recap card; keep chips
-        fade = clamp(1 - lin(gt, RECAP_T, RECAP_T + 0.4))
+        fade = clamp(1 - lin(gt, rt, rt + 0.4))
         if fade > 0.01:
             with alpha_layer(c, fade):
-                draw_alveolus(c, min(gt, RECAP_T - 0.01), 4, 0.99)
-        draw_recap(c, gt, RECAP_T)
+                draw_alveolus(c, min(gt, rt - 0.01), 4, 0.99)
+        draw_recap(c, gt, rt)
         chips(c, gt, 1.0, active=-1)
         return
 
     draw_alveolus(c, gt, phase, loc)
-    draw_caption(c, gt, CAPS)
+    draw_caption(c, gt, TIMING["caps"])
     chips(c, gt, 1.0, active=CHIP_FOR_PHASE.get(phase, -1))
 
 
 # ==========================================================================
-# Rendering drivers (silent — no audio track)
+# Narration synthesis (Kokoro af_heart) and soundtrack assembly
+# ==========================================================================
+def _model_dir():
+    return os.environ.get("KOKORO_DIR") or os.path.join(ROOT, "assets", "kokoro")
+
+
+def _trim(s, thresh=0.01):
+    idx = np.where(np.abs(s) > thresh)[0]
+    if len(idx) == 0:
+        return s
+    a = max(0, idx[0] - int(0.03 * SR))
+    b = min(len(s), idx[-1] + int(0.12 * SR))
+    return s[a:b]
+
+
+def synth_clips():
+    """Synthesize one voice clip per segment with Kokoro voice af_heart."""
+    from kokoro_onnx import Kokoro
+    md = _model_dir()
+    onnx, voices = os.path.join(md, "kokoro-v1.0.onnx"), os.path.join(md, "voices-v1.0.bin")
+    if not (os.path.exists(onnx) and os.path.exists(voices)):
+        raise SystemExit(
+            f"Kokoro model files not found in {md}. Download kokoro-v1.0.onnx and "
+            f"voices-v1.0.bin from the kokoro-onnx 'model-files-v1.0' release and set "
+            f"KOKORO_DIR, or place them in assets/kokoro/.")
+    k = Kokoro(onnx, voices)
+    clips = []
+    for line in SEG_TEXT:
+        s, sr = k.create(line, voice="af_heart", speed=0.96, lang="en-us")
+        s = np.asarray(s, dtype=np.float32)
+        if sr != SR:
+            n = int(round(len(s) * SR / sr))
+            s = np.interp(np.linspace(0, len(s), n, endpoint=False),
+                          np.arange(len(s)), s).astype(np.float32)
+        clips.append(_trim(s))
+    return clips
+
+
+def build_soundtrack(clips, wav_path):
+    """Place each clip at its scheduled onset into one voice-only track."""
+    import soundfile as sf
+    total = int(TIMING["duration"] * SR)
+    track = np.zeros(total + SR, dtype=np.float32)
+    for i, s in enumerate(clips):
+        a = int(TIMING["onsets"][i] * SR)
+        track[a:a + len(s)] += s
+    sf.write(wav_path, track[:total], SR)
+
+
+# ==========================================================================
+# Rendering drivers
 # ==========================================================================
 def render_segment(args):
-    i0, i1, path = args
+    i0, i1, path, timing = args
+    TIMING.clear(); TIMING.update(timing)          # spawn-safe: workers get timing
     surf = skia.Surface(W, H)
     c = surf.getCanvas()
     cmd = ["ffmpeg", "-y", "-loglevel", "error", "-f", "rawvideo", "-pix_fmt", "bgra",
@@ -820,6 +901,11 @@ def render_still(t, path):
     surf.makeImageSnapshot().save(path, skia.kPNG)
 
 
+def default_still_times():
+    ps, rt = TIMING["p_starts"], TIMING["recap_t"]
+    return [(ps[0] + ps[1]) / 2, (ps[1] + ps[2]) / 2, rt + 1.8]
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--stills", nargs="*", type=float)
@@ -828,28 +914,50 @@ def main():
     a = ap.parse_args()
     os.makedirs(OUT, exist_ok=True)
 
+    # Narration drives the timeline: synthesize first, then lay out to it.
+    clips = synth_clips()
+    durs = [len(s) / SR for s in clips]
+    set_timing(durs)
+    st = TIMING["starts"]
+    print("Timeline (s):  title 0.0 | p1 %.1f | p2 %.1f | p3 %.1f | p4 %.1f | recap %.1f | end %.1f"
+          % (st[1], st[2], st[3], st[4], st[5], TIMING["duration"]))
+
     if a.stills is not None:
         d = os.path.join(OUT, "stills"); os.makedirs(d, exist_ok=True)
-        for t in a.stills:
+        times = a.stills if a.stills else default_still_times()
+        for t in times:
             p = os.path.join(d, f"alveolus_t{t:05.1f}.png"); render_still(t, p); print(p)
         return
 
     import multiprocessing as mp
-    nw = max(1, a.workers)
-    bounds = [round(NFRAMES * k / nw) for k in range(nw + 1)]
-    segs = [(bounds[k], bounds[k + 1], os.path.join(OUT, f"seg{k}.mp4")) for k in range(nw)]
-    print(f"Rendering {NFRAMES} frames ({DURATION:.1f} s) with {nw} workers…")
+    nframes, nw = TIMING["nframes"], max(1, a.workers)
+    bounds = [round(nframes * k / nw) for k in range(nw + 1)]
+    segs = [(bounds[k], bounds[k + 1], os.path.join(OUT, f"seg{k}.mp4"), dict(TIMING))
+            for k in range(nw)]
+    print(f"Rendering {nframes} frames ({TIMING['duration']:.1f} s) with {nw} workers…")
     with mp.Pool(nw) as pool:
         pool.map(render_segment, segs)
+
     lst = os.path.join(OUT, "segments.txt")
     with open(lst, "w") as f:
         for sg in segs:
             f.write(f"file '{sg[2]}'\n")
+    silent = os.path.join(OUT, "silent.mp4")
     subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-f", "concat", "-safe", "0", "-i", lst,
-                    "-an", "-c:v", "copy", "-aspect", "16:9", "-movflags", "+faststart", a.out], check=True)
+                    "-an", "-c:v", "copy", "-aspect", "16:9", "-movflags", "+faststart", silent], check=True)
+
+    # voice track + mux as AAC, normalized to ~ -16 LUFS
+    wav = os.path.join(OUT, "narration.wav")
+    build_soundtrack(clips, wav)
+    subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", silent, "-i", wav,
+                    "-map", "0:v", "-map", "1:a",
+                    "-c:v", "copy", "-aspect", "16:9",
+                    "-af", "loudnorm=I=-16:TP=-1.5:LRA=11", "-ar", "48000",
+                    "-c:a", "aac", "-b:a", "160k", "-shortest",
+                    "-movflags", "+faststart", a.out], check=True)
     for sg in segs:
         os.remove(sg[2])
-    os.remove(lst)
+    os.remove(lst); os.remove(silent); os.remove(wav)
     print("Wrote", a.out)
 
 
