@@ -29,11 +29,23 @@ diagrams, 4:3 for scenes).
 
 ## SUBJECT LINES — Respiration in Humans (use these first)
 
-**1. Respiratory system overview** (aspect 4:3)
-> Subject: a clean front-on view of the human respiratory system — the windpipe
-> (trachea) descending and dividing into two main bronchi, each branching into
-> progressively smaller bronchioles inside two softly-shaded lungs, with a small
-> grape-like cluster of alveoli at the end of one bronchiole on the right.
+**1. Respiratory system overview, with a zoom bubble to the alveoli** (aspect 3:2, landscape)
+> Subject: a clean front-on view of the human respiratory system. The windpipe
+> (trachea) runs down the centre and divides into two main bronchi, one entering
+> each lung, then branches repeatedly into finer and finer bronchioles like an
+> upside-down tree, filling BOTH softly-shaded lungs evenly and symmetrically —
+> the lungs contain NO stray clusters on their own. To one side of the lungs,
+> there is a large circular magnified inset drawn like a round magnifying-glass
+> zoom bubble, connected to the tip of one bronchiole by two thin tapering guide
+> lines (a classic textbook "zoom-in" callout). ONLY inside that zoom bubble do
+> we see the close-up: a realistic grape-like bunch of tiny rounded alveoli (air
+> sacs) budding from the end of the bronchiole, a few of them wrapped in fine
+> capillaries. Keep the composition balanced, with the lungs on one side and the
+> zoom bubble on the other.
+>
+> (The magnifying-glass circle and its two connector guide lines are part of the
+> illustration and are fine — they are NOT text/arrows. Still absolutely no
+> words, letters or numbers anywhere.)
 
 **2. Alveolus gas exchange close-up** (aspect 1:1)
 > Subject: an extreme close-up cross-section of one rounded alveolus (air sac)
