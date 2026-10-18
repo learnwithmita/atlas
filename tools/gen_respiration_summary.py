@@ -19,13 +19,14 @@ C=dict(x=584,y=240,w=290,h=290)
 def Cf(fx,fy): return (round(C['x']+C['w']*fx), round(C['y']+C['h']*fy))
 
 labels=[]
-# lungs (larynx removed; it lives in the Air-pathway card)
+# lungs (new image includes the larynx)
 for t,cx,cy,ff in [
-    ("Trachea",84,266,(0.262,0.33)),
-    ("Bronchi",82,366,(0.30,0.50)),
-    ("Bronchioles",80,452,(0.37,0.65)),
-    ("Alveoli",300,236,(0.70,0.40)),
-    ("Capillaries",372,508,(0.855,0.66)),
+    ("Larynx",84,238,(0.345,0.145)),
+    ("Trachea",84,300,(0.345,0.33)),
+    ("Bronchi",82,372,(0.40,0.50)),
+    ("Bronchioles",80,452,(0.45,0.66)),
+    ("Alveoli",352,298,(0.80,0.60)),
+    ("Capillaries",386,508,(0.90,0.64)),
 ]:
     fx,fy=Lf(*ff); labels.append(chip(t,cx,cy,fx,fy))
 # capillary close-up: non-crossing layout
