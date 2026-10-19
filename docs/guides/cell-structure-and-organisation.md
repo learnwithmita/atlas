@@ -2,13 +2,13 @@
 
 **Topic at a glance.** Every living thing is built from **cells** — the smallest unit that can carry out all the processes of life. In this topic you learn what a typical animal cell and plant cell are made of, what each part *does*, how the two cell types differ, and how some cells are specially shaped for a particular job. It is the foundation for almost everything later in Biology (respiration happens in mitochondria, photosynthesis in chloroplasts, diffusion across the cell membrane), so it is worth knowing cold. Questions usually ask you to **identify** a structure from a diagram, **state its function**, **compare** animal and plant cells, or **explain** how a specialised cell is adapted to its job.
 
-> **Diagram.** The labelled animal cell (left) and plant cell (right) are on the [summary sheet](cell-structure-and-organisation-summary.svg). The clean illustration is here: `docs/diagrams/cell-structure/cells.jpg`.
-
 ---
 
 ## 1a — Cell structures and their functions
 
 Under a light microscope (with a stain such as iodine or methylene blue) you can see the larger structures of a cell. Both animal and plant cells share some of these; others are found only in plant cells.
+
+![Labelled animal cell (left) and plant cell (right): animal-only parts on the left, shared parts in the centre, plant-only parts on the right.](../diagrams/cell-structure/cells-labelled.png)
 
 ### Found in both animal and plant cells
 
