@@ -93,7 +93,8 @@ svg=f'''<svg viewBox="0 0 1000 1736" xmlns="http://www.w3.org/2000/svg" font-fam
  {''.join(labels)}
 </g>
 <!-- 4 adaptations -->
-<g transform="translate(70,600)" font-size="15">
+<text x="70" y="590" font-size="15" font-weight="800" fill="#1d2430">Why the alveolus is suited to gaseous exchange</text>
+<g transform="translate(70,606)" font-size="15">
  <rect x="0" y="0" width="186" height="26" rx="7" fill="#ffd84d"/><text x="10" y="19" class="b ink">Large surface area</text><text x="0" y="48" class="ink2">Many alveoli, so more gas diffuses</text>
  <rect x="430" y="0" width="194" height="26" rx="7" fill="#ffd84d"/><text x="440" y="19" class="b ink">Walls one cell thick</text><text x="430" y="48" class="ink2">A short diffusion distance</text>
  <rect x="0" y="70" width="118" height="26" rx="7" fill="#ffd84d"/><text x="10" y="89" class="b ink">Moist lining</text><text x="0" y="118" class="ink2">Gases dissolve before diffusing</text>
@@ -130,14 +131,19 @@ svg=f'''<svg viewBox="0 0 1000 1736" xmlns="http://www.w3.org/2000/svg" font-fam
 <!-- Card D Oxygen debt -->
 <rect x="512" y="1016" width="448" height="238" rx="20" class="card"/><rect x="512" y="1016" width="6" height="238" rx="3" fill="#5b5bd6"/>
 <text x="542" y="1056" class="sect">Oxygen debt (hard exercise)</text>
-<g transform="translate(542,1070)" font-size="14.5">
- <text x="0" y="16" class="ink"><tspan class="b" fill="#5b5bd6">1.</tspan>  Not enough oxygen, so muscles</text>
- <text x="22" y="38" class="ink">respire anaerobically</text>
- <text x="0" y="66" class="ink"><tspan class="b" fill="#5b5bd6">2.</tspan>  Lactic acid builds up, causing fatigue</text>
- <text x="0" y="94" class="ink"><tspan class="b" fill="#5b5bd6">3.</tspan>  Oxygen debt is the extra oxygen</text>
- <text x="22" y="116" class="ink">needed afterwards</text>
- <text x="0" y="144" class="ink"><tspan class="b" fill="#5b5bd6">4.</tspan>  Breathe deeply and quickly to</text>
- <text x="22" y="166" class="ink">oxidise the lactic acid</text></g>
+<g transform="translate(542,1082)">
+ <circle cx="11" cy="4" r="12" fill="#5b5bd6"/><text x="11" y="9" text-anchor="middle" font-size="13" font-weight="800" fill="#ffffff">1</text>
+ <text x="32" y="1" font-size="14.5" font-weight="800" fill="#1d2430">During hard exercise</text>
+ <text x="32" y="21" font-size="13.5" fill="#1d2430">oxygen can't reach the muscles fast enough</text>
+ <circle cx="11" cy="46" r="12" fill="#5b5bd6"/><text x="11" y="51" text-anchor="middle" font-size="13" font-weight="800" fill="#ffffff">2</text>
+ <text x="32" y="43" font-size="14.5" font-weight="800" fill="#1d2430">Muscles respire anaerobically</text>
+ <text x="32" y="63" font-size="13.5" fill="#1d2430">glucose → lactic acid, which causes fatigue</text>
+ <circle cx="11" cy="88" r="12" fill="#5b5bd6"/><text x="11" y="93" text-anchor="middle" font-size="13" font-weight="800" fill="#ffffff">3</text>
+ <text x="32" y="85" font-size="14.5" font-weight="800" fill="#1d2430">Oxygen debt builds up</text>
+ <text x="32" y="105" font-size="13.5" fill="#1d2430">the extra oxygen needed to remove the lactic acid</text>
+ <circle cx="11" cy="130" r="12" fill="#5b5bd6"/><text x="11" y="135" text-anchor="middle" font-size="13" font-weight="800" fill="#ffffff">4</text>
+ <text x="32" y="127" font-size="14.5" font-weight="800" fill="#1d2430">Recovery after exercise</text>
+ <text x="32" y="147" font-size="13.5" fill="#1d2430">breathe deeply and fast to oxidise the lactic acid</text></g>
 
 <!-- Card E Air pathway -->
 <rect x="40" y="1274" width="920" height="128" rx="20" class="card"/><rect x="40" y="1274" width="6" height="128" rx="3" fill="#5b5bd6"/>

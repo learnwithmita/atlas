@@ -33,7 +33,8 @@
  <g id="label-larynx"><line x1="114" y1="250" x2="232" y2="267" stroke="#48525f" stroke-width="1.8"/><path d="M232.0,267.0 L225.6,269.9 L226.6,262.5 Z" fill="#48525f"/><rect x="84" y="238" width="60" height="25" rx="12.5" fill="#ffffff" stroke="#cfd3dc" stroke-width="1.2"/><text x="114" y="255" text-anchor="middle" font-size="13" font-weight="700" fill="#1d2430">Larynx</text></g><g id="label-trachea"><line x1="118" y1="312" x2="232" y2="332" stroke="#48525f" stroke-width="1.8"/><path d="M232.0,332.0 L225.5,334.7 L226.8,327.3 Z" fill="#48525f"/><rect x="84" y="300" width="67" height="25" rx="12.5" fill="#ffffff" stroke="#cfd3dc" stroke-width="1.2"/><text x="118" y="317" text-anchor="middle" font-size="13" font-weight="700" fill="#1d2430">Trachea</text></g><g id="label-bronchi"><line x1="116" y1="384" x2="258" y2="392" stroke="#48525f" stroke-width="1.8"/><path d="M258.0,392.0 L251.9,395.4 L252.3,388.0 Z" fill="#48525f"/><rect x="82" y="372" width="67" height="25" rx="12.5" fill="#ffffff" stroke="#cfd3dc" stroke-width="1.2"/><text x="116" y="389" text-anchor="middle" font-size="13" font-weight="700" fill="#1d2430">Bronchi</text></g><g id="label-bronchioles"><line x1="128" y1="464" x2="282" y2="448" stroke="#48525f" stroke-width="1.8"/><path d="M282.0,448.0 L276.5,452.3 L275.7,444.9 Z" fill="#48525f"/><rect x="80" y="452" width="95" height="25" rx="12.5" fill="#ffffff" stroke="#cfd3dc" stroke-width="1.2"/><text x="128" y="469" text-anchor="middle" font-size="13" font-weight="700" fill="#1d2430">Bronchioles</text></g><g id="label-alveoli"><line x1="386" y1="310" x2="446" y2="427" stroke="#48525f" stroke-width="1.8"/><path d="M446.0,427.0 L440.0,423.4 L446.6,420.0 Z" fill="#48525f"/><rect x="352" y="298" width="67" height="25" rx="12.5" fill="#ffffff" stroke="#cfd3dc" stroke-width="1.2"/><text x="386" y="315" text-anchor="middle" font-size="13" font-weight="700" fill="#1d2430">Alveoli</text></g><g id="label-capillaries"><line x1="434" y1="520" x2="493" y2="441" stroke="#48525f" stroke-width="1.8"/><path d="M493.0,441.0 L492.4,448.0 L486.5,443.5 Z" fill="#48525f"/><rect x="386" y="508" width="95" height="25" rx="12.5" fill="#ffffff" stroke="#cfd3dc" stroke-width="1.2"/><text x="434" y="525" text-anchor="middle" font-size="13" font-weight="700" fill="#1d2430">Capillaries</text></g><g id="label-alveolus-wall-one-cell-thick"><line x1="704" y1="222" x2="694" y2="327" stroke="#48525f" stroke-width="1.8"/><path d="M694.0,327.0 L690.9,320.7 L698.3,321.4 Z" fill="#48525f"/><rect x="590" y="210" width="228" height="24" rx="12.0" fill="#ffffff" stroke="#cfd3dc" stroke-width="1.2"/><text x="704" y="226" text-anchor="middle" font-size="12" font-weight="700" fill="#1d2430">Alveolus wall (one cell thick)</text></g><g id="label-deoxygenated-blood"><line x1="790" y1="262" x2="741" y2="310" stroke="#48525f" stroke-width="1.8"/><path d="M741.0,310.0 L742.6,303.2 L747.8,308.5 Z" fill="#48525f"/><rect x="718" y="250" width="144" height="24" rx="12.0" fill="#ffffff" stroke="#cfd3dc" stroke-width="1.2"/><text x="790" y="266" text-anchor="middle" font-size="12" font-weight="700" fill="#1d2430">Deoxygenated blood</text></g><g id="label-oxygenated-blood"><line x1="755" y1="564" x2="767" y2="420" stroke="#48525f" stroke-width="1.8"/><path d="M767.0,420.0 L770.2,426.2 L762.8,425.6 Z" fill="#48525f"/><rect x="690" y="552" width="130" height="24" rx="12.0" fill="#ffffff" stroke="#cfd3dc" stroke-width="1.2"/><text x="755" y="568" text-anchor="middle" font-size="12" font-weight="700" fill="#1d2430">Oxygenated blood</text></g>
 </g>
 <!-- 4 adaptations -->
-<g transform="translate(70,600)" font-size="15">
+<text x="70" y="590" font-size="15" font-weight="800" fill="#1d2430">Why the alveolus is suited to gaseous exchange</text>
+<g transform="translate(70,606)" font-size="15">
  <rect x="0" y="0" width="186" height="26" rx="7" fill="#ffd84d"/><text x="10" y="19" class="b ink">Large surface area</text><text x="0" y="48" class="ink2">Many alveoli, so more gas diffuses</text>
  <rect x="430" y="0" width="194" height="26" rx="7" fill="#ffd84d"/><text x="440" y="19" class="b ink">Walls one cell thick</text><text x="430" y="48" class="ink2">A short diffusion distance</text>
  <rect x="0" y="70" width="118" height="26" rx="7" fill="#ffd84d"/><text x="10" y="89" class="b ink">Moist lining</text><text x="0" y="118" class="ink2">Gases dissolve before diffusing</text>
@@ -70,14 +71,19 @@
 <!-- Card D Oxygen debt -->
 <rect x="512" y="1016" width="448" height="238" rx="20" class="card"/><rect x="512" y="1016" width="6" height="238" rx="3" fill="#5b5bd6"/>
 <text x="542" y="1056" class="sect">Oxygen debt (hard exercise)</text>
-<g transform="translate(542,1070)" font-size="14.5">
- <text x="0" y="16" class="ink"><tspan class="b" fill="#5b5bd6">1.</tspan>  Not enough oxygen, so muscles</text>
- <text x="22" y="38" class="ink">respire anaerobically</text>
- <text x="0" y="66" class="ink"><tspan class="b" fill="#5b5bd6">2.</tspan>  Lactic acid builds up, causing fatigue</text>
- <text x="0" y="94" class="ink"><tspan class="b" fill="#5b5bd6">3.</tspan>  Oxygen debt is the extra oxygen</text>
- <text x="22" y="116" class="ink">needed afterwards</text>
- <text x="0" y="144" class="ink"><tspan class="b" fill="#5b5bd6">4.</tspan>  Breathe deeply and quickly to</text>
- <text x="22" y="166" class="ink">oxidise the lactic acid</text></g>
+<g transform="translate(542,1082)">
+ <circle cx="11" cy="4" r="12" fill="#5b5bd6"/><text x="11" y="9" text-anchor="middle" font-size="13" font-weight="800" fill="#ffffff">1</text>
+ <text x="32" y="1" font-size="14.5" font-weight="800" fill="#1d2430">During hard exercise</text>
+ <text x="32" y="21" font-size="13.5" fill="#1d2430">oxygen can't reach the muscles fast enough</text>
+ <circle cx="11" cy="46" r="12" fill="#5b5bd6"/><text x="11" y="51" text-anchor="middle" font-size="13" font-weight="800" fill="#ffffff">2</text>
+ <text x="32" y="43" font-size="14.5" font-weight="800" fill="#1d2430">Muscles respire anaerobically</text>
+ <text x="32" y="63" font-size="13.5" fill="#1d2430">glucose → lactic acid, which causes fatigue</text>
+ <circle cx="11" cy="88" r="12" fill="#5b5bd6"/><text x="11" y="93" text-anchor="middle" font-size="13" font-weight="800" fill="#ffffff">3</text>
+ <text x="32" y="85" font-size="14.5" font-weight="800" fill="#1d2430">Oxygen debt builds up</text>
+ <text x="32" y="105" font-size="13.5" fill="#1d2430">the extra oxygen needed to remove the lactic acid</text>
+ <circle cx="11" cy="130" r="12" fill="#5b5bd6"/><text x="11" y="135" text-anchor="middle" font-size="13" font-weight="800" fill="#ffffff">4</text>
+ <text x="32" y="127" font-size="14.5" font-weight="800" fill="#1d2430">Recovery after exercise</text>
+ <text x="32" y="147" font-size="13.5" fill="#1d2430">breathe deeply and fast to oxidise the lactic acid</text></g>
 
 <!-- Card E Air pathway -->
 <rect x="40" y="1274" width="920" height="128" rx="20" class="card"/><rect x="40" y="1274" width="6" height="128" rx="3" fill="#5b5bd6"/>
