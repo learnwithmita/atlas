@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
-import base64, os
+import base64, os, re
 ROOT="/Users/ramita/Desktop/atlas"
+def slug(text):
+    return re.sub(r"[^a-z0-9]+","-",text.lower()).strip("-")
 def b64(p):
     with open(os.path.join(ROOT,p),"rb") as f: return base64.b64encode(f.read()).decode()
 lungs=b64("docs/diagrams/respiration/lungs.jpg")
@@ -9,9 +11,11 @@ cap=b64("docs/diagrams/respiration/capillary.jpg")
 LEAD="#48525f"
 def chip(text,x,y,fx,fy,size=13):
     w=len(text)*7.0+18; h=size+12
-    return (f'<line x1="{x+w/2:.0f}" y1="{y+h/2:.0f}" x2="{fx}" y2="{fy}" stroke="{LEAD}" stroke-width="1.8" marker-end="url(#lead)"/>'
+    return (f'<g id="label-{slug(text)}">'
+            f'<line x1="{x+w/2:.0f}" y1="{y+h/2:.0f}" x2="{fx}" y2="{fy}" stroke="{LEAD}" stroke-width="1.8" marker-end="url(#lead)"/>'
             f'<rect x="{x}" y="{y}" width="{w:.0f}" height="{h}" rx="{h/2}" fill="#ffffff" stroke="#cfd3dc" stroke-width="1.2"/>'
-            f'<text x="{x+w/2:.0f}" y="{y+h/2+size*0.34:.0f}" text-anchor="middle" font-size="{size}" font-weight="700" fill="#1d2430">{text}</text>')
+            f'<text x="{x+w/2:.0f}" y="{y+h/2+size*0.34:.0f}" text-anchor="middle" font-size="{size}" font-weight="700" fill="#1d2430">{text}</text>'
+            f'</g>')
 
 L=dict(x=70,y=216,w=470,h=351)
 def Lf(fx,fy): return (round(L['x']+L['w']*fx), round(L['y']+L['h']*fy))
@@ -35,10 +39,14 @@ labels.append(chip("Deoxygenated blood",718,250,*Cf(0.54,0.24),12))
 labels.append(chip("Oxygenated blood",690,552,*Cf(0.63,0.62),12))
 # diffusion arrows across the wall (O2 red into blood, CO2 grey out)
 o2a=Cf(0.24,0.50); o2b=Cf(0.45,0.52); co2a=Cf(0.45,0.60); co2b=Cf(0.24,0.62)
-arrows=(f'<path d="M{o2a[0]},{o2a[1]} L{o2b[0]},{o2b[1]}" stroke="#d0514a" stroke-width="3" fill="none" marker-end="url(#o2)"/>'
+arrows=(f'<g id="arrow-oxygen">'
+        f'<path d="M{o2a[0]},{o2a[1]} L{o2b[0]},{o2b[1]}" stroke="#d0514a" stroke-width="3" fill="none" marker-end="url(#o2)"/>'
         f'<text x="{o2a[0]-6}" y="{o2a[1]-5}" text-anchor="end" font-size="14" font-weight="800" fill="#d0514a">O₂</text>'
+        f'</g>'
+        f'<g id="arrow-carbon-dioxide">'
         f'<path d="M{co2a[0]},{co2a[1]} L{co2b[0]},{co2b[1]}" stroke="#8a93a3" stroke-width="3" fill="none" marker-end="url(#co2)"/>'
-        f'<text x="{co2b[0]-6}" y="{co2b[1]+16}" text-anchor="end" font-size="14" font-weight="800" fill="#6b7280">CO₂</text>')
+        f'<text x="{co2b[0]-6}" y="{co2b[1]+16}" text-anchor="end" font-size="14" font-weight="800" fill="#6b7280">CO₂</text>'
+        f'</g>')
 
 svg=f'''<svg viewBox="0 0 1000 1736" xmlns="http://www.w3.org/2000/svg" font-family="Inter, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif">
 <defs>
