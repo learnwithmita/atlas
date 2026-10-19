@@ -30,7 +30,7 @@ for t,cx,cy,ff in [
 ]:
     fx,fy=Lf(*ff); labels.append(chip(t,cx,cy,fx,fy))
 # capillary close-up: non-crossing layout
-labels.append(chip("Alveolus wall (one cell thick)",590,210,*Cf(0.41,0.40),12))
+labels.append(chip("Alveolus wall (one cell thick)",590,210,*Cf(0.38,0.30),12))
 labels.append(chip("Deoxygenated blood",718,250,*Cf(0.54,0.24),12))
 labels.append(chip("Oxygenated blood",690,552,*Cf(0.63,0.62),12))
 # diffusion arrows across the wall (O2 red into blood, CO2 grey out)
@@ -67,7 +67,7 @@ svg=f'''<svg viewBox="0 0 1000 1736" xmlns="http://www.w3.org/2000/svg" font-fam
 <rect x="40" y="140" width="920" height="600" rx="20" class="card"/>
 <rect x="40" y="140" width="6" height="600" rx="3" fill="#5b5bd6"/>
 <text x="70" y="180" class="sect">Gaseous exchange</text>
-<text x="70" y="204" class="sub">OXYGEN DIFFUSES INTO THE BLOOD, CARBON DIOXIDE DIFFUSES OUT — AT THE ALVEOLI</text>
+<text x="70" y="204" class="sub">OXYGEN DIFFUSES INTO THE BLOOD, CARBON DIOXIDE DIFFUSES OUT, IN THE ALVEOLI</text>
 <g clip-path="url(#cA)">
  <image href="data:image/jpeg;base64,{lungs}" x="{L['x']}" y="{L['y']}" width="{L['w']}" height="{L['h']}"/>
  <image href="data:image/jpeg;base64,{cap}" x="{C['x']}" y="{C['y']}" width="{C['w']}" height="{C['h']}"/>
@@ -134,7 +134,7 @@ svg=f'''<svg viewBox="0 0 1000 1736" xmlns="http://www.w3.org/2000/svg" font-fam
 
 <!-- Card F Tobacco -->
 <rect x="40" y="1422" width="920" height="278" rx="20" class="card"/><rect x="40" y="1422" width="6" height="278" rx="3" fill="#5b5bd6"/>
-<text x="70" y="1462" class="sect">Tobacco smoke — three toxins</text>
+<text x="70" y="1462" class="sect">Tobacco smoke: three toxins</text>
 <g transform="translate(70,1484)" font-size="14">
  <rect x="0" y="0" width="274" height="186" rx="14" fill="#faf9ff" stroke="#e7e7f3" stroke-width="1.2"/>
  <text x="18" y="32" font-size="16" font-weight="800" fill="#5b5bd6">Nicotine</text>
