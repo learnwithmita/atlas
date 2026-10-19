@@ -48,6 +48,24 @@ diagrams, 4:3 for scenes).
 > part of the illustration and are fine — they are NOT text/arrows. Still
 > absolutely no words, letters or numbers anywhere.)
 
+## SUBJECT LINES — Cell Structure and Organisation (Topic 1)
+
+**1. Animal cell and plant cell side by side, cut away** (aspect 3:2, landscape)
+> Subject: two large cut-away cells drawn side by side with a clear gap between
+> them. On the left, a typical ANIMAL cell — a soft rounded, slightly irregular
+> shape. On the right, a typical PLANT cell — a tall rectangular box shape. Both
+> are cut open to reveal, as smooth rounded organelles floating in the cytoplasm:
+> a large central nucleus (with a small nucleolus inside), several bean-shaped
+> mitochondria, a folded ribbon-like endoplasmic reticulum, a stack of flattened
+> curved sacs for the Golgi body, and tiny dot-like ribosomes. The animal cell has
+> a thin smooth outer cell membrane and only small scattered vacuoles. The plant
+> cell additionally has a thick straight outer cell wall just outside its cell
+> membrane, one big central sap vacuole taking up most of the middle (pushing the
+> other organelles to the edges), and several green oval chloroplasts. Keep both
+> cells clearly separated with generous empty margin all around and between them so
+> labels can be added afterwards. Use the muted palette: rose/pink cytoplasm,
+> indigo/violet nucleus, green chloroplasts, soft natural organelle tones.
+
 **2. Alveolus gas exchange close-up** (aspect 1:1)
 > Subject: an extreme close-up cross-section of one rounded alveolus (air sac)
 > wrapped by a network of capillaries carrying red blood cells, showing the very
@@ -57,9 +75,7 @@ diagrams, 4:3 for scenes).
 ---
 
 ## Reuse for later topics (just swap the subject line), e.g.
-- Cell structure: "an animal cell and a plant cell side by side, cut away to show
-  the nucleus, cytoplasm, cell membrane, mitochondria, (plant: chloroplasts,
-  vacuole, cell wall) as smooth rounded organelles."
+- Cell structure (Topic 1): see the dedicated subject line below.
 - Heart/circulation: "a cross-section of the human heart showing four chambers
   and the main vessels, chambers in warm red / muted blue for oxygenated vs
   deoxygenated blood."
