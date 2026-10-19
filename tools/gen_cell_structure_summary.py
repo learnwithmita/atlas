@@ -34,7 +34,7 @@ def Pl(fx,fy): return (PX+PW*fx, PY+PH*fy)
 
 labels=[]
 # animal-only (left column, point right into animal)
-labels.append(chip1("Small vacuole",96,392,*A(0.18,0.62),"r",13))
+labels.append(chip1("Small vacuole",106,404,*A(0.19,0.63),"r",12))
 # shared (centre column, two leaders: left->animal, right->plant) ordered to avoid crossing
 CXC=500
 shared=[
