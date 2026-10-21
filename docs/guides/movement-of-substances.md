@@ -8,7 +8,7 @@
 
 ## 2a — Diffusion
 
-**Definition.** Diffusion is the **net movement of particles from a region of higher concentration to a region of lower concentration** (i.e. **down a concentration gradient**), until they are evenly spread. It happens because particles are always moving randomly. It is **passive** — the cell uses **no energy**.
+**Definition.** Diffusion is the **net movement of particles from a region of higher concentration to a region of lower concentration, down a concentration gradient**, until they are evenly spread. It happens because particles are always moving randomly. It is **passive** — the cell uses **no energy**.
 
 **What speeds it up:**
 - a **steeper concentration gradient** (bigger difference)
@@ -48,13 +48,25 @@ Because of the strong **cell wall**, a plant cell in water never bursts; it just
 
 | Surrounding solution | What happens | Result |
 |----------------------|--------------|--------|
-| **Dilute / pure water** | Water enters by osmosis | The cell **swells and bursts** (no wall to stop it) |
-| **Same** concentration | No net movement | **Normal** shape |
-| **Concentrated** | Water leaves the cell | The cell **shrinks and becomes crinkled** |
+| **Dilute / pure water** (higher water potential outside) | Water enters the cell by osmosis, through the partially permeable membrane | The cell **swells and bursts (haemolysis)** — there is no cell wall to resist the pressure |
+| **Same** concentration | No net movement of water | **Normal** shape |
+| **Concentrated** (lower water potential outside) | Water leaves the cell by osmosis | The cell **shrinks and becomes crinkled (crenated)** |
 
 **Investigating osmosis.** You can show osmosis with Visking tubing (an artificial partially permeable membrane) or with potato strips: strips in dilute solution gain mass and become firm; strips in concentrated solution lose mass and become soft.
 
 **Examiner wants.** The full definition including **"water molecules"**, **"water potential"** (or dilute→concentrated) and **"partially permeable membrane"**; and that an animal cell **bursts** (no wall) whereas a plant cell becomes **turgid**. **Common mistake:** forgetting "partially permeable membrane", or saying solutes move (only *water* moves in osmosis).
+
+### Sample question and model answer
+
+**Q: A red blood cell is placed in pure water. Describe and explain what happens. [3]**
+
+> The pure water has a **higher water potential** than the cell's contents, so **water moves into the red blood cell by osmosis** through the partially permeable membrane. Because a red blood cell has **no cell wall** to resist the pressure, the cell **swells and bursts (haemolysis)**.
+
+**Q: A plant cell is placed in a concentrated sugar solution. Explain what happens. [3]**
+
+> The concentrated solution has a **lower water potential** than the cell sap, so **water leaves the cell by osmosis**. The vacuole shrinks and the **cell membrane pulls away from the cell wall**. The rigid cell wall itself does *not* change shape. The cell is now **plasmolysed**.
+
+*Notice the structure the examiner wants: (1) compare water potentials, (2) say which way water moves by osmosis, (3) state the result on the cell.*
 
 ---
 
