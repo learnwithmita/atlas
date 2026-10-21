@@ -11,7 +11,7 @@ export const BILLING_ENABLED = process.env.BILLING_ENABLED === "true";
 // The only thing that differs across tiers: how many answers you can have
 // AI-marked per day (resets at midnight). Premium is unlimited.
 export const FREE_DAILY_MARKS = Number(process.env.FREE_DAILY_MARKS ?? 5);
-export const PRO_DAILY_MARKS = Number(process.env.PRO_DAILY_MARKS ?? 40);
+export const PRO_DAILY_MARKS = Number(process.env.PRO_DAILY_MARKS ?? 10);
 
 export type Tier = "free" | "pro" | "premium";
 export type Entitlement = {
@@ -89,6 +89,31 @@ export async function getEntitlement(): Promise<Entitlement> {
   }
   const tier = tierForPriceId(sub!.price_id);
   return { tier, isPro: true, dailyMarkCap: capFor(tier), periodEnd: sub!.period_end ?? null, reason: "active_sub" };
+}
+
+/**
+ * Usage snapshot for the credits display. `cap === null` means unlimited
+ * (Premium / staff / billing off); otherwise `remaining` counts down the daily cap.
+ */
+export async function getMarkUsage(): Promise<{
+  tier: Tier;
+  isPro: boolean;
+  cap: number | null;
+  used: number;
+  remaining: number | null;
+}> {
+  const ent = await getEntitlement();
+  if (ent.dailyMarkCap === null) {
+    return { tier: ent.tier, isPro: ent.isPro, cap: null, used: 0, remaining: null };
+  }
+  const used = await marksUsedToday();
+  return {
+    tier: ent.tier,
+    isPro: ent.isPro,
+    cap: ent.dailyMarkCap,
+    used,
+    remaining: Math.max(0, ent.dailyMarkCap - used),
+  };
 }
 
 /** How many answers the user has had AI-marked today (resets at midnight). */

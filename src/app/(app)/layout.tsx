@@ -1,13 +1,15 @@
 import { Sidebar } from "@/components/app/Sidebar";
 import { MobileNav } from "@/components/app/MobileNav";
+import { WelcomeTour } from "@/components/app/WelcomeTour";
 import { getProfile } from "@/lib/data";
+import { getMarkUsage } from "@/lib/entitlements";
 
 export default async function AppLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const profile = await getProfile();
+  const [profile, usage] = await Promise.all([getProfile(), getMarkUsage()]);
 
   // Fallback so the app is browsable before Supabase keys are added.
   const role = profile?.role ?? "student";
@@ -16,11 +18,12 @@ export default async function AppLayout({
 
   return (
     <div className="flex min-h-screen">
-      <Sidebar role={role} name={name} streak={streak} />
+      <Sidebar role={role} name={name} streak={streak} usage={usage} />
       <div className="flex-1 min-w-0 flex flex-col">
-        <MobileNav role={role} name={name} streak={streak} />
+        <MobileNav role={role} name={name} streak={streak} usage={usage} />
         <main className="flex-1">{children}</main>
       </div>
+      {role === "student" && <WelcomeTour />}
     </div>
   );
 }

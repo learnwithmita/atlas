@@ -16,16 +16,19 @@ import {
 import { Logo } from "@/components/Logo";
 import { StreakFlame } from "@/components/ui/StreakFlame";
 import { ThemeToggle } from "@/components/app/ThemeToggle";
+import { MarkCreditsChip, type MarkUsage } from "@/components/app/MarkCredits";
 import { cn } from "@/lib/utils";
 
 export function MobileNav({
   role,
   name,
   streak,
+  usage,
 }: {
   role: "student" | "tutor" | "admin";
   name: string;
   streak: number;
+  usage?: MarkUsage;
 }) {
   const pathname = usePathname();
 
@@ -59,6 +62,7 @@ export function MobileNav({
       <header className="md:hidden sticky top-0 z-30 flex items-center justify-between h-14 px-4 border-b border-hairline bg-surface/80 backdrop-blur-xl">
         <Logo href={homeHref} />
         <div className="flex items-center gap-1.5">
+          {role === "student" && usage && <MarkCreditsChip usage={usage} />}
           {role === "student" && <StreakFlame days={streak} size="sm" />}
           <ThemeToggle />
           <Link

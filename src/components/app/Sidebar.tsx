@@ -17,6 +17,7 @@ import {
 import { Logo } from "@/components/Logo";
 import { StreakFlame } from "@/components/ui/StreakFlame";
 import { ThemeToggle } from "@/components/app/ThemeToggle";
+import { MarkCredits, type MarkUsage } from "@/components/app/MarkCredits";
 import { signOut } from "@/app/(auth)/actions";
 import { cn } from "@/lib/utils";
 
@@ -58,10 +59,12 @@ export function Sidebar({
   role,
   name,
   streak,
+  usage,
 }: {
   role: "student" | "tutor" | "admin";
   name: string;
   streak: number;
+  usage?: MarkUsage;
 }) {
   const pathname = usePathname();
   const nav = NAVS[role];
@@ -106,6 +109,8 @@ export function Sidebar({
       )}
 
       <div className="mt-auto space-y-3">
+        {role === "student" && usage && <MarkCredits usage={usage} />}
+
         {role === "student" && (
           <div className="flex items-center justify-between px-3 py-2.5 rounded-[12px] bg-flame-soft">
             <span className="text-sm font-medium text-flame">Streak</span>
