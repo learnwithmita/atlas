@@ -1,5 +1,7 @@
 import { readFile } from "node:fs/promises";
+import { writeFileSync } from "node:fs";
 import path from "node:path";
+import os from "node:os";
 import sharp from "sharp";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient, isServiceConfigured } from "@/lib/supabase/admin";
@@ -10,7 +12,31 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const SHEET_BG = "#f3f4fb"; // matches the summary sheet background
+// Footer proportions at the sheet's base width of 1000px; scaled up for the 2x
+// masters at render time.
+const BASE_W = 1000;
 const FOOTER_H = 74;
+
+// Make the bundled DejaVu font available to sharp/librsvg. Hosts like Vercel
+// have NO system fonts, so without this the footer text renders as empty boxes.
+// Restricting fontconfig to just our font dir means the footer always uses the
+// same font everywhere. Runs once at module load, before any render.
+(() => {
+  try {
+    const fontDir = path.join(process.cwd(), "assets", "fonts");
+    const conf = path.join(os.tmpdir(), "atlas-fonts.conf");
+    writeFileSync(
+      conf,
+      `<?xml version="1.0"?><!DOCTYPE fontconfig SYSTEM "fonts.dtd"><fontconfig><dir>${fontDir}</dir><cachedir>${path.join(
+        os.tmpdir(),
+        "atlas-fc-cache"
+      )}</cachedir></fontconfig>`
+    );
+    process.env.FONTCONFIG_FILE = conf;
+  } catch {
+    /* fall back to system fonts */
+  }
+})();
 
 function esc(s: string): string {
   return s
@@ -95,13 +121,18 @@ export async function GET(
   const line1 = `© ${year} Atlas · G3 Biology — personal study use only. Not to be copied, resold or redistributed.`;
   const line2 = `Licensed to ${email} · viewed ${today}`;
 
-  const overlay = `<svg width="${w}" height="${h + FOOTER_H}" xmlns="http://www.w3.org/2000/svg">
-  <text x="${w / 2}" y="${h + 30}" font-family="Arial, Helvetica, sans-serif" font-size="15" fill="#7a808c" text-anchor="middle">${esc(line1)}</text>
-  <text x="${w / 2}" y="${h + 54}" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#9aa0ad" text-anchor="middle">${esc(line2)}</text>
+  // Scale the footer to the master's resolution (masters are 2x, so ~2).
+  const scale = w / BASE_W;
+  const footerH = Math.round(FOOTER_H * scale);
+  const size1 = 15 * scale;
+  const size2 = 14 * scale;
+  const overlay = `<svg width="${w}" height="${h + footerH}" xmlns="http://www.w3.org/2000/svg">
+  <text x="${w / 2}" y="${h + 30 * scale}" font-family="DejaVu Sans, sans-serif" font-size="${size1}" fill="#7a808c" text-anchor="middle">${esc(line1)}</text>
+  <text x="${w / 2}" y="${h + 54 * scale}" font-family="DejaVu Sans, sans-serif" font-size="${size2}" fill="#9aa0ad" text-anchor="middle">${esc(line2)}</text>
 </svg>`;
 
   const out = await sharp(base)
-    .extend({ top: 0, bottom: FOOTER_H, left: 0, right: 0, background: SHEET_BG })
+    .extend({ top: 0, bottom: footerH, left: 0, right: 0, background: SHEET_BG })
     .composite([{ input: Buffer.from(overlay), top: 0, left: 0 }])
     .png()
     .toBuffer();

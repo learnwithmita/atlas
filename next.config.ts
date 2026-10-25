@@ -6,7 +6,10 @@ const nextConfig: NextConfig = {
   // The summary image route reads master PNGs from /assets at runtime; make sure
   // they're traced into the serverless function bundle on deploy.
   outputFileTracingIncludes: {
-    "/learn/summary/[topicId]/image": ["./assets/summaries/**/*"],
+    "/learn/summary/[topicId]/image": [
+      "./assets/summaries/**/*",
+      "./assets/fonts/**/*",
+    ],
   },
 };
 

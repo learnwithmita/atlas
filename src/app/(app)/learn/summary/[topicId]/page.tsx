@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Download } from "lucide-react";
 import { getTopicStudio } from "@/lib/data";
 import { getEntitlement } from "@/lib/entitlements";
 import { hasSummary, summaryImageUrl } from "@/lib/summaries";
@@ -23,16 +23,27 @@ export default async function SummaryPage({
 
   return (
     <div className="mx-auto max-w-3xl px-5 sm:px-8 py-8 pb-24 md:pb-8">
-      <Link
-        href={`/learn/topic/${topicId}`}
-        className="inline-flex items-center gap-1.5 text-sm text-ink-2 hover:text-ink mb-6"
-      >
-        <ArrowLeft size={16} /> {t.topicName}
-      </Link>
+      <div className="flex items-center justify-between gap-3 mb-6">
+        <Link
+          href={`/learn/topic/${topicId}`}
+          className="inline-flex items-center gap-1.5 text-sm text-ink-2 hover:text-ink"
+        >
+          <ArrowLeft size={16} /> {t.topicName}
+        </Link>
+        {src && (
+          <a
+            href={src}
+            download={`${t.topicName} summary.png`}
+            className="inline-flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-full border border-hairline text-ink-2 hover:border-accent hover:text-accent"
+          >
+            <Download size={14} /> Download
+          </a>
+        )}
+      </div>
 
       {src ? (
         <figure className="rounded-[16px] overflow-hidden border border-hairline bg-white">
-          {/* Static asset from /public/summaries; plain img keeps it simple. */}
+          {/* Served per-student (watermarked) by the image route. */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={src}
