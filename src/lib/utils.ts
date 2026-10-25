@@ -6,7 +6,7 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-/** SEAB-style grade bands derived from a 0–100 readiness/mastery score. */
+/** G3-style grade bands derived from a 0–100 readiness/mastery score. */
 export function toGrade(score: number): string {
   if (score >= 75) return "A1";
   if (score >= 70) return "A2";

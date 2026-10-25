@@ -67,7 +67,7 @@ create table if not exists daily_activity (
 create table if not exists subjects (
   id           uuid primary key default uuid_generate_v4(),
   name         text not null,
-  exam_body    text not null default 'SEAB',
+  exam_body    text not null default 'G3',
   syllabus_code text,
   icon         text,
   sort_order   int default 0

@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "Atlas — AI Science Tutor",
     short_name: "Atlas",
     description:
-      "Your AI Biology & Chemistry tutor for the Singapore SEAB syllabus — practice, marking and an adaptive study plan.",
+      "Your AI Biology & Chemistry tutor for the Singapore G3 syllabus — practice, marking and an adaptive study plan.",
     start_url: "/learn",
     scope: "/",
     display: "standalone",

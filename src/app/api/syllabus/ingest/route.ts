@@ -98,7 +98,7 @@ export async function POST(req: Request) {
       .from("subjects")
       .insert({
         name: subjectName,
-        exam_body: tree.examBody || "SEAB",
+        exam_body: tree.examBody || "G3",
         syllabus_code: code,
         level,
         track,
@@ -117,7 +117,7 @@ export async function POST(req: Request) {
     // Keep code/exam-body fresh on re-ingest.
     await supabase
       .from("subjects")
-      .update({ syllabus_code: code, exam_body: tree.examBody || "SEAB" })
+      .update({ syllabus_code: code, exam_body: tree.examBody || "G3" })
       .eq("id", subjectId);
   }
 
@@ -196,7 +196,7 @@ export async function POST(req: Request) {
     code,
     title,
     subject_name: subjectName,
-    exam_body: tree.examBody || "SEAB",
+    exam_body: tree.examBody || "G3",
     level,
     track,
     topic_count: topicCount,

@@ -20,7 +20,7 @@ create table if not exists syllabuses (
   code          text,                       -- e.g. 'K325'
   title         text not null,              -- e.g. 'Biology (G3, Pure)'
   subject_name  text,                       -- 'Biology' / 'Chemistry' / 'Combined Science'
-  exam_body     text not null default 'SEAB',
+  exam_body     text not null default 'G3',
   level         text,                        -- 'G3'
   track         text,                        -- 'Pure' | 'Combined'
   topic_count   int not null default 0,

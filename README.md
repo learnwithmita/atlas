@@ -2,7 +2,7 @@
 
 > Adaptive Tutoring & Learning for Applied Science · Biology & Chemistry (G3 first)
 
-A personal Biology & Chemistry tutor that knows the SEAB syllabus, marks answers
+A personal Biology & Chemistry tutor that knows the G3 syllabus, marks answers
 against the syllabus mark scheme, and turns every mistake into an adaptive study
 plan. This repo is the
 first runnable slice of the [product blueprint](#whats-in-this-slice).
@@ -21,7 +21,7 @@ Built with **Next.js 16 · React 19 · Tailwind v4 · Supabase · Google Gemini*
 | Student dashboard — mastery ring, predicted grade, **streaks**, daily goal | ✅ |
 | Duolingo-style study plan (Fix This First / High Priority / Low-Hanging Fruit) | ✅ |
 | Lessons (overview → misconceptions → examiner tips) | ✅ |
-| Practice + **AI marking against the SEAB mark scheme** (Gemini) | ✅ |
+| Practice + **AI marking against the G3 mark scheme** (Gemini) | ✅ |
 | AI tutor chat (Socratic, grounded, quick actions) | ✅ |
 | **Admin analytics dashboard** (usage, mastery by topic, hardest outcomes, AI cost) | ✅ |
 | Temporary subscription / checkout page (monthly + annual) | ✅ (preview, no real Stripe) |
@@ -73,7 +73,7 @@ setup message) so you can browse the UI. Add the keys below to make it live.
    20. `supabase/migrations/0020_extracted_images.sql` (diagrams for paper questions)
    21. `supabase/migrations/0021_fix_rls_recursion.sql` (fix flashcard RLS recursion)
    22. `supabase/migrations/0022_note_images.sql` (topic-notes diagram)
-   23. `supabase/seed.sql` (SEAB content + flashcards + cloze items)
+   23. `supabase/seed.sql` (G3 content + flashcards + cloze items)
 4. **Auth → Providers → Email**: for easy testing, turn **off** "Confirm email"
    so signup logs you straight in.
 

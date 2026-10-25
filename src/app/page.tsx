@@ -21,7 +21,7 @@ const features = [
   {
     icon: BrainCircuit,
     title: "Knows your syllabus",
-    body: "Grounded in the SEAB syllabus, past papers and mark schemes. Every answer cites its source.",
+    body: "Grounded in the G3 syllabus, past papers and mark schemes. Every answer cites its source.",
   },
   {
     icon: LineChart,
@@ -69,7 +69,7 @@ export default async function Landing() {
             your syllabus by heart.
           </h1>
           <p className="mx-auto max-w-xl text-lg sm:text-xl text-ink-2 mt-6 leading-relaxed">
-            Atlas marks your answers against the SEAB mark scheme, remembers
+            Atlas marks your answers against the G3 mark scheme, remembers
             every mistake you make, and turns it into tomorrow&apos;s study plan.
           </p>
           <p className="mx-auto max-w-xl mt-5 inline-flex items-center gap-2 rounded-[14px] border border-hairline bg-surface px-4 py-2.5 text-[15px] text-ink-2 shadow-xs">

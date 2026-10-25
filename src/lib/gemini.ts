@@ -155,10 +155,10 @@ export function friendlyGeminiError(e: unknown): string {
   return `The AI call failed: ${msg.slice(0, 240)}`;
 }
 
-const TUTOR_SYSTEM = `You are Atlas, a warm but rigorous Biology & Chemistry tutor for Singapore secondary-school students sitting SEAB (Singapore-Cambridge) examinations.
+const TUTOR_SYSTEM = `You are Atlas, a warm but rigorous Biology & Chemistry tutor for Singapore secondary-school students sitting G3 (Singapore-Cambridge) examinations.
 
 Rules:
-- Teach the SEAB syllabus and Singapore answering conventions. Use precise command words (state, describe, explain, suggest, calculate).
+- Teach the G3 syllabus and Singapore answering conventions. Use precise command words (state, describe, explain, suggest, calculate).
 - Be Socratic first: ask a guiding question or give a hint before revealing a full model answer. Reveal the full answer only after the student attempts or explicitly asks.
 - Reward examiner technique (keywords, phrasing) as much as concepts.
 - If you are not confident the answer is in the syllabus, say so plainly rather than inventing facts.
@@ -216,7 +216,7 @@ Then, for EVERY question in the paper, write an ADAPTED practice version:
 - stem: REPHRASE the question IN YOUR OWN WORDS. Keep the same concept, skill and difficulty, but change the scenario, context, values or organism so it is NOT a verbatim copy. If the original is multiple-choice, turn it into a short structured/open-ended question testing the same idea. Preserve any maths/chemistry in LaTeX ($...$, $\\ce{...}$).
 - marks: the mark allocation shown, else a sensible estimate.
 - type: one of structured, open_ended, data_based (avoid mcq).
-- commandWords: SEAB command words (state, describe, explain, suggest, calculate, define…).
+- commandWords: G3 command words (state, describe, explain, suggest, calculate, define…).
 - topic: EXACTLY one topic name from this list (verbatim), or "Unknown":
 ${topicList}
 - confidence: 0..1 for the topic classification.
@@ -302,7 +302,7 @@ export type SyllabusTree = {
   code: string; // e.g. K325
   level: string; // e.g. G3
   track: string; // Pure | Combined
-  examBody: string; // SEAB
+  examBody: string; // G3
   topics: SyllabusTopic[];
 };
 
@@ -317,14 +317,14 @@ export async function generateSyllabusTree(
 ): Promise<SyllabusTree> {
   if (!isGeminiConfigured) throw new Error("GEMINI_API_KEY missing");
 
-  const prompt = `You are reading an official Singapore SEAB (Singapore-Cambridge) science syllabus document.
+  const prompt = `You are reading an official Singapore G3 (Singapore-Cambridge) science syllabus document.
 
 Extract its full structure. Return:
 - subjectName: the science subject — exactly "Biology", "Chemistry", or "Combined Science".
 - code: the syllabus code printed on the cover (e.g. "K325", "K324", "K328"), else "".
 - level: the level as "G3", "G2" or "G1" (SEC uses G1/G2/G3). If it says O-Level, use "G3". Else "".
 - track: "Pure" for a single-subject syllabus (Biology or Chemistry on its own), or "Combined" for Combined Science.
-- examBody: "SEAB".
+- examBody: "G3".
 - topics: the ordered list of main topics/themes in the syllabus. For each:
   - name: the topic name as printed (e.g. "Cells and the Chemistry of Life", "The Particulate Nature of Matter").
   - subtopics: the sub-sections/headings under the topic. Most topics have SEVERAL subtopics — break them out as printed; do NOT collapse a whole topic into a single subtopic. For each:
@@ -416,11 +416,11 @@ Capture every topic and subtopic. If a subtopic has no explicitly numbered outco
       code: String(p.code ?? "").trim(),
       level: String(p.level ?? "").trim(),
       track: String(p.track ?? "").trim(),
-      examBody: String(p.examBody ?? "SEAB").trim() || "SEAB",
+      examBody: String(p.examBody ?? "G3").trim() || "G3",
       topics,
     };
   } catch {
-    return { subjectName: "", code: "", level: "", track: "", examBody: "SEAB", topics: [] };
+    return { subjectName: "", code: "", level: "", track: "", examBody: "G3", topics: [] };
   }
 }
 
@@ -436,7 +436,7 @@ export async function generateTopicNotes(
 ): Promise<TopicNotes> {
   if (!isGeminiConfigured) throw new Error("GEMINI_API_KEY missing");
 
-  const prompt = `Write concise revision notes for the SEAB O-Level science topic "${topicName}".
+  const prompt = `Write concise revision notes for the G3 O-Level science topic "${topicName}".
 ${outcomes.length ? `Cover these learning outcomes:\n${outcomes.map((o) => `- ${o}`).join("\n")}` : ""}
 
 Return:
@@ -499,11 +499,11 @@ export async function generateFlashcards(
 ): Promise<GeneratedCard[]> {
   if (!isGeminiConfigured) throw new Error("GEMINI_API_KEY missing");
 
-  const prompt = `Create ${count} exam-revision flashcards for the SEAB "${subtopicName}" topic, in the style of Quizlet definition cards.
+  const prompt = `Create ${count} exam-revision flashcards for the G3 "${subtopicName}" topic, in the style of Quizlet definition cards.
 ${outcomes.length ? `Base them on these learning outcomes:\n${outcomes.map((o) => `- ${o}`).join("\n")}` : ""}
 
 Rules:
-- FRONT = a key TERM, structure, definition prompt or short recall question (e.g. an organelle name, "Define diffusion", a keyword). BACK = the precise SEAB-keyword answer/definition/function a student must know.
+- FRONT = a key TERM, structure, definition prompt or short recall question (e.g. an organelle name, "Define diffusion", a keyword). BACK = the precise G3-keyword answer/definition/function a student must know.
 - Prefer term→definition and structure→function pairs (e.g. front "Mitochondrion" / back "Site of aerobic respiration; releases energy for the cell"). Cover every important term, structure, definition and process in the topic.
 - Keep each side short and exam-precise. British spelling. Maths/chemistry in LaTeX ($...$, $\\ce{...}$).`;
 
@@ -570,7 +570,7 @@ export async function generateExamQuestions(
     .map((t) => {
       const outcomes = t.outcomes.length
         ? t.outcomes.map((o) => `  • ${o}`).join("\n")
-        : "  (use the standard SEAB syllabus content for this topic)";
+        : "  (use the standard G3 syllabus content for this topic)";
       const examples = t.examples.length
         ? `\n Example questions from real school papers (match this STYLE and difficulty — do NOT copy them):\n${t.examples
             .map((e) => `  • ${e}`)
@@ -580,7 +580,7 @@ export async function generateExamQuestions(
     })
     .join("\n\n");
 
-  const prompt = `You are setting a fair Singapore SEAB science practice paper for a G3 (upper-secondary) student.
+  const prompt = `You are setting a fair Singapore G3 science practice paper for a G3 (upper-secondary) student.
 
 Write ${count} exam questions, spread as evenly as possible across the topics below.
 
@@ -657,7 +657,7 @@ export async function generateAnswersForQuestions(
   if (!isGeminiConfigured) throw new Error("GEMINI_API_KEY missing");
   if (items.length === 0) return [];
 
-  const prompt = `You are a Singapore SEAB ${subject} teacher writing an answer key. For each question below, give a concise full-marks model answer and the mark-scheme points (one per mark). Use British spelling; write maths/chemistry in LaTeX ($...$, $\\ce{...}$).
+  const prompt = `You are a Singapore G3 ${subject} teacher writing an answer key. For each question below, give a concise full-marks model answer and the mark-scheme points (one per mark). Use British spelling; write maths/chemistry in LaTeX ($...$, $\\ce{...}$).
 
 Questions:
 ${items.map((q, i) => `${i + 1}. (${q.marks} mark${q.marks === 1 ? "" : "s"}) ${q.stem}`).join("\n\n")}
@@ -725,7 +725,7 @@ export async function generateBankBatch(
     .map((t) => {
       const outcomes = t.outcomes.length
         ? t.outcomes.map((o) => `  • ${o}`).join("\n")
-        : "  (use the standard SEAB syllabus content for this topic)";
+        : "  (use the standard G3 syllabus content for this topic)";
       const examples = t.examples.length
         ? `\n Example questions from real papers (match STYLE, don't copy):\n${t.examples
             .map((e) => `  • ${e}`)
@@ -735,7 +735,7 @@ export async function generateBankBatch(
     })
     .join("\n\n");
 
-  const prompt = `You are writing a fair Singapore SEAB science practice bank for a G3 (upper-secondary) student, WITH a mark scheme for each question.
+  const prompt = `You are writing a fair Singapore G3 science practice bank for a G3 (upper-secondary) student, WITH a mark scheme for each question.
 
 Write ${count} questions spread evenly across the topics below.
 
@@ -745,7 +745,7 @@ For EACH question provide:
 - stem: the question. SCOPE: only ideas in the outcomes above; no obscure/out-of-syllabus specifics (e.g. the internal structure of a named bacterium). SELF-CONTAINED: never depend on a diagram/figure/table not written into the stem.
 - marks: 1–5.
 - type: structured | open_ended | data_based (no MCQ).
-- commandWords: the SEAB command words used.
+- commandWords: the G3 command words used.
 - topic: copied verbatim from a TOPIC line above.
 - markScheme: an array with exactly one entry PER MARK (so a 3-mark question has 3 entries). Each entry: { point: the creditable idea in examiner language, keywords: 2–5 short accept-words/phrases a marker would look for }.
 - modelAnswer: a concise full-marks answer.
@@ -969,7 +969,7 @@ export async function generateCloze(
 ): Promise<GeneratedCloze[]> {
   if (!isGeminiConfigured) throw new Error("GEMINI_API_KEY missing");
 
-  const prompt = `Create ${count} fill-in-the-blank revision sentences for the SEAB O-Level topic "${subtopicName}".
+  const prompt = `Create ${count} fill-in-the-blank revision sentences for the G3 O-Level topic "${subtopicName}".
 ${outcomes.length ? `Base them on these learning outcomes:\n${outcomes.map((o) => `- ${o}`).join("\n")}` : ""}
 
 Rules: each sentence must state a key fact and hide ONE important keyword/phrase (the answer a student must recall) by wrapping it in double braces, e.g. "Osmosis moves water across a {{partially permeable}} membrane." The "answer" field = the exact text inside the braces. Keep sentences short and unambiguous, with only ONE blank each. Use British spelling.`;
@@ -1013,7 +1013,7 @@ export async function tutorReply(
 ): Promise<{ text: string; grounded: boolean }> {
   if (!isGeminiConfigured) {
     return {
-      text: "The AI tutor isn't connected yet. Add your GEMINI_API_KEY to .env.local and restart, and I'll be able to help you here — grounded in the SEAB syllabus, with a hint before the full answer.",
+      text: "The AI tutor isn't connected yet. Add your GEMINI_API_KEY to .env.local and restart, and I'll be able to help you here — grounded in the G3 syllabus, with a hint before the full answer.",
       grounded: false,
     };
   }
@@ -1070,11 +1070,11 @@ export async function markAnswer(input: {
       modelAnswer: input.modelAnswer,
       improvedAnswer: input.modelAnswer,
       feedback:
-        "AI marking isn't connected yet. Add GEMINI_API_KEY to .env.local to have Atlas mark this against the SEAB scheme.",
+        "AI marking isn't connected yet. Add GEMINI_API_KEY to .env.local to have Atlas mark this against the G3 scheme.",
     };
   }
 
-  const prompt = `Mark this student's answer strictly against the SEAB mark scheme.
+  const prompt = `Mark this student's answer strictly against the G3 mark scheme.
 
 QUESTION (${input.marks} marks): ${input.stem}
 
@@ -1149,7 +1149,7 @@ Award marks like a Singapore examiner. Be specific about which marking points th
 
 /**
  * Mark an open-ended answer when there is NO stored mark scheme (e.g. a question
- * extracted from an uploaded paper). Gemini derives an SEAB-style scheme itself,
+ * extracted from an uploaded paper). Gemini derives an G3-style scheme itself,
  * then marks against it.
  */
 export async function markOpenEnded(input: {
@@ -1170,7 +1170,7 @@ export async function markOpenEnded(input: {
     };
   }
 
-  const prompt = `You are a Singapore O-Level (SEAB) examiner. First derive the mark scheme for the question, then mark the student's answer against it.
+  const prompt = `You are a Singapore O-Level (G3) examiner. First derive the mark scheme for the question, then mark the student's answer against it.
 
 QUESTION (${input.marks} marks): ${input.stem}
 

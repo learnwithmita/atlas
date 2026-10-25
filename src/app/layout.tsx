@@ -4,9 +4,9 @@ import "./globals.css";
 import { ServiceWorker } from "@/components/app/ServiceWorker";
 
 export const metadata: Metadata = {
-  title: "Atlas — Your SEAB Biology & Chemistry Tutor",
+  title: "Atlas — Your G3 Biology & Chemistry Tutor",
   description:
-    "A Biology & Chemistry revision companion built on the SEAB syllabus. Every question, flashcard and note is reviewed by an experienced tutor — AI-assisted, never AI-alone — and marks your answers against the mark scheme.",
+    "A Biology & Chemistry revision companion built on the G3 syllabus. Every question, flashcard and note is reviewed by an experienced tutor — AI-assisted, never AI-alone — and marks your answers against the mark scheme.",
   metadataBase: new URL("https://atlas.sg"),
   manifest: "/manifest.webmanifest",
   appleWebApp: {

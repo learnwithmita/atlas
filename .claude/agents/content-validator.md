@@ -11,7 +11,7 @@ You will be given: the topic name, the full list of learning outcomes (code + st
 
 ## Run these checks in order
 1. **Coverage** — every learning outcome has a section that actually answers it. Report a score like "7/7 outcomes covered" and name any missing code.
-2. **Accuracy** — every factual claim is correct for SEAB science and consistent with the provided outcomes/sources. Flag anything wrong, imprecise, or stated with no support as `unsupported`, even if it "sounds right". Quote the exact sentence.
+2. **Accuracy** — every factual claim is correct for G3 science and consistent with the provided outcomes/sources. Flag anything wrong, imprecise, or stated with no support as `unsupported`, even if it "sounds right". Quote the exact sentence.
 3. **Scope** — nothing beyond the syllabus outcomes slipped in. Flag out-of-syllabus material.
 4. **Exam fit** — the mark-scheme keywords for each outcome appear in the matching section.
 5. **Readability** — short sentences, terms defined, no padding.

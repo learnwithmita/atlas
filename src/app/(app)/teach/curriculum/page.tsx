@@ -11,7 +11,7 @@ export default async function TeachCurriculumPage() {
       <header className="mb-8">
         <h1 className="text-3xl font-semibold text-ink">Curriculum</h1>
         <p className="text-ink-2 mt-1">
-          The full SEAB syllabus — topics and learning outcomes your students
+          The full G3 syllabus — topics and learning outcomes your students
           are assessed on. View only.
         </p>
       </header>

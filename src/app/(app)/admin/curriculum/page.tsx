@@ -12,7 +12,7 @@ export default async function AdminCurriculumPage() {
         <p className="text-sm text-ink-3">Platform</p>
         <h1 className="text-3xl font-semibold text-ink mt-1">Curriculum</h1>
         <p className="text-ink-2 mt-1">
-          The SEAB syllabus spine powering the app. Rename or delete topics and
+          The G3 syllabus spine powering the app. Rename or delete topics and
           outcomes, or remove a whole syllabus — e.g. strip the Physics topics
           that came in with Combined Science, or retire the old O-Level subject.
         </p>

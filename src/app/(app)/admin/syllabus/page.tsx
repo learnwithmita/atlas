@@ -13,7 +13,7 @@ export default async function AdminSyllabusPage() {
         <p className="text-sm text-ink-3">Platform</p>
         <h1 className="text-3xl font-semibold text-ink mt-1">Syllabus</h1>
         <p className="text-ink-2 mt-1">
-          Upload an official SEAB syllabus PDF and Atlas builds its curriculum —
+          Upload an official G3 syllabus PDF and Atlas builds its curriculum —
           topics, subtopics and learning outcomes — automatically.
         </p>
       </header>

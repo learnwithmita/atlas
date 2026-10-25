@@ -60,7 +60,7 @@ The orchestrator takes one topic and runs every agent in order, starting each st
 
 These two fill the knowledge base so the study guide is built from sources, not from a model's memory.
 
-**Important syllabus change:** from 2027, O-Level, N(A) and N(T) are combined and renamed the Singapore-Cambridge Secondary Education Certificate (SEC), with subjects at G1, G2 and G3. G3 uses the O-Level grading scale. The science syllabuses have new codes, so the agent must load the right one ([SEAB: SEC](https://www.seab.gov.sg/secondary-education-certificate-sec/), [2027 G3 syllabuses](https://www.seab.gov.sg/secondary-education-certificate-sec/g3-syllabuses-for-school-candidates-2027/)).
+**Important syllabus change:** from 2027, O-Level, N(A) and N(T) are combined and renamed the Singapore-Cambridge Secondary Education Certificate (SEC), with subjects at G1, G2 and G3. G3 uses the O-Level grading scale. The science syllabuses have new codes, so the agent must load the right one ([G3: SEC](https://www.seab.gov.sg/secondary-education-certificate-sec/), [2027 G3 syllabuses](https://www.seab.gov.sg/secondary-education-certificate-sec/g3-syllabuses-for-school-candidates-2027/)).
 
 | Subject | 2027 SEC code | Code for 2026 and earlier |
 | --- | --- | --- |
@@ -70,7 +70,7 @@ These two fill the knowledge base so the study guide is built from sources, not 
 
 **Research agent**
 
-- **Reads:** the official SEAB syllabus PDF (the ground truth), then supporting sources: open educational material, freely published school prelim papers, and textbooks you own. It reads them to understand; it never copies passages into Atlas.
+- **Reads:** the official G3 syllabus PDF (the ground truth), then supporting sources: open educational material, freely published school prelim papers, and textbooks you own. It reads them to understand; it never copies passages into Atlas.
 - **Writes:** for each learning outcome, a short list of facts, definitions, required diagrams and practical skills, each with its source.
 - **Flags:** facts that sources disagree on, and anything taught in textbooks but not in the syllabus (marked "beyond syllabus" so guides leave it out).
 
@@ -80,7 +80,7 @@ These two fill the knowledge base so the study guide is built from sources, not 
 - **Finds:** which outcomes are tested most often, the command words used (state, explain, describe, suggest, calculate), the keywords mark schemes reward, and common ways students lose marks.
 - **Writes:** a frequency score per learning outcome (high, medium, low) and an "examiner wants" list per outcome, for example: "osmosis answers must say water potential and partially permeable membrane".
 
-SEAB sells past-year papers through authorised publishers rather than releasing them free ([SEAB](https://ask.gov.sg/seab/questions/cm1ugigk1004xux9s59k80j0k)). The trend agent can analyse papers you've bought, but Atlas should show students its own questions, not reproduced SEAB papers (see Risks).
+G3 sells past-year papers through authorised publishers rather than releasing them free ([G3](https://ask.gov.sg/seab/questions/cm1ugigk1004xux9s59k80j0k)). The trend agent can analyse papers you've bought, but Atlas should show students its own questions, not reproduced G3 papers (see Risks).
 
 ## 3. Study-guide agent
 
@@ -125,12 +125,12 @@ The content validator checks the study guide against both the research and the s
 
 These agents fill the question bank with original questions in real exam style, each with a verified answer. Source papers are used to learn what is tested and how, never shown to students as they are.
 
-- **Paper extractor:** reads uploaded papers (SEAB, school prelims, assessment books) and records each question's concept, learning outcome, command words, marks and question style. This feeds the research and exam-trend agents; extracted questions are not published.
+- **Paper extractor:** reads uploaded papers (G3, school prelims, assessment books) and records each question's concept, learning outcome, command words, marks and question style. This feeds the research and exam-trend agents; extracted questions are not published.
 - **Question generator (new):** for each learning outcome, writes new questions using Gemini, guided by the exam-trend findings: the concept tested, the command word, the mark allocation and the typical structure (for example, a 3-mark "explain" on osmosis with a data table). It changes the context, organism, numbers and wording, and asks the image agent for any diagram. It aims for the same mix of difficulty and question types as real papers.
 - **Originality checker (new):** compares every generated question against all source questions in the knowledge base. Questions whose wording, data or scenario are too close to a source are rejected and regenerated. It also checks the question is answerable, matches its marks and stays within the syllabus.
 - **Solver A and Solver B:** two different models answer each question without seeing each other's answer. Each writes a model answer and mark-scheme points.
 - **Answer checker:** passes the answer when both solvers agree and the number of mark points matches the marks. For calculations (moles, concentration), it recomputes the numbers in code. Disagreements go to your review inbox with both answers side by side.
-- **Diagram cropper:** kept for papers you have rights to use, such as your own worksheets. For SEAB and school papers, diagrams are redrawn by the image agent instead.
+- **Diagram cropper:** kept for papers you have rights to use, such as your own worksheets. For G3 and school papers, diagrams are redrawn by the image agent instead.
 
 ## 6. Image agent and label checker
 
@@ -203,9 +203,9 @@ Atlas Pro could include the full long-form library, while reels stay free. That 
 
 | Risk | What to do |
 | --- | --- |
-| Copyright on SEAB papers, school papers and textbooks | Use them only as research: the question generator learns concepts and style, then writes original questions, and the originality checker rejects anything too close to a source. Never publish source questions, diagrams or textbook passages. SEAB papers are sold, not free. This is a general approach, not legal advice; a short check with an IP lawyer before launch is worth it. |
+| Copyright on G3 papers, school papers and textbooks | Use them only as research: the question generator learns concepts and style, then writes original questions, and the originality checker rejects anything too close to a source. Never publish source questions, diagrams or textbook passages. G3 papers are sold, not free. This is a general approach, not legal advice; a short check with an IP lawyer before launch is worth it. |
 | Wrong content reaching students | Nothing goes live without passing a checker; spot-check 5% of auto-verified items; add a "report a problem" button. |
-| Outdated syllabus | Tag every item with the syllabus code and year; re-run the coverage check when SEAB publishes a new syllabus. |
+| Outdated syllabus | Tag every item with the syllabus code and year; re-run the coverage check when G3 publishes a new syllabus. |
 | Students and minors on Instagram | No student faces or names without parental consent; reply to DMs from your tutoring account, not a personal one. |
 | AI costs growing | Generate each topic once and store it; re-render only what changed. Long-form video rendering is the most expensive step, so run it only after the guide is approved. |
 
@@ -230,6 +230,6 @@ Atlas Pro could include the full long-form library, while reels stay free. That 
 
 ## Sources
 
-- [SEAB: Secondary Education Certificate (SEC)](https://www.seab.gov.sg/secondary-education-certificate-sec/)
-- [SEAB: 2027 SEC G3 syllabuses for school candidates](https://www.seab.gov.sg/secondary-education-certificate-sec/g3-syllabuses-for-school-candidates-2027/)
-- [SEAB on ask.gov.sg: past years' question papers](https://ask.gov.sg/seab/questions/cm1ugigk1004xux9s59k80j0k)
+- [G3: Secondary Education Certificate (SEC)](https://www.seab.gov.sg/secondary-education-certificate-sec/)
+- [G3: 2027 SEC G3 syllabuses for school candidates](https://www.seab.gov.sg/secondary-education-certificate-sec/g3-syllabuses-for-school-candidates-2027/)
+- [G3 on ask.gov.sg: past years' question papers](https://ask.gov.sg/seab/questions/cm1ugigk1004xux9s59k80j0k)

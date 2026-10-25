@@ -1,5 +1,5 @@
 -- ============================================================================
--- Atlas — seed content from the OFFICIAL SEAB 2026 syllabuses
+-- Atlas — seed content from the OFFICIAL G3 2026 syllabuses
 --   Biology  6093  (© MOE & Cambridge University Press & Assessment 2024)
 --   Chemistry 6092 (© MOE & Cambridge University Press & Assessment 2024)
 --
@@ -20,8 +20,8 @@ $$;
 
 -- ── Subjects ────────────────────────────────────────────────────────────────
 insert into subjects (id, name, exam_body, syllabus_code, icon, sort_order) values
-  (pg_temp.aid('subj:6093'), 'Biology',   'SEAB', '6093', 'leaf',  1),
-  (pg_temp.aid('subj:6092'), 'Chemistry', 'SEAB', '6092', 'flask', 2)
+  (pg_temp.aid('subj:6093'), 'Biology',   'G3', '6093', 'leaf',  1),
+  (pg_temp.aid('subj:6092'), 'Chemistry', 'G3', '6092', 'flask', 2)
 on conflict (id) do update set name = excluded.name, syllabus_code = excluded.syllabus_code, icon = excluded.icon;
 
 -- ════════════════════════════════════════════════════════════════════════════
@@ -468,7 +468,7 @@ insert into lessons (id, subtopic_id, overview, simple_explanation, detailed_exp
 on conflict (id) do update set overview = excluded.overview, detailed_explanation = excluded.detailed_explanation;
 
 -- ════════════════════════════════════════════════════════════════════════════
---  Sample questions + SEAB-style mark schemes (remapped to real subtopics)
+--  Sample questions + G3-style mark schemes (remapped to real subtopics)
 -- ════════════════════════════════════════════════════════════════════════════
 insert into questions (id, subject_id, subtopic_id, stem, type, marks, command_words, difficulty, frequency_score) values
   (pg_temp.aid('q:osmosis:define'), pg_temp.aid('subj:6093'), pg_temp.aid('st:bio:2:osmosis'),
