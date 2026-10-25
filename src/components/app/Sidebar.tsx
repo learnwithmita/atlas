@@ -42,6 +42,7 @@ const adminNav: NavItem[] = [
   { href: "/admin/syllabus", label: "Syllabus", icon: GraduationCap },
   { href: "/admin/curriculum", label: "Curriculum", icon: Library },
   { href: "/admin/bank", label: "Question Bank", icon: BookOpen },
+  { href: "/admin/cards", label: "Flashcards", icon: Layers },
   { href: "/admin/content", label: "Uploads", icon: UploadCloud },
 ];
 

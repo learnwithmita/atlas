@@ -51,7 +51,11 @@ function matchBrace(text: string, start: number): number {
  * Without this, `\ce{Cu2O}` leaks to the page as literal "\ce" text.
  */
 function pushPlain(run: string, parts: React.ReactNode[], keyRef: { k: number }) {
-  const cmd = /\\(ce|pu)\s*\{/g;
+  // Match `\ce{…}` / `\pu{…}` AND the backslash-stripped `ce{…}` / `pu{…}`
+  // that a JSON round-trip can produce (which would otherwise leak as the
+  // literal text "ceNH3"). The `{` immediately after keeps this from matching
+  // the word "ce" in ordinary prose.
+  const cmd = /\\?(ce|pu)\s*\{/g;
   let last = 0;
   let m: RegExpExecArray | null;
   while ((m = cmd.exec(run)) !== null) {
@@ -59,7 +63,8 @@ function pushPlain(run: string, parts: React.ReactNode[], keyRef: { k: number })
     const end = matchBrace(run, braceOpen);
     if (end === -1) break; // unbalanced — leave the rest as text
     if (m.index > last) parts.push(run.slice(last, m.index));
-    const tex = run.slice(m.index, end); // includes \ce{ … }
+    let tex = run.slice(m.index, end); // includes (\)ce{ … }
+    if (!tex.startsWith("\\")) tex = "\\" + tex; // restore the eaten backslash
     parts.push(
       <span
         key={`c${keyRef.k++}`}

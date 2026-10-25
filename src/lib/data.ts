@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createServiceClient, isServiceConfigured } from "@/lib/supabase/admin";
 import { toGrade } from "@/lib/utils";
+import { summaryForTopic } from "@/lib/summaries";
 
 export type Profile = {
   id: string;
@@ -629,6 +630,125 @@ export async function getQuestionBank(): Promise<BankTopic[]> {
   }));
 }
 
+export type FlashcardTopic = {
+  topicId: string;
+  topicName: string;
+  subject: string;
+  cardCount: number;
+};
+
+/**
+ * Per-topic count of curated (shared) flashcards, for the admin flashcards
+ * browser. Mirrors getQuestionBank so admins see coverage at a glance and can
+ * review every deck WITHOUT dropping into the student /cards experience.
+ */
+export async function getFlashcardBank(): Promise<FlashcardTopic[]> {
+  if (!isSupabaseConfigured) return [];
+  const supabase = await createClient();
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let topicsQ: any = await supabase
+    .from("topics")
+    .select("id, name, sort_order, discipline, subject:subjects(name)")
+    .order("sort_order");
+  if (topicsQ.error) {
+    topicsQ = await supabase
+      .from("topics")
+      .select("id, name, sort_order, subject:subjects(name)")
+      .order("sort_order");
+  }
+  const topics = topicsQ.data ?? [];
+
+  const { data: fcQ } = await supabase
+    .from("flashcards")
+    .select("subtopic:subtopics(topic_id)")
+    .is("created_by", null)
+    .limit(10000);
+  const byTopic = new Map<string, number>();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  for (const c of (fcQ ?? []) as any[]) {
+    const tid = c.subtopic?.topic_id;
+    if (tid) byTopic.set(tid, (byTopic.get(tid) ?? 0) + 1);
+  }
+
+  const displaySubject = (subjectName: string, discipline: string | null) => {
+    if (subjectName.toLowerCase().includes("combined") && discipline) {
+      const label = discipline.charAt(0).toUpperCase() + discipline.slice(1);
+      return `Combined ${label}`;
+    }
+    return subjectName;
+  };
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (topics ?? []).map((t: any) => ({
+    topicId: t.id,
+    topicName: t.name,
+    subject: displaySubject(t.subject?.name ?? "", t.discipline ?? null),
+    cardCount: byTopic.get(t.id) ?? 0,
+  }));
+}
+
+export type TopicCoverage = {
+  topicId: string;
+  topicName: string;
+  subject: string;
+  hasNotes: boolean;
+  hasSummary: boolean;
+  cardCount: number;
+  questionCount: number; // our own bank/generated — excludes paper extracts
+};
+
+export type SubjectCoverage = {
+  subject: string;
+  topics: TopicCoverage[];
+  totals: { topics: number; notes: number; summary: number; questions: number; flashcards: number };
+};
+
+/**
+ * Admin content-coverage overview: for every topic, which of the four assets
+ * (notes, summary, questions, flashcards) exist. Built by composing the bank
+ * and flashcard aggregators so there's a single source of truth per asset.
+ */
+export async function getContentCoverage(): Promise<SubjectCoverage[]> {
+  if (!isSupabaseConfigured) return [];
+  const supabase = await createClient();
+
+  const [bank, cards] = await Promise.all([getQuestionBank(), getFlashcardBank()]);
+  const { data: notesRows } = await supabase.from("topic_notes").select("topic_id");
+  const notesSet = new Set((notesRows ?? []).map((r) => r.topic_id as string));
+  const cardByTopic = new Map(cards.map((c) => [c.topicId, c.cardCount]));
+
+  // getQuestionBank is ordered by sort_order and has exactly one row per topic,
+  // so it's the spine. Summary comes from the committed registry.
+  const bySubject = new Map<string, TopicCoverage[]>();
+  for (const t of bank) {
+    const cov: TopicCoverage = {
+      topicId: t.topicId,
+      topicName: t.topicName,
+      subject: t.subject,
+      hasNotes: notesSet.has(t.topicId),
+      hasSummary: summaryForTopic(t.topicId) !== null,
+      cardCount: cardByTopic.get(t.topicId) ?? 0,
+      questionCount: t.bankCount,
+    };
+    const list = bySubject.get(t.subject) ?? [];
+    list.push(cov);
+    bySubject.set(t.subject, list);
+  }
+
+  return [...bySubject.entries()].map(([subject, topics]) => ({
+    subject,
+    topics,
+    totals: {
+      topics: topics.length,
+      notes: topics.filter((t) => t.hasNotes).length,
+      summary: topics.filter((t) => t.hasSummary).length,
+      questions: topics.filter((t) => t.questionCount > 0).length,
+      flashcards: topics.filter((t) => t.cardCount > 0).length,
+    },
+  }));
+}
+
 // ── Roster / assign targets ──────────────────────────────────────────────────
 export type RosterStudent = { id: string; name: string; email: string | null; classroom: string };
 
@@ -1027,7 +1147,7 @@ export async function getSyllabuses(): Promise<SyllabusRow[]> {
       code: r.code,
       title: r.title,
       subjectName: r.subject_name,
-      examBody: r.exam_body ?? "SEAB",
+      examBody: r.exam_body ?? "G3",
       level: r.level,
       track: r.track,
       topicCount: live && live.topics > 0 ? live.topics : r.topic_count ?? 0,

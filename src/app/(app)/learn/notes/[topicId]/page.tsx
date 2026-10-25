@@ -21,10 +21,10 @@ export default async function TopicNotesPage({
   return (
     <div className="mx-auto max-w-2xl px-5 sm:px-8 py-8 pb-24 md:pb-8">
       <Link
-        href="/practice"
+        href={`/learn/topic/${topicId}`}
         className="inline-flex items-center gap-1.5 text-sm text-ink-2 hover:text-ink mb-6"
       >
-        <ArrowLeft size={16} /> Practice
+        <ArrowLeft size={16} /> Topic
       </Link>
       <header className="mb-6 flex items-end justify-between gap-4">
         <div>

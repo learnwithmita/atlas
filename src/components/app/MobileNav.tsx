@@ -39,6 +39,7 @@ export function MobileNav({
           { href: "/admin/syllabus", label: "Syllabus", icon: GraduationCap },
           { href: "/admin/curriculum", label: "Curriculum", icon: Library },
           { href: "/admin/bank", label: "Bank", icon: BookOpen },
+          { href: "/admin/cards", label: "Cards", icon: Layers },
           { href: "/admin/content", label: "Uploads", icon: UploadCloud },
         ]
       : role === "tutor"

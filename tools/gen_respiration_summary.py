@@ -105,14 +105,14 @@ svg=f'''<svg viewBox="0 0 1000 1736" xmlns="http://www.w3.org/2000/svg" font-fam
 <rect x="40" y="760" width="920" height="236" rx="20" class="card"/><rect x="40" y="760" width="6" height="236" rx="3" fill="#5b5bd6"/>
 <text x="70" y="800" class="sect">Breathing</text>
 <g transform="translate(70,818)"><rect x="0" y="0" width="415" height="158" rx="14" fill="#f3f8f4" stroke="#d6e8dc" stroke-width="1.2"/>
- <text x="18" y="30" font-size="15" font-weight="800" fill="#2e7d5b">Breathing in</text>
+ <text x="18" y="30" font-size="15" font-weight="800" fill="#2e7d5b">Breathing in (Inhalation)</text>
  <text x="18" y="58" class="body">External intercostal muscles contract</text>
  <text x="18" y="82" class="body">Ribs move up and out</text>
  <text x="18" y="106" class="body">Diaphragm contracts and flattens</text>
  <text x="18" y="134" class="body">Volume increases, pressure decreases,</text>
  <text x="18" y="152" class="body">so air moves in</text></g>
 <g transform="translate(505,818)"><rect x="0" y="0" width="415" height="158" rx="14" fill="#fbf4f2" stroke="#efd8d0" stroke-width="1.2"/>
- <text x="18" y="30" font-size="15" font-weight="800" fill="#b5503a">Breathing out</text>
+ <text x="18" y="30" font-size="15" font-weight="800" fill="#b5503a">Breathing out (Exhalation)</text>
  <text x="18" y="58" class="body">Internal intercostal muscles contract</text>
  <text x="18" y="82" class="body">Ribs move down and in</text>
  <text x="18" y="106" class="body">Diaphragm relaxes and domes up</text>

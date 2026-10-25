@@ -1,10 +1,12 @@
 "use client";
 
 import { useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   CheckCircle2,
   ChevronDown,
+  ChevronRight,
   FileText,
   Loader2,
   Sparkles,
@@ -66,7 +68,7 @@ export function SyllabusManager({ syllabuses }: { syllabuses: SyllabusRow[] }) {
           <h2 className="text-lg font-semibold text-ink">Upload a syllabus</h2>
         </div>
         <p className="text-ink-2 text-sm mb-5">
-          Drop in an official SEAB syllabus PDF. Atlas reads it and builds the
+          Drop in an official G3 syllabus PDF. Atlas reads it and builds the
           topic → subtopic → learning-outcome tree automatically — no manual
           seeding. Re-uploading the same subject refreshes it.
         </p>
@@ -171,41 +173,55 @@ export function SyllabusManager({ syllabuses }: { syllabuses: SyllabusRow[] }) {
         ) : (
           <div className="grid sm:grid-cols-2 gap-3">
             {syllabuses.map((s) => (
-              <Card key={s.id} className="p-5">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="font-semibold text-ink">{s.subjectName}</p>
-                    <p className="text-xs text-ink-3 mt-0.5">
-                      {[s.examBody, s.level, s.track, s.code]
-                        .filter(Boolean)
-                        .join(" · ")}
-                    </p>
+              <Link
+                key={s.id}
+                href="/admin/curriculum"
+                className="group block"
+                title={`Open ${s.subjectName} in Curriculum`}
+              >
+                <Card className="p-5 transition-colors hover:border-accent/50 group-hover:bg-surface-2">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="font-semibold text-ink">{s.subjectName}</p>
+                      <p className="text-xs text-ink-3 mt-0.5">
+                        {[s.examBody, s.level, s.track, s.code]
+                          .filter(Boolean)
+                          .join(" · ")}
+                      </p>
+                    </div>
+                    <Badge tone={s.track === "Combined" ? "mint" : "neutral"}>
+                      {s.track ?? "—"}
+                    </Badge>
                   </div>
-                  <Badge tone={s.track === "Combined" ? "mint" : "neutral"}>
-                    {s.track ?? "—"}
-                  </Badge>
-                </div>
-                <div className="flex items-center gap-4 mt-4 text-sm text-ink-2">
-                  <span>
-                    <strong className="text-ink tabular-nums">
-                      {s.topicCount}
-                    </strong>{" "}
-                    topics
+                  <div className="flex items-center gap-4 mt-4 text-sm text-ink-2">
+                    <span>
+                      <strong className="text-ink tabular-nums">
+                        {s.topicCount}
+                      </strong>{" "}
+                      topics
+                    </span>
+                    <span>
+                      <strong className="text-ink tabular-nums">
+                        {s.subtopicCount}
+                      </strong>{" "}
+                      subtopics
+                    </span>
+                    <span>
+                      <strong className="text-ink tabular-nums">
+                        {s.outcomeCount}
+                      </strong>{" "}
+                      outcomes
+                    </span>
+                  </div>
+                  <span className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-accent">
+                    View curriculum
+                    <ChevronRight
+                      size={13}
+                      className="transition-transform group-hover:translate-x-0.5"
+                    />
                   </span>
-                  <span>
-                    <strong className="text-ink tabular-nums">
-                      {s.subtopicCount}
-                    </strong>{" "}
-                    subtopics
-                  </span>
-                  <span>
-                    <strong className="text-ink tabular-nums">
-                      {s.outcomeCount}
-                    </strong>{" "}
-                    outcomes
-                  </span>
-                </div>
-              </Card>
+                </Card>
+              </Link>
             ))}
           </div>
         )}

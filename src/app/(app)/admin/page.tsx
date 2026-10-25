@@ -6,18 +6,22 @@ import {
   Timer,
   Users,
 } from "lucide-react";
-import { getAdminAnalytics } from "@/lib/data";
+import { getAdminAnalytics, getContentCoverage } from "@/lib/data";
 import { StatTile } from "@/components/ui/StatTile";
 import { Card } from "@/components/ui/Card";
 import { MasteryBar } from "@/components/ui/MasteryBar";
 import { Badge } from "@/components/ui/Badge";
+import { ContentCoverage } from "@/components/admin/ContentCoverage";
 import { clamp } from "@/lib/utils";
 
 export const metadata = { title: "Analytics · Atlas Admin" };
 export const dynamic = "force-dynamic";
 
 export default async function AdminPage() {
-  const a = await getAdminAnalytics();
+  const [a, coverage] = await Promise.all([
+    getAdminAnalytics(),
+    getContentCoverage(),
+  ]);
 
   return (
     <div className="mx-auto max-w-6xl px-5 sm:px-8 py-8 pb-24 md:pb-8">
@@ -25,6 +29,17 @@ export default async function AdminPage() {
         <p className="text-sm text-ink-3">Platform</p>
         <h1 className="text-3xl font-semibold text-ink mt-1">Analytics</h1>
       </header>
+
+      {/* Content coverage — what each topic has and still needs */}
+      <section className="mb-10">
+        <div className="mb-3">
+          <h2 className="text-lg font-semibold text-ink">Content coverage</h2>
+          <p className="text-sm text-ink-3">
+            What each topic has in place. Tap a topic to fill the gaps.
+          </p>
+        </div>
+        <ContentCoverage subjects={coverage} />
+      </section>
 
       {!a.configured && (
         <Card className="p-5 mb-6 bg-accent-soft border-0">

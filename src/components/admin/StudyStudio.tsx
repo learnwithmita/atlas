@@ -23,14 +23,12 @@ export function StudyStudio({
   flashcardCount,
   hasNotes,
   outcomeCount,
-  firstSubtopicId,
   cards = [],
 }: {
   topicId: string;
   flashcardCount: number;
   hasNotes: boolean;
   outcomeCount: number;
-  firstSubtopicId: string | null;
   cards?: { front: string; back: string }[];
 }) {
   const router = useRouter();
@@ -75,8 +73,8 @@ export function StudyStudio({
       desc: "Definition cards (term → function) covering every learning outcome. Shared with all students.",
       status: fc > 0 ? `${fc} shared cards` : "None yet",
       endpoint: "/api/flashcards/generate-topic",
-      viewHref: firstSubtopicId ? `/cards/${firstSubtopicId}` : "/cards",
-      viewLabel: "View deck",
+      viewHref: `/admin/cards/${topicId}`,
+      viewLabel: "Review cards",
     },
     {
       key: "notes",
@@ -155,14 +153,12 @@ export function StudyStudio({
               </div>
             ))}
           </div>
-          {firstSubtopicId && (
-            <Link
-              href={`/cards/${firstSubtopicId}`}
-              className="inline-flex items-center gap-1.5 text-sm text-accent mt-3"
-            >
-              <ExternalLink size={14} /> Open as a study deck
-            </Link>
-          )}
+          <Link
+            href={`/admin/cards/${topicId}`}
+            className="inline-flex items-center gap-1.5 text-sm text-accent mt-3"
+          >
+            <ExternalLink size={14} /> Review full deck
+          </Link>
         </Card>
       )}
     </div>

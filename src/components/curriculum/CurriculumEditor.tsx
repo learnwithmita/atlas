@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Check, ChevronRight, Pencil, Sparkles, Trash2, X } from "lucide-react";
+import { Check, ChevronRight, FolderOpen, Pencil, Trash2, X } from "lucide-react";
 import type { CurriculumSubject } from "@/lib/data";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
@@ -133,10 +133,10 @@ export function CurriculumEditor({ subjects }: { subjects: CurriculumSubject[] }
                           href={`/admin/studio/${topic.id}`}
                           onClick={(e) => e.stopPropagation()}
                           className="p-1 text-ink-3 hover:text-accent inline-flex items-center gap-1 text-xs"
-                          aria-label="Study content"
-                          title="Generate flashcards & notes"
+                          aria-label="Open study content"
+                          title="Open this topic's notes, summary, flashcards & questions"
                         >
-                          <Sparkles size={14} /> Study
+                          <FolderOpen size={14} /> Content
                         </Link>
                         <button
                           onClick={(e) => {
