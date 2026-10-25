@@ -20,6 +20,38 @@ function esc(s: string): string {
     .replace(/"/g, "&quot;");
 }
 
+/** A coarse, non-identifying device label (e.g. "Chrome · iOS") — enough to
+ * distinguish sessions without storing the full user-agent or any IP. */
+function coarseDevice(ua: string | null): string | null {
+  if (!ua) return null;
+  const os = /iphone|ipad|ipod/i.test(ua)
+    ? "iOS"
+    : /android/i.test(ua)
+      ? "Android"
+      : /windows/i.test(ua)
+        ? "Windows"
+        : /mac os x|macintosh/i.test(ua)
+          ? "macOS"
+          : /linux/i.test(ua)
+            ? "Linux"
+            : "other";
+  // Order matters: Edge/Opera/Samsung UAs also contain "Chrome"; Chrome contains "Safari".
+  const browser = /edg\//i.test(ua)
+    ? "Edge"
+    : /opr\/|opera/i.test(ua)
+      ? "Opera"
+      : /samsungbrowser/i.test(ua)
+        ? "Samsung Internet"
+        : /firefox|fxios/i.test(ua)
+          ? "Firefox"
+          : /chrome|crios/i.test(ua)
+            ? "Chrome"
+            : /safari/i.test(ua)
+              ? "Safari"
+              : "other";
+  return `${browser} · ${os}`;
+}
+
 /**
  * Per-student delivery of a topic summary sheet. The master PNG never leaves
  * the server un-marked: this route checks Pro access, stamps the viewer's email
@@ -74,18 +106,24 @@ export async function GET(
     .png()
     .toBuffer();
 
-  // Best-effort access log (works once migration 0025 is applied).
+  // Best-effort access log (works once migration 0025 is applied). Minimal by
+  // design: account, topic, time, coarse device — no IP, no full user-agent.
   try {
     if (isServiceConfigured) {
-      const fwd = _req.headers.get("x-forwarded-for");
-      await createServiceClient()
-        .from("summary_views")
-        .insert({
-          user_id: user.id,
-          topic_id: topicId,
-          ip: fwd ? fwd.split(",")[0].trim() : null,
-          user_agent: _req.headers.get("user-agent"),
-        });
+      const svc = createServiceClient();
+      await svc.from("summary_views").insert({
+        user_id: user.id,
+        topic_id: topicId,
+        device: coarseDevice(_req.headers.get("user-agent")),
+      });
+      // Retention: occasionally drop rows older than 90 days so the log never
+      // accumulates indefinitely (belt-and-braces with the optional pg_cron job).
+      if (Math.random() < 0.02) {
+        const cutoff = new Date(
+          Date.now() - 90 * 24 * 60 * 60 * 1000
+        ).toISOString();
+        await svc.from("summary_views").delete().lt("viewed_at", cutoff);
+      }
     }
   } catch {
     /* logging is best-effort; never block delivery */
