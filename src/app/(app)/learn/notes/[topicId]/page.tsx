@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, PenLine, Printer } from "lucide-react";
 import { getProfile, getTopicNotes } from "@/lib/data";
+import { renderMarkdown } from "@/lib/markdown";
 import { NotesView } from "@/components/notes/NotesView";
 import { LinkButton } from "@/components/ui/Button";
 
@@ -41,7 +42,12 @@ export default async function TopicNotesPage({
           </LinkButton>
         </div>
       </header>
-      <NotesView topicId={topicId} data={data} admin={admin} />
+      <NotesView
+        topicId={topicId}
+        data={data}
+        admin={admin}
+        bodyHtml={renderMarkdown(data.body)}
+      />
     </div>
   );
 }

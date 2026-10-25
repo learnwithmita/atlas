@@ -164,3 +164,70 @@ h3 {
 .animate-fade-up {
   animation: fade-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
+
+/* ============================================================
+   Markdown notes — rendered from the curated note body.
+   ============================================================ */
+.notes-prose {
+  color: var(--color-ink);
+  line-height: 1.65;
+  font-size: 15px;
+}
+.notes-prose > :first-child { margin-top: 0; }
+.notes-prose h1 { font-size: 1.6rem; font-weight: 700; margin: 0 0 0.6rem; }
+.notes-prose h2 { font-size: 1.25rem; font-weight: 600; margin: 1.9rem 0 0.6rem; }
+.notes-prose h3 { font-size: 1.05rem; font-weight: 600; margin: 1.2rem 0 0.4rem; }
+.notes-prose p { margin: 0 0 0.9rem; }
+.notes-prose strong { font-weight: 650; }
+.notes-prose em { font-style: italic; }
+.notes-prose ul, .notes-prose ol { margin: 0 0 0.9rem; padding-left: 1.4rem; }
+.notes-prose ul { list-style: disc; }
+.notes-prose ol { list-style: decimal; }
+.notes-prose li { margin: 0.25rem 0; }
+.notes-prose a { color: var(--color-accent); text-decoration: underline; }
+.notes-prose blockquote {
+  border-left: 3px solid var(--color-accent);
+  background: var(--color-accent-soft);
+  padding: 0.6rem 0.9rem;
+  border-radius: 10px;
+  margin: 0 0 0.9rem;
+}
+.notes-prose hr { border: none; border-top: 1px solid var(--color-hairline); margin: 1.6rem 0; }
+.notes-prose code {
+  background: var(--color-surface-2);
+  padding: 0.1rem 0.35rem;
+  border-radius: 6px;
+  font-size: 0.9em;
+}
+.notes-prose img {
+  max-width: 100%;
+  height: auto;
+  border: 1px solid var(--color-hairline);
+  border-radius: 10px;
+  background: #fff;
+  margin: 0.4rem 0 1rem;
+}
+.notes-prose table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0 0 1rem;
+  font-size: 14px;
+}
+.notes-prose th, .notes-prose td {
+  border: 1px solid var(--color-hairline);
+  padding: 0.5rem 0.7rem;
+  text-align: left;
+  vertical-align: top;
+}
+.notes-prose thead th { background: var(--color-surface-2); font-weight: 600; }
+
+/* Keep downloaded-as-PDF notes inside the page boundaries. */
+@media print {
+  @page { size: A4; margin: 16mm; }
+  .notes-prose { font-size: 10.5pt; line-height: 1.5; }
+  .notes-prose h2, .notes-prose h3 { break-after: avoid; }
+  .notes-prose table, .notes-prose img, .notes-prose blockquote, .notes-prose li {
+    break-inside: avoid;
+  }
+  .notes-prose img { max-width: 100%; max-height: 85vh; }
+}

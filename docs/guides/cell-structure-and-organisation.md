@@ -117,6 +117,45 @@ Most cells are **specialised**: their structure is adapted to carry out a partic
 - Saying the cell wall is "made of cells" — it is made of **cellulose**.
 - Giving a feature of a specialised cell with **no reason** (e.g. "it has no nucleus" without "so there is more room for haemoglobin").
 
+## Sample question and model answer
+
+Questions on this topic often combine three skills at once: identifying a structure, comparing the two cell types, and explaining an adaptation. Here is a worked example.
+
+**Question (6 marks)**
+
+(a) Name **one** structure, other than a chloroplast, that is found in a plant cell but not in an animal cell, and state its function. **[2]**
+
+(b) The cell surface membrane is described as *partially permeable*. State what this means. **[1]**
+
+(c) A root hair cell absorbs water and mineral ions from the soil. Explain **two** ways it is adapted to carry out this function. **[3]**
+
+**How to approach it**
+
+- Check the command word. "Name" and "State" want short, exact answers with no explanation. "Explain" in part (c) means you must give a reason, not just a feature.
+- Watch the marks. Part (c) is worth 3 marks for "two ways", so give two adaptations and make sure one of them carries an extra explaining point.
+- For every adaptation, write **feature + reason** ("it has ..., so that ..."). A feature on its own usually scores only half.
+- Use exact terms: *partially permeable* (not "permeable"), *osmosis*, *active transport*.
+
+**Model answer** — each **bold** phrase is the exact keyword that earns the mark; the tag after it says what that 1 mark is for.
+
+**(a)** [2 marks]
+- **Cell wall** — *1 mark: naming the structure.*
+- made of **cellulose** and gives the cell **shape and support** (or **stops it bursting**) — *1 mark: its function.*
+
+*(A **large, permanent sap vacuole** + its function would also earn the 2 marks.)*
+
+**(b)** [1 mark]
+- lets **some substances pass through but not others** — *1 mark.* (Just "lets things through" scores 0 — the "but not others" is the key idea.)
+
+**(c)** [3 marks]
+- **long, narrow projection → large surface area** — *1 mark.*
+- so **more water and mineral ions are absorbed** — *1 mark.*
+- **many mitochondria** to release **energy for active transport** of mineral ions — *1 mark.*
+
+**Why this scores full marks:** every part answers the exact command word, (a) pairs the structure with its function, and in (c) each mark lands on a specific keyword the examiner is looking for — the surface-area idea, the absorption, and the energy-for-active-transport point.
+
+---
+
 ## Quick self-test
 1. State two structures found in a plant cell but **not** in an animal cell. *(1a, 1c)*
 2. Give the function of the cell membrane, and the exact word for how permeable it is. *(1a)*

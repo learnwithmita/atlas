@@ -186,6 +186,9 @@ export type TopicNotesView = {
   subject: string;
   keyPoints: string[];
   misconceptions: { claim: string; correction: string }[];
+  /** Full markdown document (preferred). When present, render this instead of
+   * the key-point bullets. */
+  body: string | null;
   hasNotes: boolean;
   studentNotes: string;
   imageUrl: string | null;
@@ -205,10 +208,10 @@ export async function getTopicNotes(topicId: string): Promise<TopicNotesView | n
     .single();
   if (!topic) return null;
 
-  // image_url comes from 0022 — degrade gracefully if it isn't run.
+  // image_url (0022) and body (0027) — degrade gracefully if not yet run.
   let notesQ = await supabase
     .from("topic_notes")
-    .select("key_points, misconceptions, image_url")
+    .select("key_points, misconceptions, image_url, body")
     .eq("topic_id", topicId)
     .maybeSingle();
   if (notesQ.error) {
@@ -240,6 +243,8 @@ export async function getTopicNotes(topicId: string): Promise<TopicNotesView | n
     keyPoints: (notes?.key_points as string[]) ?? [],
     misconceptions:
       (notes?.misconceptions as { claim: string; correction: string }[]) ?? [],
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    body: ((notes as any)?.body as string) ?? null,
     hasNotes: !!notes,
     studentNotes,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

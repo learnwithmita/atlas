@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { AlertTriangle, Check, Loader2, Pencil, Sparkles } from "lucide-react";
+import { AlertTriangle, BookText, Check, Pencil } from "lucide-react";
 import type { TopicNotesView } from "@/lib/data";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -13,39 +13,21 @@ export function NotesView({
   topicId,
   data,
   admin,
+  bodyHtml,
 }: {
   topicId: string;
   data: TopicNotesView;
   admin?: boolean;
+  /** Server-rendered HTML of the markdown note body. When present, it is the
+   * authoritative note content and the legacy bullet blocks are not shown. */
+  bodyHtml?: string;
 }) {
-  const [notes, setNotes] = useState(data);
+  const [notes] = useState(data);
   const [imgOpen, setImgOpen] = useState(false);
-  const [generating, setGenerating] = useState(false);
-  const [genError, setGenError] = useState<string | null>(null);
 
   const [content, setContent] = useState(data.studentNotes);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
-
-  async function generate() {
-    setGenerating(true);
-    setGenError(null);
-    try {
-      const res = await fetch("/api/notes/generate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ topicId }),
-      });
-      const d = await res.json();
-      if (res.ok)
-        setNotes((n) => ({ ...n, keyPoints: d.keyPoints, misconceptions: d.misconceptions, hasNotes: true }));
-      else setGenError(d.error ?? "Couldn't generate notes.");
-    } catch {
-      setGenError("Network error.");
-    } finally {
-      setGenerating(false);
-    }
-  }
 
   async function save() {
     setSaving(true);
@@ -58,44 +40,30 @@ export function NotesView({
     }
   }
 
+  const hasBody = !!bodyHtml;
+
   return (
     <div className="space-y-6">
-      {/* Key points */}
-      {!notes.hasNotes ? (
+      {hasBody ? (
+        <Card className="p-6 sm:p-8">
+          <div
+            className="notes-prose"
+            dangerouslySetInnerHTML={{ __html: bodyHtml! }}
+          />
+        </Card>
+      ) : !notes.hasNotes ? (
         <Card className="p-8 text-center">
           <div className="h-12 w-12 mx-auto rounded-[16px] bg-accent-soft grid place-items-center mb-4">
-            <Sparkles className="text-accent" size={22} />
+            <BookText className="text-accent" size={22} />
           </div>
           <p className="text-ink font-medium mb-1">No notes yet for this topic</p>
-          {admin ? (
-            <>
-              <p className="text-ink-2 text-sm mb-5">
-                Generate a quick revision sheet with key points and common
-                misconceptions.
-              </p>
-              <Button onClick={generate} disabled={generating}>
-                {generating ? (
-                  <>
-                    <Loader2 size={16} className="animate-spin" /> Writing notes…
-                  </>
-                ) : (
-                  <>
-                    <Sparkles size={16} /> Generate notes
-                  </>
-                )}
-              </Button>
-              {genError && <p className="text-sm text-danger mt-3">{genError}</p>}
-            </>
-          ) : (
-            <p className="text-ink-2 text-sm">
-              Your tutor is still preparing revision notes for this topic — check
-              back soon.
-            </p>
-          )}
+          <p className="text-ink-2 text-sm">
+            Revision notes for this topic are being prepared — check back soon.
+          </p>
         </Card>
       ) : (
         <>
-          {/* Topic diagram */}
+          {/* Topic diagram (legacy notes) */}
           {(notes.imageUrl || admin) && (
             <Card className="p-6">
               <div className="flex items-center justify-between gap-3 mb-3">
@@ -125,7 +93,6 @@ export function NotesView({
                   />
                 </div>
               )}
-              {!notes.imageUrl && !admin && null}
             </Card>
           )}
 

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { getTopicNotes } from "@/lib/data";
+import { renderMarkdown } from "@/lib/markdown";
 import { MathText } from "@/components/ui/MathText";
 import { PrintButton } from "@/components/cards/PrintButton";
 
@@ -34,6 +35,13 @@ export default async function NotesPrintPage({
         <p className="text-ink-2 text-sm mt-0.5">{data.subject} · Revision notes</p>
       </header>
 
+      {data.body ? (
+        <div
+          className="notes-prose"
+          dangerouslySetInnerHTML={{ __html: renderMarkdown(data.body) }}
+        />
+      ) : (
+      <>
       {data.imageUrl && (
         // eslint-disable-next-line @next/next/no-img-element
         <img
@@ -77,7 +85,9 @@ export default async function NotesPrintPage({
       )}
 
       {data.keyPoints.length === 0 && data.misconceptions.length === 0 && (
-        <p className="text-ink-2">No notes yet — generate them from the study studio.</p>
+        <p className="text-ink-2">Notes for this topic are being prepared.</p>
+      )}
+      </>
       )}
     </div>
   );
