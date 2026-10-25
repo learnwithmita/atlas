@@ -1,23 +1,23 @@
-"use client";
-
-import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { BookText, ExternalLink, Layers, Loader2, Sparkles } from "lucide-react";
+import { BookText, ExternalLink, Layers } from "lucide-react";
 import { Card } from "@/components/ui/Card";
-import { Button } from "@/components/ui/Button";
+import { MathText } from "@/components/ui/MathText";
 
 type Row = {
-  key: "flashcards" | "notes";
+  key: string;
   title: string;
   icon: typeof Layers;
   desc: string;
   status: string;
-  endpoint: string;
-  viewHref: string;
-  viewLabel: string;
+  viewHref?: string;
+  viewLabel?: string;
 };
 
+/**
+ * Review panel for a topic's notes & flashcards. These are authored by us and
+ * uploaded, not generated in-app — so there is no generate/regenerate here.
+ * Questions are the only generated content, and that lives on the bank page.
+ */
 export function StudyStudio({
   topicId,
   flashcardCount,
@@ -31,60 +31,22 @@ export function StudyStudio({
   outcomeCount: number;
   cards?: { front: string; back: string }[];
 }) {
-  const router = useRouter();
-  const [busy, setBusy] = useState<string | null>(null);
-  const [msg, setMsg] = useState<Record<string, string>>({});
-  const [err, setErr] = useState<Record<string, string>>({});
-  const [fc, setFc] = useState(flashcardCount);
-  const [notes, setNotes] = useState(hasNotes);
-
-  async function run(key: string, endpoint: string) {
-    setBusy(key);
-    setErr((e) => ({ ...e, [key]: "" }));
-    setMsg((m) => ({ ...m, [key]: "" }));
-    try {
-      const res = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ topicId }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        if (key === "flashcards") setFc((n) => n + (data.added ?? 0));
-        if (key === "notes") setNotes(true);
-        setMsg((m) => ({
-          ...m,
-          [key]: key === "flashcards" ? `Generated ${data.added} shared cards.` : "Notes generated.",
-        }));
-        router.refresh();
-      } else setErr((e) => ({ ...e, [key]: data.error ?? "Failed." }));
-    } catch {
-      setErr((e) => ({ ...e, [key]: "Network error." }));
-    } finally {
-      setBusy(null);
-    }
-  }
-
   const rows: Row[] = [
+    {
+      key: "notes",
+      title: "Revision notes",
+      icon: BookText,
+      desc: "Full revision notes covering every learning outcome. Shown to all students. Review them in Student preview.",
+      status: hasNotes ? "Published" : "Not published yet",
+    },
     {
       key: "flashcards",
       title: "Flashcards",
       icon: Layers,
       desc: "Definition cards (term → function) covering every learning outcome. Shared with all students.",
-      status: fc > 0 ? `${fc} shared cards` : "None yet",
-      endpoint: "/api/flashcards/generate-topic",
+      status: flashcardCount > 0 ? `${flashcardCount} shared cards` : "None yet",
       viewHref: `/admin/cards/${topicId}`,
       viewLabel: "Review cards",
-    },
-    {
-      key: "notes",
-      title: "Revision notes",
-      icon: BookText,
-      desc: "Key points + misconceptions covering every learning outcome. Editable, printable.",
-      status: notes ? "Generated" : "None yet",
-      endpoint: "/api/notes/generate",
-      viewHref: `/learn/notes/${topicId}`,
-      viewLabel: "View notes",
     },
   ];
 
@@ -92,10 +54,13 @@ export function StudyStudio({
     <div className="space-y-4">
       <p className="text-sm text-ink-3">
         Covers {outcomeCount} learning outcome{outcomeCount === 1 ? "" : "s"}.
-        Generated once on your Gemini key and shared with every student.
+        Notes and flashcards are authored and uploaded, not generated here.
       </p>
+
       {rows.map((r) => {
         const Icon = r.icon;
+        const ready =
+          r.status !== "Not published yet" && r.status !== "None yet";
         return (
           <Card key={r.key} className="p-5">
             <div className="flex items-start justify-between gap-3">
@@ -109,56 +74,45 @@ export function StudyStudio({
                   <p className="text-xs text-ink-3 mt-1">{r.status}</p>
                 </div>
               </div>
+              {ready && r.viewHref && (
+                <Link
+                  href={r.viewHref}
+                  className="inline-flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-full border border-hairline text-ink-2 hover:border-accent hover:text-accent shrink-0"
+                >
+                  <ExternalLink size={14} /> {r.viewLabel}
+                </Link>
+              )}
             </div>
-            <div className="flex flex-wrap items-center gap-2 mt-4">
-              <Button size="sm" disabled={busy !== null} onClick={() => run(r.key, r.endpoint)}>
-                {busy === r.key ? (
-                  <>
-                    <Loader2 size={15} className="animate-spin" /> Generating…
-                  </>
-                ) : (
-                  <>
-                    <Sparkles size={15} /> {r.status === "None yet" ? "Generate" : "Regenerate"}
-                  </>
-                )}
-              </Button>
-              <Link
-                href={r.viewHref}
-                className="inline-flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-full border border-hairline text-ink-2 hover:border-accent hover:text-accent"
-              >
-                <ExternalLink size={14} /> {r.viewLabel}
-              </Link>
-            </div>
-            {err[r.key] && <p className="text-sm text-danger mt-2">{err[r.key]}</p>}
-            {msg[r.key] && <p className="text-sm text-accent mt-2">{msg[r.key]}</p>}
           </Card>
         );
       })}
 
-      {/* Inline preview of the generated deck so you can review every card here */}
+      {/* Inline preview of the curated deck so you can review every card here */}
       {cards.length > 0 && (
         <Card className="p-5">
           <div className="flex items-center gap-2 mb-3">
             <Layers size={18} className="text-accent" />
-            <h2 className="text-lg font-semibold text-ink">Deck preview ({cards.length})</h2>
+            <h2 className="text-lg font-semibold text-ink">
+              Deck preview ({cards.length})
+            </h2>
           </div>
           <div className="divide-y divide-hairline">
             {cards.map((c, i) => (
               <div key={i} className="flex items-start gap-3 py-2.5">
-                <span className="text-xs text-ink-3 tabular-nums w-6 shrink-0 pt-0.5">{i + 1}</span>
+                <span className="text-xs text-ink-3 tabular-nums w-6 shrink-0 pt-0.5">
+                  {i + 1}
+                </span>
                 <div className="min-w-0">
-                  <p className="text-sm font-medium text-ink">{c.front}</p>
-                  <p className="text-sm text-ink-2 mt-0.5">{c.back}</p>
+                  <p className="text-sm font-medium text-ink">
+                    <MathText>{c.front}</MathText>
+                  </p>
+                  <p className="text-sm text-ink-2 mt-0.5">
+                    <MathText>{c.back}</MathText>
+                  </p>
                 </div>
               </div>
             ))}
           </div>
-          <Link
-            href={`/admin/cards/${topicId}`}
-            className="inline-flex items-center gap-1.5 text-sm text-accent mt-3"
-          >
-            <ExternalLink size={14} /> Review full deck
-          </Link>
         </Card>
       )}
     </div>

@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   BarChart3,
   BookOpen,
+  Eye,
   GraduationCap,
   Home,
   Layers,
@@ -107,6 +108,21 @@ export function Sidebar({
           <Sparkles size={19} />
           Upgrade
         </Link>
+      )}
+
+      {/* One entry into the student experience — keeps admin and student views
+          cleanly separated (no per-page "preview as student" links). */}
+      {(role === "admin" || role === "tutor") && (
+        <a
+          href="/learn"
+          target="_blank"
+          rel="noreferrer"
+          className="mt-4 flex items-center gap-3 h-11 px-3 rounded-[12px] text-[15px] font-medium text-ink-2 hover:text-ink hover:bg-surface-2 transition-colors"
+          title="Open the student app in a new tab"
+        >
+          <Eye size={19} />
+          Student preview
+        </a>
       )}
 
       <div className="mt-auto space-y-3">

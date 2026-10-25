@@ -6,6 +6,7 @@ import {
   Timer,
   Users,
 } from "lucide-react";
+import { Suspense } from "react";
 import { getAdminAnalytics, getContentCoverage } from "@/lib/data";
 import { StatTile } from "@/components/ui/StatTile";
 import { Card } from "@/components/ui/Card";
@@ -17,11 +18,14 @@ import { clamp } from "@/lib/utils";
 export const metadata = { title: "Analytics · Atlas Admin" };
 export const dynamic = "force-dynamic";
 
+/** Heavy content-coverage query, streamed so it doesn't block the dashboard. */
+async function CoverageSection() {
+  const coverage = await getContentCoverage();
+  return <ContentCoverage subjects={coverage} />;
+}
+
 export default async function AdminPage() {
-  const [a, coverage] = await Promise.all([
-    getAdminAnalytics(),
-    getContentCoverage(),
-  ]);
+  const a = await getAdminAnalytics();
 
   return (
     <div className="mx-auto max-w-6xl px-5 sm:px-8 py-8 pb-24 md:pb-8">
@@ -29,17 +33,6 @@ export default async function AdminPage() {
         <p className="text-sm text-ink-3">Platform</p>
         <h1 className="text-3xl font-semibold text-ink mt-1">Analytics</h1>
       </header>
-
-      {/* Content coverage — what each topic has and still needs */}
-      <section className="mb-10">
-        <div className="mb-3">
-          <h2 className="text-lg font-semibold text-ink">Content coverage</h2>
-          <p className="text-sm text-ink-3">
-            What each topic has in place. Tap a topic to fill the gaps.
-          </p>
-        </div>
-        <ContentCoverage subjects={coverage} />
-      </section>
 
       {!a.configured && (
         <Card className="p-5 mb-6 bg-accent-soft border-0">
@@ -223,6 +216,23 @@ export default async function AdminPage() {
           )}
         </Card>
       </div>
+
+      {/* Content coverage — what each topic has and still needs (below the dashboard) */}
+      <section className="mt-10">
+        <div className="mb-3">
+          <h2 className="text-lg font-semibold text-ink">Content coverage</h2>
+          <p className="text-sm text-ink-3">
+            What each topic has in place. Tap a topic to fill the gaps.
+          </p>
+        </div>
+        <Suspense
+          fallback={
+            <Card className="p-8 text-center text-ink-3">Loading coverage…</Card>
+          }
+        >
+          <CoverageSection />
+        </Suspense>
+      </section>
     </div>
   );
 }
