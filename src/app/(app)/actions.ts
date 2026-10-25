@@ -168,6 +168,18 @@ async function adminMutate(
 ): Promise<{ error?: string; ok?: boolean }> {
   if (!isSupabaseConfigured) return { error: "Supabase not connected." };
   const supabase = await createClient();
+  // Defense-in-depth: RLS already blocks non-admin writes, but reject here too
+  // so a non-admin caller gets a clear error instead of a silent no-op.
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not signed in." };
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+  if (profile?.role !== "admin") return { error: "Admins only." };
   const { error } = await fn(supabase);
   if (error) return { error: error.message };
   revalidatePath("/admin/curriculum");

@@ -25,6 +25,15 @@ export async function POST(req: Request) {
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Not signed in" }, { status: 401 });
 
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+  if (profile?.role !== "admin" && profile?.role !== "tutor") {
+    return NextResponse.json({ error: "Admins or tutors only." }, { status: 403 });
+  }
+
   // RLS ensures the caller can only read their own (or, as admin, any) resource.
   const { data: resource } = await supabase
     .from("resources")
