@@ -3,7 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { getTopicStudio } from "@/lib/data";
 import { getEntitlement } from "@/lib/entitlements";
-import { summaryForTopic } from "@/lib/summaries";
+import { hasSummary, summaryImageUrl } from "@/lib/summaries";
 
 export const metadata = { title: "Summary sheet · Atlas" };
 export const dynamic = "force-dynamic";
@@ -19,7 +19,7 @@ export default async function SummaryPage({
   if (!t.topicName) notFound();
   if (!ent.isPro) redirect("/pricing");
 
-  const src = summaryForTopic(topicId);
+  const src = hasSummary(topicId) ? summaryImageUrl(topicId) : null;
 
   return (
     <div className="mx-auto max-w-3xl px-5 sm:px-8 py-8 pb-24 md:pb-8">

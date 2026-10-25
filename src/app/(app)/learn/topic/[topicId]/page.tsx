@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { getTopicStudio } from "@/lib/data";
 import { getEntitlement } from "@/lib/entitlements";
-import { summaryForTopic } from "@/lib/summaries";
+import { hasSummary } from "@/lib/summaries";
 import { Card } from "@/components/ui/Card";
 import { LinkButton } from "@/components/ui/Button";
 
@@ -34,7 +34,7 @@ export default async function TopicStudyPage({
   const [t, ent] = await Promise.all([getTopicStudio(topicId), getEntitlement()]);
   if (!t.topicName) notFound();
 
-  const hasSummary = summaryForTopic(topicId) !== null;
+  const summaryReady = hasSummary(topicId);
   const canSeeSummary = ent.isPro;
 
   return (
@@ -79,7 +79,7 @@ export default async function TopicStudyPage({
           status={
             !canSeeSummary
               ? "Pro feature"
-              : hasSummary
+              : summaryReady
                 ? "Ready to view"
                 : "Being added for this topic"
           }
@@ -89,7 +89,7 @@ export default async function TopicStudyPage({
             <LinkButton href="/pricing" size="sm" variant="secondary">
               Upgrade to Pro
             </LinkButton>
-          ) : hasSummary ? (
+          ) : summaryReady ? (
             <LinkButton href={`/learn/summary/${topicId}`} size="sm">
               View summary
             </LinkButton>

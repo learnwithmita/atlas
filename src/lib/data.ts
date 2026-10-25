@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createServiceClient, isServiceConfigured } from "@/lib/supabase/admin";
 import { toGrade } from "@/lib/utils";
-import { summaryForTopic } from "@/lib/summaries";
+import { hasSummary } from "@/lib/summaries";
 
 export type Profile = {
   id: string;
@@ -727,7 +727,7 @@ export async function getContentCoverage(): Promise<SubjectCoverage[]> {
       topicName: t.topicName,
       subject: t.subject,
       hasNotes: notesSet.has(t.topicId),
-      hasSummary: summaryForTopic(t.topicId) !== null,
+      hasSummary: hasSummary(t.topicId),
       cardCount: cardByTopic.get(t.topicId) ?? 0,
       questionCount: t.bankCount,
     };

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ArrowLeft, BookOpen, ExternalLink, LayoutGrid } from "lucide-react";
 import { getTopicStudio } from "@/lib/data";
-import { summaryForTopic } from "@/lib/summaries";
+import { hasSummary } from "@/lib/summaries";
 import { StudyStudio } from "@/components/admin/StudyStudio";
 import { Card } from "@/components/ui/Card";
 import { LinkButton } from "@/components/ui/Button";
@@ -16,7 +16,7 @@ export default async function StudioPage({
 }) {
   const { topicId } = await params;
   const s = await getTopicStudio(topicId);
-  const summary = summaryForTopic(topicId);
+  const summary = hasSummary(topicId);
 
   return (
     <div className="mx-auto max-w-2xl px-5 sm:px-8 py-8 pb-24 md:pb-8">
