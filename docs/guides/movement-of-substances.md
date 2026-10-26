@@ -94,22 +94,19 @@ Because of the strong **cell wall**, a plant cell in water never bursts; it just
 
 ## Sample questions and model answers
 
-The examiner wants a clear chain of reasoning, not just the result. For osmosis: **(1) compare the water potentials → (2) say which way water moves by osmosis → (3) give the effect on the cell** (and mention the cell wall for plant cells). Below, each **bold** phrase is the keyword that earns the mark.
+**How to approach these questions.** For osmosis, give the chain of reasoning: first compare the **water potentials**, then say which way **water moves by osmosis**, then give the **effect on the cell** (turgid / plasmolysed / bursts), mentioning the cell wall for plant cells. A **(1)** marks where each mark is awarded.
 
-**1. A red blood cell is placed in pure water. Explain what happens. [3]**
-- The pure water has a **higher water potential** than the cell contents — *1 mark.*
-- so **water enters the cell by osmosis** (through the partially permeable membrane) — *1 mark.*
-- the cell has no cell wall, so it **swells and the membrane bursts (haemolysis)** — *1 mark.*
+**Question 1.** A red blood cell is placed in pure water. Explain what happens. **[3]**
 
-**2. A plant cell is placed in a concentrated sugar solution. Explain what happens. [3]**
-- The solution has a **lower water potential** than the cell sap — *1 mark.*
-- so **water leaves the cell by osmosis** — *1 mark.*
-- the **membrane and contents pull away from the cell wall (plasmolysis)**; the wall itself keeps its shape — *1 mark.*
+*Answer:* The pure water has a higher water potential than the cell contents **(1)**, so water enters the cell by osmosis **(1)**; with no cell wall, the cell swells and the membrane bursts (haemolysis) **(1)**.
 
-**3. Explain why a root hair cell uses active transport to absorb mineral ions, and why it has many mitochondria. [3]**
-- Mineral ions are **more concentrated inside the cell than in the soil**, so they must be taken up **against the concentration gradient** — *1 mark.*
-- active transport needs **energy from respiration** — *1 mark.*
-- the **many mitochondria** release that energy — *1 mark.*
+**Question 2.** A plant cell is placed in a concentrated sugar solution. Explain what happens. **[3]**
+
+*Answer:* The solution has a lower water potential than the cell sap **(1)**, so water leaves the cell by osmosis **(1)**; the membrane and contents pull away from the cell wall (plasmolysis), and the wall keeps its shape **(1)**.
+
+**Question 3.** Explain why a root hair cell uses active transport to absorb mineral ions, and why it has many mitochondria. **[3]**
+
+*Answer:* Mineral ions are more concentrated inside the cell than in the soil, so they are taken up against the concentration gradient **(1)**; this needs energy from respiration **(1)**, which the many mitochondria release **(1)**.
 
 ---
 
