@@ -1,0 +1,78 @@
+<svg viewBox="0 0 1000 1512" xmlns="http://www.w3.org/2000/svg" font-family="Inter, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif">
+<defs>
+ <filter id="soft" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="3" stdDeviation="6" flood-color="#1d2430" flood-opacity="0.08"/></filter>
+ <style>
+  .card{fill:#ffffff;stroke:#e7e7ee;stroke-width:1.2;filter:url(#soft)}
+  .sect{font-size:22px;font-weight:800;fill:#1d2430}
+  .sub{font-size:13.5px;font-weight:700;fill:#5e6673;letter-spacing:1.0px}
+  .ink{fill:#1d2430}.ink2{fill:#5e6673}.body{font-size:15px;font-weight:500;fill:#1d2430}
+ </style>
+</defs>
+<rect width="1000" height="1512" fill="#f7f7fb"/>
+<text x="40" y="66" font-size="40" font-weight="800" fill="#1d2430">Biological Molecules</text>
+<rect x="40" y="84" width="228" height="30" rx="15" fill="#eeeefb"/>
+<text x="56" y="105" font-size="14" font-weight="700" fill="#5b5bd6" letter-spacing="1.4">BIOLOGY · AT A GLANCE</text>
+<text x="960" y="70" text-anchor="end" font-size="15" font-weight="600" fill="#5e6673">G3 Biology · summary</text>
+
+<!-- Card A: three food groups -->
+<rect x="40" y="140" width="920" height="300" rx="20" class="card"/><rect x="40" y="140" width="6" height="300" rx="3" fill="#5b5bd6"/>
+<text x="70" y="180" class="sect">The three food groups</text>
+<text x="70" y="204" class="sub">ELEMENTS · MAIN ROLE · BUILDING BLOCKS</text>
+<g transform="translate(70,236)">
+ <text x="0" y="0" font-size="17" font-weight="800" fill="#5b5bd6">Carbohydrates</text><text x="0" y="28" font-size="13.5" font-weight="800" fill="#1d2430">Elements</text><text x="0" y="48" font-size="14" fill="#1d2430">C, H, O</text><text x="0" y="80" font-size="13.5" font-weight="800" fill="#1d2430">Main role</text><text x="0" y="100" font-size="14" fill="#1d2430">Immediate source</text><text x="0" y="120" font-size="14" fill="#1d2430">of energy</text><text x="0" y="152" font-size="13.5" font-weight="800" fill="#1d2430">Built from</text><text x="0" y="172" font-size="14" fill="#1d2430">Glucose →</text><text x="0" y="192" font-size="14" fill="#1d2430">starch, glycogen,</text><text x="0" y="212" font-size="14" fill="#1d2430">cellulose</text>
+ <text x="312" y="0" font-size="17" font-weight="800" fill="#5b5bd6">Fats (lipids)</text><text x="312" y="28" font-size="13.5" font-weight="800" fill="#1d2430">Elements</text><text x="312" y="48" font-size="14" fill="#1d2430">C, H, O</text><text x="312" y="80" font-size="13.5" font-weight="800" fill="#1d2430">Main role</text><text x="312" y="100" font-size="14" fill="#1d2430">Long-term energy</text><text x="312" y="120" font-size="14" fill="#1d2430">store and insulation</text><text x="312" y="152" font-size="13.5" font-weight="800" fill="#1d2430">Built from</text><text x="312" y="172" font-size="14" fill="#1d2430">Glycerol +</text><text x="312" y="192" font-size="14" fill="#1d2430">fatty acids</text>
+ <text x="624" y="0" font-size="17" font-weight="800" fill="#5b5bd6">Proteins</text><text x="624" y="28" font-size="13.5" font-weight="800" fill="#1d2430">Elements</text><text x="624" y="48" font-size="14" fill="#1d2430">C, H, O, N</text><text x="624" y="80" font-size="13.5" font-weight="800" fill="#1d2430">Main role</text><text x="624" y="100" font-size="14" fill="#1d2430">Growth and repair</text><text x="624" y="120" font-size="14" fill="#1d2430">of cells</text><text x="624" y="152" font-size="13.5" font-weight="800" fill="#1d2430">Built from</text><text x="624" y="172" font-size="14" fill="#1d2430">Amino acids →</text><text x="624" y="192" font-size="14" fill="#1d2430">polypeptides,</text><text x="624" y="212" font-size="14" fill="#1d2430">proteins</text>
+</g>
+
+<!-- Card B: food tests -->
+<rect x="40" y="460" width="920" height="320" rx="20" class="card"/><rect x="40" y="460" width="6" height="320" rx="3" fill="#5b5bd6"/>
+<text x="70" y="500" class="sect">Food tests</text>
+<text x="70" y="524" class="sub">REAGENT · POSITIVE RESULT</text>
+<g transform="translate(70,548)"><g transform="translate(0,0)"><clipPath id="t780"><path d="M78,0 v98 a22,22 0 0 0 44,0 v-98 z"/></clipPath><path d="M78,0 v98 a22,22 0 0 0 44,0 v-98 z" fill="#ffffff" stroke="#c9ced8" stroke-width="2"/><g clip-path="url(#t780)"><rect x="76" y="50" width="48" height="74" fill="#272a63"/><ellipse cx="100" cy="50" rx="22" ry="5" fill="#ffffff" fill-opacity="0.25"/></g><rect x="75" y="-3" width="50" height="7" rx="3" fill="#dfe3ea"/><text x="100" y="150" text-anchor="middle" font-size="15" font-weight="800" fill="#1d2430">Starch</text><text x="100" y="174" text-anchor="middle" font-size="13" fill="#1d2430">+ iodine solution</text><text x="100" y="198" text-anchor="middle" font-size="13" font-weight="700" fill="#5b5bd6">blue-black</text></g><g transform="translate(230,0)"><clipPath id="t780"><path d="M78,0 v98 a22,22 0 0 0 44,0 v-98 z"/></clipPath><path d="M78,0 v98 a22,22 0 0 0 44,0 v-98 z" fill="#ffffff" stroke="#c9ced8" stroke-width="2"/><g clip-path="url(#t780)"><rect x="76" y="50" width="48" height="74" fill="#c0402a"/><ellipse cx="100" cy="50" rx="22" ry="5" fill="#ffffff" fill-opacity="0.25"/></g><rect x="75" y="-3" width="50" height="7" rx="3" fill="#dfe3ea"/><text x="100" y="150" text-anchor="middle" font-size="15" font-weight="800" fill="#1d2430">Reducing sugar</text><text x="100" y="174" text-anchor="middle" font-size="13" fill="#1d2430">+ Benedict's, heat</text><text x="100" y="198" text-anchor="middle" font-size="13" font-weight="700" fill="#5b5bd6">brick-red</text><text x="100" y="220" text-anchor="middle" font-size="12" fill="#5e6673">(blue if none)</text></g><g transform="translate(460,0)"><clipPath id="t780"><path d="M78,0 v98 a22,22 0 0 0 44,0 v-98 z"/></clipPath><path d="M78,0 v98 a22,22 0 0 0 44,0 v-98 z" fill="#ffffff" stroke="#c9ced8" stroke-width="2"/><g clip-path="url(#t780)"><rect x="76" y="50" width="48" height="74" fill="#7b3fa0"/><ellipse cx="100" cy="50" rx="22" ry="5" fill="#ffffff" fill-opacity="0.25"/></g><rect x="75" y="-3" width="50" height="7" rx="3" fill="#dfe3ea"/><text x="100" y="150" text-anchor="middle" font-size="15" font-weight="800" fill="#1d2430">Protein</text><text x="100" y="174" text-anchor="middle" font-size="13" fill="#1d2430">+ biuret solution</text><text x="100" y="198" text-anchor="middle" font-size="13" font-weight="700" fill="#5b5bd6">violet</text></g><g transform="translate(690,0)"><clipPath id="t780"><path d="M78,0 v98 a22,22 0 0 0 44,0 v-98 z"/></clipPath><path d="M78,0 v98 a22,22 0 0 0 44,0 v-98 z" fill="#ffffff" stroke="#c9ced8" stroke-width="2"/><g clip-path="url(#t780)"><rect x="76" y="50" width="48" height="74" fill="#e7eaef"/><ellipse cx="100" cy="50" rx="22" ry="5" fill="#ffffff" fill-opacity="0.25"/></g><rect x="75" y="-3" width="50" height="7" rx="3" fill="#dfe3ea"/><text x="100" y="150" text-anchor="middle" font-size="15" font-weight="800" fill="#1d2430">Fats</text><text x="100" y="174" text-anchor="middle" font-size="13" fill="#1d2430">+ ethanol, then water</text><text x="100" y="198" text-anchor="middle" font-size="13" font-weight="700" fill="#5b5bd6">cloudy emulsion</text><text x="100" y="220" text-anchor="middle" font-size="12" fill="#5e6673">(milky white)</text></g></g>
+
+<!-- Card C: enzymes lock and key -->
+<rect x="40" y="800" width="920" height="360" rx="20" class="card"/><rect x="40" y="800" width="6" height="360" rx="3" fill="#5b5bd6"/>
+<text x="70" y="840" class="sect">Enzymes: the lock and key model</text>
+<g>
+ <text x="170" y="878" text-anchor="middle" font-size="14" font-weight="700" fill="#1d2430">1. Substrate fits the active site</text>
+ <path d="M114.0,920 H150 A20,20 0 0 1 190,920 H226.0 V974 H114.0 Z" fill="#cfe3d6" stroke="#4f9d73" stroke-width="2.5"/><path d="M125.0,882 H215.0 V904 H190 A20,20 0 0 1 150,904 H125.0 Z" fill="#f0c24a" stroke="#d09a1e" stroke-width="2.5"/>
+ <text x="170" y="998" text-anchor="middle" font-size="12.5" fill="#5e6673">only a matching substrate fits</text>
+ <line x1="285" y1="947" x2="375" y2="947" stroke="#48525f" stroke-width="3" stroke-linecap="round"/><path d="M375.0,947.0 L368.1,951.0 L368.1,943.0 Z" fill="#48525f"/>
+ <text x="445" y="878" text-anchor="middle" font-size="14" font-weight="700" fill="#1d2430">2. Enzyme-substrate complex</text>
+ <path d="M389.0,920 H425 A20,20 0 0 1 465,920 H501.0 V974 H389.0 Z" fill="#cfe3d6" stroke="#4f9d73" stroke-width="2.5"/><path d="M400.0,898 H490.0 V920 H465 A20,20 0 0 1 425,920 H400.0 Z" fill="#f0c24a" stroke="#d09a1e" stroke-width="2.5"/>
+ <text x="445" y="998" text-anchor="middle" font-size="12.5" fill="#5e6673">lowers the activation energy</text>
+ <line x1="560" y1="947" x2="650" y2="947" stroke="#48525f" stroke-width="3" stroke-linecap="round"/><path d="M650.0,947.0 L643.1,951.0 L643.1,943.0 Z" fill="#48525f"/>
+ <text x="720" y="878" text-anchor="middle" font-size="14" font-weight="700" fill="#1d2430">3. Products released</text>
+ <path d="M664.0,920 H700 A20,20 0 0 1 740,920 H776.0 V974 H664.0 Z" fill="#cfe3d6" stroke="#4f9d73" stroke-width="2.5"/><rect x="678" y="896" width="38" height="22" rx="7" fill="#f0c24a" stroke="#d09a1e" stroke-width="2.5"/><rect x="724" y="896" width="38" height="22" rx="7" fill="#f0c24a" stroke="#d09a1e" stroke-width="2.5"/>
+ <text x="720" y="998" text-anchor="middle" font-size="12.5" fill="#5e6673">enzyme is unchanged, reused</text>
+</g>
+<g transform="translate(70,1040)" font-size="14">
+ <rect x="0" y="0" width="415" height="96" rx="14" fill="#faf9ff" stroke="#e7e7f3" stroke-width="1.2"/>
+ <text x="18" y="28" font-size="14.5" font-weight="800" fill="#5b5bd6">Key idea</text>
+ <text x="18" y="52" class="ink">Enzymes are biological catalysts: they speed</text>
+ <text x="18" y="72" class="ink">up reactions and are not used up.</text>
+ <rect x="435" y="0" width="415" height="96" rx="14" fill="#faf9ff" stroke="#e7e7f3" stroke-width="1.2"/>
+ <text x="453" y="28" font-size="14.5" font-weight="800" fill="#5b5bd6">Specific</text>
+ <text x="453" y="52" class="ink">Each enzyme's active site fits only one</text>
+ <text x="453" y="72" class="ink">substrate (its complementary shape).</text>
+</g>
+
+<!-- Card D: temperature and pH -->
+<rect x="40" y="1180" width="920" height="300" rx="20" class="card"/><rect x="40" y="1180" width="6" height="300" rx="3" fill="#5b5bd6"/>
+<text x="70" y="1220" class="sect">Temperature and pH</text>
+<text x="70" y="1244" class="sub">RATE OF ENZYME-CATALYSED REACTIONS</text>
+<text x="217" y="1298" text-anchor="middle" font-size="12.5" fill="#5e6673">rises to an optimum (~37°C), then denatures</text>
+<rect x="144" y="1339" width="175" height="139" rx="12" fill="#f7f8fc" stroke="#e4e8f1" stroke-width="1.2"/><line x1="150" y1="1440" x2="285" y2="1440" stroke="#9aa3b2" stroke-width="2"/><line x1="150" y1="1440" x2="150" y2="1345" stroke="#9aa3b2" stroke-width="2"/><path d="M150,1438 L174,1423 L199,1391 L218,1353 L226,1345 L235,1354 L247,1392 L261,1429 L272,1440" fill="none" stroke="#5b5bd6" stroke-width="3.2" stroke-linecap="round"/><text x="217.5" y="1470" text-anchor="middle" font-size="13" font-weight="700" fill="#5e6673">Temperature</text><text x="140" y="1333" font-size="13" font-weight="700" fill="#5e6673">Rate</text><line x1="225.60000000000002" y1="1345.0" x2="225.60000000000002" y2="1440" stroke="#c7ccd6" stroke-width="1.4" stroke-dasharray="3,4"/><circle cx="225.60000000000002" cy="1345.0" r="4" fill="#5b5bd6"/><text x="225.60000000000002" y="1335.0" text-anchor="middle" font-size="12" font-weight="700" fill="#1d2430">optimum</text>
+<text x="507" y="1298" text-anchor="middle" font-size="12.5" fill="#5e6673">fastest at the optimum pH</text>
+<rect x="434" y="1339" width="175" height="139" rx="12" fill="#f7f8fc" stroke="#e4e8f1" stroke-width="1.2"/><line x1="440" y1="1440" x2="575" y2="1440" stroke="#9aa3b2" stroke-width="2"/><line x1="440" y1="1440" x2="440" y2="1345" stroke="#9aa3b2" stroke-width="2"/><path d="M447,1440 L467,1412 L487,1372 L508,1345 L528,1372 L548,1412 L568,1440" fill="none" stroke="#5b5bd6" stroke-width="3.2" stroke-linecap="round"/><text x="507.5" y="1470" text-anchor="middle" font-size="13" font-weight="700" fill="#5e6673">pH</text><text x="430" y="1333" font-size="13" font-weight="700" fill="#5e6673">Rate</text><line x1="507.5" y1="1345.0" x2="507.5" y2="1440" stroke="#c7ccd6" stroke-width="1.4" stroke-dasharray="3,4"/><circle cx="507.5" cy="1345.0" r="4" fill="#5b5bd6"/><text x="507.5" y="1335.0" text-anchor="middle" font-size="12" font-weight="700" fill="#1d2430">optimum pH</text>
+<g transform="translate(650,1262)" font-size="14">
+ <rect x="0" y="0" width="282" height="200" rx="14" fill="#faf9ff" stroke="#e7e7f3" stroke-width="1.2"/>
+ <text x="18" y="28" font-size="14.5" font-weight="800" fill="#5b5bd6">Denatured</text>
+ <text x="18" y="52" class="ink">High temperature or the wrong pH</text>
+ <text x="18" y="72" class="ink">changes the active site's shape, so</text>
+ <text x="18" y="92" class="ink">the substrate no longer fits.</text>
+ <text x="18" y="120" class="ink">This is permanent, so the</text>
+ <text x="18" y="140" class="ink">reaction stops.</text>
+ <text x="18" y="172" font-size="12.5" fill="#5e6673">Low temperature only slows it.</text>
+</g>
+</svg>
