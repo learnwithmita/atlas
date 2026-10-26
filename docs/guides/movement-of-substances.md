@@ -2,7 +2,7 @@
 
 **Topic at a glance.** Cells constantly take in what they need (oxygen, glucose, water, mineral ions) and get rid of waste (carbon dioxide). These substances cross the **cell membrane**, which is **partially permeable**. There are three ways they move: **diffusion**, **osmosis** and **active transport**. The first two are *passive* (no energy used by the cell); the third needs *energy*. Knowing the exact definitions word-for-word, and being able to explain what happens to plant and animal cells in different solutions, is where the marks are.
 
-![The three processes: diffusion (particles spread down the gradient), osmosis (water crosses a partially permeable membrane to the concentrated side), and active transport (particles pumped against the gradient using energy).](../diagrams/movement/three-processes.png)
+![Diffusion, osmosis and active transport compared.](../diagrams/movement/three-processes.png)
 
 ---
 
@@ -26,7 +26,7 @@
 
 ## 2b — Osmosis
 
-**Definition.** Osmosis is the **net movement of water molecules from a region of higher water potential (a dilute solution) to a region of lower water potential (a concentrated solution), through a partially permeable membrane.**
+**Definition.** Osmosis is the **net movement of water molecules from a region of higher water potential to a region of lower water potential, through a partially permeable membrane.**
 
 > **Water potential** is just how "free" the water is: a **dilute** solution (lots of water) has a **high** water potential; a **concentrated** solution (little water) has a **low** water potential. Water moves from high to low water potential.
 
@@ -42,7 +42,7 @@ Osmosis is still a type of diffusion (of water), so it is also **passive — no 
 
 Because of the strong **cell wall**, a plant cell in water never bursts; it just becomes turgid.
 
-![Osmosis in living cells: a plant cell goes turgid, then flaccid, then plasmolysed as the outside solution gets more concentrated; a red blood cell swells and bursts in water, is normal in an equal solution, and shrinks and crinkles in a concentrated solution.](../diagrams/movement/osmosis-in-cells.png)
+![Osmosis in living cells: red blood cells and plant cells in different solutions.](../diagrams/movement/osmosis-in-living-cells.png)
 
 ### Effect on animal cells (red blood cell — no cell wall)
 
@@ -55,18 +55,6 @@ Because of the strong **cell wall**, a plant cell in water never bursts; it just
 **Investigating osmosis.** You can show osmosis with Visking tubing (an artificial partially permeable membrane) or with potato strips: strips in dilute solution gain mass and become firm; strips in concentrated solution lose mass and become soft.
 
 **Examiner wants.** The full definition including **"water molecules"**, **"water potential"** (or dilute→concentrated) and **"partially permeable membrane"**; and that an animal cell **bursts** (no wall) whereas a plant cell becomes **turgid**. **Common mistake:** forgetting "partially permeable membrane", or saying solutes move (only *water* moves in osmosis).
-
-### Sample question and model answer
-
-**Q: A red blood cell is placed in pure water. Describe and explain what happens. [3]**
-
-> The pure water has a **higher water potential** than the cell's contents, so **water moves into the red blood cell by osmosis** through the partially permeable membrane. Because a red blood cell has **no cell wall** to resist the pressure, the cell **swells and bursts (haemolysis)**.
-
-**Q: A plant cell is placed in a concentrated sugar solution. Explain what happens. [3]**
-
-> The concentrated solution has a **lower water potential** than the cell sap, so **water leaves the cell by osmosis**. The vacuole shrinks and the **cell membrane pulls away from the cell wall**. The rigid cell wall itself does *not* change shape. The cell is now **plasmolysed**.
-
-*Notice the structure the examiner wants: (1) compare water potentials, (2) say which way water moves by osmosis, (3) state the result on the cell.*
 
 ---
 
@@ -103,6 +91,27 @@ Because of the strong **cell wall**, a plant cell in water never bursts; it just
 - Leaving out **"partially permeable membrane"** from the osmosis definition.
 - Saying solute (sugar/salt) moves in osmosis — only **water** moves.
 - Forgetting that active transport goes **against** the gradient and **needs energy**.
+
+## Sample questions and model answers
+
+The examiner wants a clear chain of reasoning, not just the result. For osmosis: **(1) compare the water potentials → (2) say which way water moves by osmosis → (3) give the effect on the cell** (and mention the cell wall for plant cells). Below, each **bold** phrase is the keyword that earns the mark.
+
+**1. A red blood cell is placed in pure water. Explain what happens. [3]**
+- The pure water has a **higher water potential** than the cell contents — *1 mark.*
+- so **water enters the cell by osmosis** (through the partially permeable membrane) — *1 mark.*
+- the cell has no cell wall, so it **swells and the membrane bursts (haemolysis)** — *1 mark.*
+
+**2. A plant cell is placed in a concentrated sugar solution. Explain what happens. [3]**
+- The solution has a **lower water potential** than the cell sap — *1 mark.*
+- so **water leaves the cell by osmosis** — *1 mark.*
+- the **membrane and contents pull away from the cell wall (plasmolysis)**; the wall itself keeps its shape — *1 mark.*
+
+**3. Explain why a root hair cell uses active transport to absorb mineral ions, and why it has many mitochondria. [3]**
+- Mineral ions are **more concentrated inside the cell than in the soil**, so they must be taken up **against the concentration gradient** — *1 mark.*
+- active transport needs **energy from respiration** — *1 mark.*
+- the **many mitochondria** release that energy — *1 mark.*
+
+---
 
 ## Quick self-test
 1. Define diffusion, including the phrase about the concentration gradient. *(2a)*

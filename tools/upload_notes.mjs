@@ -33,24 +33,20 @@ for (const r of rewrites) {
   if (from && to) body = body.split(from).join(to);
 }
 
-const res = await fetch(`${BASE}/rest/v1/topic_notes?topic_id=eq.${topicId}`, {
-  method: "PATCH",
+// Upsert on topic_id so it works whether or not a notes row already exists.
+const res = await fetch(`${BASE}/rest/v1/topic_notes?on_conflict=topic_id`, {
+  method: "POST",
   headers: {
     apikey: KEY,
     Authorization: `Bearer ${KEY}`,
     "Content-Type": "application/json",
-    Prefer: "return=representation",
+    Prefer: "resolution=merge-duplicates,return=representation",
   },
-  body: JSON.stringify({ body }),
+  body: JSON.stringify({ topic_id: topicId, body }),
 });
 const text = await res.text();
 if (!res.ok) {
   console.error(`Failed (${res.status}): ${text}`);
-  process.exit(1);
-}
-const rows = JSON.parse(text);
-if (rows.length === 0) {
-  console.error("No topic_notes row for that topic — insert one first (generate notes once, or seed).");
   process.exit(1);
 }
 console.log(`Uploaded ${body.length} chars of markdown to topic_notes.body for ${topicId}.`);
