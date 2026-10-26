@@ -53,6 +53,9 @@ def p_active(w=270,h=150):
     cx,cy=w/2,40
     star="".join(f'<line x1="{cx}" y1="{cy}" x2="{cx+14*math.cos(math.radians(a))}" y2="{cy+14*math.sin(math.radians(a))}" stroke="{YEL}" stroke-width="3.4" stroke-linecap="round"/>' for a in range(0,360,45))
     s+=f'<circle cx="{cx}" cy="{cy}" r="6" fill="{YEL}"/>'+star
+    # labels so the energy burst and the carrier protein are clear
+    s+=f'<text x="{w/2}" y="22" text-anchor="middle" font-size="10.5" font-weight="700" fill="#1d2430">Energy</text>'
+    s+=f'<text x="{w/2}" y="130" text-anchor="middle" font-size="10.5" font-weight="700" fill="#1d2430">Carrier protein</text>'
     return s
 
 def defn(x,y,name,lines,tag):
@@ -126,7 +129,7 @@ svg=f'''<svg viewBox="0 0 1000 1392" xmlns="http://www.w3.org/2000/svg" font-fam
 <g transform="translate(366,224)">{p_osmosis()}</g>
 <g transform="translate(662,224)">{p_active()}</g>
 {defn(70,408,"Diffusion",["Net movement of particles from","higher to lower concentration,","down a concentration gradient."],"Down the gradient · No energy")}
-{defn(366,408,"Osmosis",["Net movement of water from a","dilute to a concentrated solution","through a partially permeable membrane."],"Water only · No energy")}
+{defn(366,408,"Osmosis",["Net movement of water molecules,","from higher to lower water potential,","through a partially permeable membrane."],"Water only · No energy")}
 {defn(662,408,"Active transport",["Movement of particles against the","gradient, from lower to higher","concentration, using energy."],"Against the gradient · Uses energy")}
 
 <!-- Card B: osmosis in living cells -->
