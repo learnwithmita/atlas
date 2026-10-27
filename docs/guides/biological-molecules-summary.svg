@@ -35,15 +35,15 @@
 <text x="70" y="840" class="sect">Enzymes: the lock and key model</text>
 <g>
  <text x="170" y="878" text-anchor="middle" font-size="14" font-weight="700" fill="#1d2430">1. Substrate fits the active site</text>
- <path d="M114.0,920 H150 A20,20 0 0 1 190,920 H226.0 V974 H114.0 Z" fill="#cfe3d6" stroke="#4f9d73" stroke-width="2.5"/><path d="M125.0,882 H215.0 V904 H190 A20,20 0 0 1 150,904 H125.0 Z" fill="#f0c24a" stroke="#d09a1e" stroke-width="2.5"/>
+ <path d="M114.0,920 H150 A20,20 0 0 0 190,920 H226.0 V974 H114.0 Z" fill="#cfe3d6" stroke="#4f9d73" stroke-width="2.5"/><path d="M125.0,882 H215.0 V904 H190 A20,20 0 0 1 150,904 H125.0 Z" fill="#f0c24a" stroke="#d09a1e" stroke-width="2.5"/>
  <text x="170" y="998" text-anchor="middle" font-size="12.5" fill="#5e6673">only a matching substrate fits</text>
  <line x1="285" y1="947" x2="375" y2="947" stroke="#48525f" stroke-width="3" stroke-linecap="round"/><path d="M375.0,947.0 L368.1,951.0 L368.1,943.0 Z" fill="#48525f"/>
  <text x="445" y="878" text-anchor="middle" font-size="14" font-weight="700" fill="#1d2430">2. Enzyme-substrate complex</text>
- <path d="M389.0,920 H425 A20,20 0 0 1 465,920 H501.0 V974 H389.0 Z" fill="#cfe3d6" stroke="#4f9d73" stroke-width="2.5"/><path d="M400.0,898 H490.0 V920 H465 A20,20 0 0 1 425,920 H400.0 Z" fill="#f0c24a" stroke="#d09a1e" stroke-width="2.5"/>
+ <path d="M389.0,920 H425 A20,20 0 0 0 465,920 H501.0 V974 H389.0 Z" fill="#cfe3d6" stroke="#4f9d73" stroke-width="2.5"/><path d="M400.0,898 H490.0 V920 H465 A20,20 0 0 1 425,920 H400.0 Z" fill="#f0c24a" stroke="#d09a1e" stroke-width="2.5"/>
  <text x="445" y="998" text-anchor="middle" font-size="12.5" fill="#5e6673">lowers the activation energy</text>
  <line x1="560" y1="947" x2="650" y2="947" stroke="#48525f" stroke-width="3" stroke-linecap="round"/><path d="M650.0,947.0 L643.1,951.0 L643.1,943.0 Z" fill="#48525f"/>
  <text x="720" y="878" text-anchor="middle" font-size="14" font-weight="700" fill="#1d2430">3. Products released</text>
- <path d="M664.0,920 H700 A20,20 0 0 1 740,920 H776.0 V974 H664.0 Z" fill="#cfe3d6" stroke="#4f9d73" stroke-width="2.5"/><rect x="678" y="896" width="38" height="22" rx="7" fill="#f0c24a" stroke="#d09a1e" stroke-width="2.5"/><rect x="724" y="896" width="38" height="22" rx="7" fill="#f0c24a" stroke="#d09a1e" stroke-width="2.5"/>
+ <path d="M664.0,920 H700 A20,20 0 0 0 740,920 H776.0 V974 H664.0 Z" fill="#cfe3d6" stroke="#4f9d73" stroke-width="2.5"/><rect x="678" y="896" width="38" height="22" rx="7" fill="#f0c24a" stroke="#d09a1e" stroke-width="2.5"/><rect x="724" y="896" width="38" height="22" rx="7" fill="#f0c24a" stroke="#d09a1e" stroke-width="2.5"/>
  <text x="720" y="998" text-anchor="middle" font-size="12.5" fill="#5e6673">enzyme is unchanged, reused</text>
 </g>
 <g transform="translate(70,1040)" font-size="14">

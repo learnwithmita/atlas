@@ -27,7 +27,9 @@ def tube(x,y,liquid):
 ENZF="#cfe3d6"; ENZS="#4f9d73"; SUBF="#f0c24a"; SUBS="#d09a1e"
 def enzyme(cx, ytop, w=112, h=54, notch=20):
     L=cx-w/2; R=cx+w/2; nl=cx-notch; nr=cx+notch; B=ytop+h
-    d=f'M{L},{ytop} H{nl} A{notch},{notch} 0 0 1 {nr},{ytop} H{R} V{B} H{L} Z'
+    # sweep-flag 0 makes the arc dip DOWN into the block (a concave active-site
+    # notch) rather than bulging out, so the substrate's bump fits into it.
+    d=f'M{L},{ytop} H{nl} A{notch},{notch} 0 0 0 {nr},{ytop} H{R} V{B} H{L} Z'
     return f'<path d="{d}" fill="{ENZF}" stroke="{ENZS}" stroke-width="2.5"/>'
 def substrate(cx, ytop, w=90, h=22, bump=20):
     L=cx-w/2; R=cx+w/2; B=ytop+h; bl=cx-bump; br=cx+bump
