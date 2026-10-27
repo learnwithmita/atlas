@@ -12,6 +12,8 @@ const TOPIC_SUMMARY_FILES: Record<string, string> = {
   // Respiration in Humans (Pure Biology + Combined Science share the sheet)
   "010586ac-1766-4ddc-ad9b-7c2c6f6aac23": "respiration-in-humans.png",
   "dd6bcdf2-3c48-454e-8c15-62380a133197": "respiration-in-humans.png",
+  // Pure Biology · Biological Molecules
+  "e5cf8781-5b55-4b87-9bcb-6b7ce4b305f6": "biological-molecules.png",
 };
 
 /** Server-only master filename for a topic, or null if none is published. */
