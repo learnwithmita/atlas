@@ -116,7 +116,9 @@ export async function getMarkUsage(): Promise<{
   };
 }
 
-/** How many answers the user has had AI-marked today (resets at midnight). */
+/** How many answers the user has had AI-marked today (resets at midnight).
+ * Counts the ai_mark_usage ledger (0029), which every billable marking path
+ * writes to — so structured, open-ended and assignment marking all count. */
 export async function marksUsedToday(): Promise<number> {
   if (!isSupabaseConfigured) return 0;
   const supabase = await createClient();
@@ -127,11 +129,28 @@ export async function marksUsedToday(): Promise<number> {
   const since = new Date();
   since.setHours(0, 0, 0, 0);
   const { count } = await supabase
-    .from("practice_log")
+    .from("ai_mark_usage")
     .select("id", { count: "exact", head: true })
-    .eq("student_id", user.id)
+    .eq("user_id", user.id)
     .gte("created_at", since.toISOString());
   return count ?? 0;
+}
+
+/**
+ * Record one billable AI mark in the daily ledger. Best-effort: a failure here
+ * must never block returning the student's result. Call after a successful AI
+ * mark on every marking path so the daily cap counts consistently.
+ */
+export async function recordMark(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+  kind: string
+): Promise<void> {
+  try {
+    await supabase.from("ai_mark_usage").insert({ user_id: userId, kind });
+  } catch {
+    /* ledger write is best-effort; never block the student's result */
+  }
 }
 
 /**

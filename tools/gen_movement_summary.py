@@ -140,7 +140,7 @@ svg=f'''<svg viewBox="0 0 1000 1392" xmlns="http://www.w3.org/2000/svg" font-fam
 <g transform="translate(316,718)">{plant_cell("flaccid")}</g>{cellcap(391,900,"Flaccid","Loses some water:")}<text x="391" y="937" text-anchor="middle" font-size="12.5" fill="#5e6673">soft and limp</text>
 <g transform="translate(536,718)">{plant_cell("plasmolysed")}</g>{cellcap(611,900,"Plasmolysed","In concentrated solution:")}<text x="611" y="937" text-anchor="middle" font-size="12.5" fill="#5e6673">membrane pulls from wall</text>
 <line x1="740" y1="712" x2="740" y2="1080" stroke="#ececf3" stroke-width="1.4"/>
-<text x="770" y="700" class="sub">RED BLOOD CELL (NO WALL)</text>
+<text x="748" y="700" class="sub">RED BLOOD CELL (NO WALL)</text>
 <g transform="translate(772,724)" transform-origin="0 0"><g transform="scale(0.62)">{rbc_cell("burst")}</g></g><text x="820" y="852" text-anchor="middle" font-size="13" font-weight="800" fill="#1d2430">In water</text><text x="820" y="871" text-anchor="middle" font-size="12" fill="#5e6673">swells &amp; bursts</text>
 <g transform="translate(772,878)"><g transform="scale(0.62)">{rbc_cell("normal")}</g></g><text x="820" y="1006" text-anchor="middle" font-size="13" font-weight="800" fill="#1d2430">Normal</text>
 <g transform="translate(878,724)"><g transform="scale(0.62)">{rbc_cell("shrunken")}</g></g><text x="926" y="852" text-anchor="middle" font-size="13" font-weight="800" fill="#1d2430">Concentrated</text><text x="926" y="871" text-anchor="middle" font-size="12" fill="#5e6673">shrinks, crinkled</text>

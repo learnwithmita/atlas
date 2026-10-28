@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { friendlyGeminiError, markAnswer } from "@/lib/gemini";
-import { canMarkNow } from "@/lib/entitlements";
+import { canMarkNow, recordMark } from "@/lib/entitlements";
+import { cleanAnswer, isUuid } from "@/lib/validate";
 
 export const runtime = "nodejs";
 
@@ -20,6 +21,16 @@ export async function POST(req: Request) {
         { status: 503 }
       );
     }
+
+    // Validate untrusted input before any auth/DB/AI work.
+    if (!isUuid(questionId)) {
+      return NextResponse.json({ error: "Invalid question." }, { status: 400 });
+    }
+    const checked = cleanAnswer(answer);
+    if (!checked.ok) {
+      return NextResponse.json({ error: checked.error }, { status: 400 });
+    }
+    const cleanedAnswer = checked.answer;
 
     const supabase = await createClient();
     const {
@@ -67,12 +78,15 @@ export async function POST(req: Request) {
         markingPoints: ms.marking_points ?? [],
         modelAnswer: ms.model_answer ?? "",
         acceptedKeywords: ms.accepted_keywords ?? [],
-        studentAnswer: answer,
+        studentAnswer: cleanedAnswer,
       });
     } catch (e) {
       // AI failed (e.g. rate limit) — return a clean message, persist nothing.
       return NextResponse.json({ error: friendlyGeminiError(e) }, { status: 502 });
     }
+
+    // Count this billable AI mark against the daily cap (best-effort).
+    await recordMark(supabase, user.id, "structured");
 
     // Persist the attempt.
     const { data: attempt } = await supabase
@@ -80,7 +94,7 @@ export async function POST(req: Request) {
       .insert({
         student_id: user.id,
         question_id: questionId,
-        response_text: answer,
+        response_text: cleanedAnswer,
         is_correct: result.awarded >= result.max,
         awarded_marks: result.awarded,
         max_marks: result.max,

@@ -10,7 +10,8 @@ import {
   type MarkResult,
 } from "@/lib/gemini";
 import { getBankScheme } from "@/lib/data";
-import { canMarkNow } from "@/lib/entitlements";
+import { canMarkNow, recordMark } from "@/lib/entitlements";
+import { cleanAnswer, isUuid } from "@/lib/validate";
 
 export const runtime = "nodejs";
 
@@ -33,6 +34,25 @@ export async function POST(req: Request) {
     marks?: number;
     topicId?: string | null;
   };
+
+  // Validate untrusted input before any auth/DB/AI work.
+  const checked = cleanAnswer(body.answer);
+  if (!checked.ok) {
+    return NextResponse.json({ error: checked.error }, { status: 400 });
+  }
+  body.answer = checked.answer;
+  for (const id of [body.questionId, body.bankId, body.topicId]) {
+    if (id != null && !isUuid(id)) {
+      return NextResponse.json({ error: "Invalid request." }, { status: 400 });
+    }
+  }
+  if (body.marks != null) {
+    body.marks = Math.min(20, Math.max(1, Number(body.marks) || 3));
+  }
+  if (typeof body.stem === "string") {
+    body.stem = body.stem.trim().slice(0, 4000);
+  }
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -61,6 +81,7 @@ export async function POST(req: Request) {
   }
 
   let result: MarkResult;
+  let aiUsed = false; // only a real Gemini call counts against the daily cap
 
   // Bank question with a stored scheme → hybrid keyword+AI marking.
   const scheme = body.bankId && !body.questionId ? await getBankScheme(body.bankId) : null;
@@ -83,6 +104,7 @@ export async function POST(req: Request) {
           modelAnswer: scheme.modelAnswer,
           studentAnswer: body.answer,
         });
+        aiUsed = true;
       } catch {
         result = kw; // AI busy — keep the free keyword result rather than failing
       }
@@ -93,10 +115,15 @@ export async function POST(req: Request) {
     if (!stem) return NextResponse.json({ error: "No question provided" }, { status: 400 });
     try {
       result = await markOpenEnded({ stem, marks, studentAnswer: body.answer });
+      aiUsed = true;
     } catch (e) {
       return NextResponse.json({ error: friendlyGeminiError(e) }, { status: 502 });
     }
   }
+
+  // Count this against the daily cap only when a real AI call was made
+  // (the keyword-only hybrid path has no Gemini cost). Best-effort.
+  if (aiUsed) await recordMark(supabase, user.id, "open");
 
   // Ad-hoc / bank practice (no assignment question id): log it for review.
   if (!body.questionId) {
@@ -124,9 +151,9 @@ export async function POST(req: Request) {
       .from("subtopics")
       .select("learning_outcomes(id)")
       .eq("topic_id", body.topicId);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const outcomeIds: string[] = (subs ?? []).flatMap((s: any) =>
-      (s.learning_outcomes ?? []).map((o: any) => o.id)
+    const rows = (subs ?? []) as { learning_outcomes?: { id: string }[] }[];
+    const outcomeIds: string[] = rows.flatMap((s) =>
+      (s.learning_outcomes ?? []).map((o) => o.id)
     );
     for (const oid of outcomeIds) {
       const { data: existing } = await supabase

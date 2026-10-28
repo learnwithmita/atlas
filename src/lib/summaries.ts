@@ -23,6 +23,9 @@ const TOPIC_SUMMARY_FILES: Record<string, string> = {
   // Nutrition in Humans (Pure Biology + Combined Science share the sheet)
   "83825cbf-2598-4b22-9033-8b404325cf5b": "nutrition-in-humans.png",
   "f10538b5-b552-494b-b3da-aa3ef6e2f459": "nutrition-in-humans.png",
+  // Movement of Substances (Pure Biology + Combined Science share the sheet)
+  "2db5a461-038c-4b10-aba6-45adb651657f": "movement-of-substances.png",
+  "f13eeb66-e051-4b81-ad69-e632cf4cd5ed": "movement-of-substances.png",
 };
 
 /**
