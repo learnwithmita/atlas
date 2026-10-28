@@ -239,9 +239,18 @@ export default async function Landing() {
             © {new Date().getFullYear()} Atlas · Adaptive Tutoring & Learning
             for Applied Science
           </p>
-          <div className="flex gap-6 text-sm text-ink-2">
+          <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm text-ink-2">
             <Link href="/pricing" className="hover:text-ink">
               Pricing
+            </Link>
+            <Link href="/privacy" className="hover:text-ink">
+              Privacy
+            </Link>
+            <Link href="/terms" className="hover:text-ink">
+              Terms
+            </Link>
+            <Link href="/refund" className="hover:text-ink">
+              Refunds
             </Link>
             <Link href="/login" className="hover:text-ink">
               Sign in
