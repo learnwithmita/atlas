@@ -3,7 +3,12 @@ import { notFound, redirect } from "next/navigation";
 import { ArrowLeft, Download } from "lucide-react";
 import { getTopicStudio } from "@/lib/data";
 import { getEntitlement } from "@/lib/entitlements";
-import { hasSummary, summaryImageUrl } from "@/lib/summaries";
+import {
+  hasSummary,
+  hasSummaryPdf,
+  summaryImageUrl,
+  summaryPdfUrl,
+} from "@/lib/summaries";
 
 export const metadata = { title: "Summary sheet · Atlas" };
 export const dynamic = "force-dynamic";
@@ -20,6 +25,11 @@ export default async function SummaryPage({
   if (!ent.isPro) redirect("/pricing");
 
   const src = hasSummary(topicId) ? summaryImageUrl(topicId) : null;
+  // In-app we show a single image; the download is a multi-page A4 PDF when the
+  // sheet is tall enough to warrant one, so it prints at a readable size.
+  const pdf = hasSummaryPdf(topicId);
+  const downloadHref = pdf ? summaryPdfUrl(topicId) : src;
+  const downloadName = `${t.topicName} summary.${pdf ? "pdf" : "png"}`;
 
   return (
     <div className="mx-auto max-w-3xl px-5 sm:px-8 py-8 pb-24 md:pb-8">
@@ -30,13 +40,13 @@ export default async function SummaryPage({
         >
           <ArrowLeft size={16} /> {t.topicName}
         </Link>
-        {src && (
+        {downloadHref && (
           <a
-            href={src}
-            download={`${t.topicName} summary.png`}
+            href={downloadHref}
+            download={downloadName}
             className="inline-flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-full border border-hairline text-ink-2 hover:border-accent hover:text-accent"
           >
-            <Download size={14} /> Download
+            <Download size={14} /> Download{pdf ? " PDF" : ""}
           </a>
         )}
       </div>
