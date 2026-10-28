@@ -1,0 +1,135 @@
+{
+  "topic": "Chemical Calculations",
+  "topicId": "0e8a26c4-beac-44f1-871b-1c0b9931f5f5",
+  "subjectId": "794b1077-34a4-4beb-9de6-9e068b95dd28",
+  "questions": [
+    {
+      "lo": "4.1c",
+      "type": "structured",
+      "marks": 2,
+      "commandWords": ["Deduce"],
+      "stem": "Deduce the formula of each of the following ionic compounds.\n(a) Aluminium oxide, formed from $Al^{3+}$ and $O^{2-}$ ions.\n(b) Calcium nitrate, formed from $Ca^{2+}$ and $NO_3^{-}$ ions.",
+      "markScheme": [
+        { "point": "aluminium oxide = $Al_2O_3$ (two 3+ balance three 2−)", "keywords": ["Al2O3", "Al_2O_3"] },
+        { "point": "calcium nitrate = $Ca(NO_3)_2$ (one 2+ balances two 1−)", "keywords": ["Ca(NO3)2", "Ca(NO_3)_2"] }
+      ],
+      "modelAnswer": "(a) $Al_2O_3$ — two $Al^{3+}$ (6+) balance three $O^{2-}$ (6−).\n(b) $Ca(NO_3)_2$ — one $Ca^{2+}$ (2+) balances two $NO_3^{-}$ (2−)."
+    },
+    {
+      "lo": "4.1e",
+      "type": "structured",
+      "marks": 2,
+      "commandWords": ["Construct"],
+      "stem": "Construct the balanced chemical equation, including state symbols, for the complete combustion of methane ($CH_4$) in oxygen.",
+      "markScheme": [
+        { "point": "correct formulae and balancing: $CH_4 + 2O_2 \\rightarrow CO_2 + 2H_2O$", "keywords": ["CH4 + 2O2", "CO2 + 2H2O", "balanced"] },
+        { "point": "correct state symbols throughout: $CH_4(g) + 2O_2(g) \\rightarrow CO_2(g) + 2H_2O(l)$", "keywords": ["(g)", "(l)", "state symbols"] }
+      ],
+      "modelAnswer": "$CH_4(g) + 2O_2(g) \\rightarrow CO_2(g) + 2H_2O(l)$"
+    },
+    {
+      "lo": "4.2b",
+      "type": "structured",
+      "marks": 2,
+      "commandWords": ["Calculate"],
+      "stem": "Calculate the relative molecular mass, $M_r$, of ammonium sulfate, $(NH_4)_2SO_4$.\n($A_r$: H = 1, N = 14, O = 16, S = 32)",
+      "markScheme": [
+        { "point": "sums the relative atomic masses: $(2\\times14) + (8\\times1) + 32 + (4\\times16)$", "keywords": ["2×14", "8×1", "4×16"] },
+        { "point": "$M_r = 132$", "keywords": ["132"] }
+      ],
+      "modelAnswer": "$M_r = (2\\times14) + (8\\times1) + 32 + (4\\times16) = 28 + 8 + 32 + 64 = 132$."
+    },
+    {
+      "lo": "4.2d",
+      "type": "structured",
+      "marks": 2,
+      "commandWords": ["Calculate"],
+      "stem": "Calculate the percentage by mass of nitrogen in ammonium nitrate, $NH_4NO_3$.\n($A_r$: H = 1, N = 14, O = 16)",
+      "markScheme": [
+        { "point": "$M_r(NH_4NO_3) = 80$ and mass of nitrogen $= 2\\times14 = 28$", "keywords": ["80", "28"] },
+        { "point": "% N $= 28/80 \\times 100 = 35.0\\%$", "keywords": ["28/80", "35", "35.0"] }
+      ],
+      "modelAnswer": "$M_r(NH_4NO_3) = 14+4+14+48 = 80$. Mass of N $= 2\\times14 = 28$. % N $= 28/80 \\times 100 = 35.0\\%$."
+    },
+    {
+      "lo": "4.2e",
+      "type": "data_based",
+      "marks": 3,
+      "commandWords": ["Determine"],
+      "stem": "A compound contains 40.0% carbon, 6.7% hydrogen and 53.3% oxygen by mass. Determine its empirical formula.\n($A_r$: H = 1, C = 12, O = 16)",
+      "markScheme": [
+        { "point": "divides each percentage by $A_r$ to get moles: C $40.0/12 = 3.33$, H $6.7/1 = 6.7$, O $53.3/16 = 3.33$", "keywords": ["40.0/12", "6.7/1", "53.3/16", "moles"] },
+        { "point": "divides by the smallest (3.33) to get ratio C : H : O = 1 : 2 : 1", "keywords": ["divide by smallest", "1 : 2 : 1", "ratio"] },
+        { "point": "empirical formula $= CH_2O$", "keywords": ["CH2O", "CH_2O"] }
+      ],
+      "modelAnswer": "Moles: C $= 40.0/12 = 3.33$; H $= 6.7/1 = 6.7$; O $= 53.3/16 = 3.33$. Divide by smallest (3.33): C 1 : H 2 : O 1. Empirical formula $= CH_2O$."
+    },
+    {
+      "lo": "4.2f",
+      "type": "structured",
+      "marks": 3,
+      "commandWords": ["Calculate"],
+      "stem": "Magnesium burns in oxygen: $2Mg + O_2 \\rightarrow 2MgO$.\nCalculate the mass of magnesium oxide formed when 6.0 g of magnesium is completely burned.\n($A_r$: O = 16, Mg = 24)",
+      "markScheme": [
+        { "point": "moles of Mg $= 6.0/24 = 0.25$ mol", "keywords": ["6.0/24", "0.25"] },
+        { "point": "mole ratio Mg : MgO = 1 : 1, so moles MgO = 0.25 mol", "keywords": ["1 : 1", "0.25 mol"] },
+        { "point": "mass MgO $= 0.25 \\times 40 = 10.0$ g", "keywords": ["0.25 × 40", "10.0 g", "10 g"] }
+      ],
+      "modelAnswer": "Moles Mg $= 6.0/24 = 0.25$ mol. From the equation moles MgO $= 0.25$ mol. $M_r(MgO) = 40$. Mass MgO $= 0.25 \\times 40 = 10.0$ g."
+    },
+    {
+      "lo": "4.2f",
+      "type": "structured",
+      "marks": 3,
+      "commandWords": ["Calculate"],
+      "stem": "Excess hydrochloric acid is added to 10.0 g of calcium carbonate: $CaCO_3 + 2HCl \\rightarrow CaCl_2 + H_2O + CO_2$.\nCalculate the volume of carbon dioxide produced at room temperature and pressure (r.t.p.).\n($A_r$: C = 12, O = 16, Ca = 40; molar gas volume = 24 dm³ at r.t.p.)",
+      "markScheme": [
+        { "point": "moles $CaCO_3 = 10.0/100 = 0.10$ mol", "keywords": ["10.0/100", "0.10"] },
+        { "point": "mole ratio $CaCO_3 : CO_2$ = 1 : 1, so moles $CO_2 = 0.10$ mol", "keywords": ["1 : 1", "0.10 mol"] },
+        { "point": "volume $= 0.10 \\times 24 = 2.4$ dm³", "keywords": ["0.10 × 24", "2.4 dm3", "2.4 dm³"] }
+      ],
+      "modelAnswer": "$M_r(CaCO_3) = 40+12+48 = 100$. Moles $CaCO_3 = 10.0/100 = 0.10$ mol. Moles $CO_2 = 0.10$ mol. Volume $= 0.10 \\times 24 = 2.4$ dm³."
+    },
+    {
+      "lo": "4.2f",
+      "type": "structured",
+      "marks": 4,
+      "commandWords": ["Determine", "Calculate"],
+      "stem": "Hydrogen reacts with oxygen: $2H_2 + O_2 \\rightarrow 2H_2O$.\n0.50 mol of hydrogen is mixed with 0.20 mol of oxygen and the reaction goes to completion.\n(a) Determine the limiting reactant.\n(b) Calculate the mass of water formed.\n($A_r$: H = 1, O = 16)",
+      "markScheme": [
+        { "point": "0.50 mol $H_2$ would need 0.25 mol $O_2$ (ratio 2 : 1)", "keywords": ["0.25 mol", "2 : 1"] },
+        { "point": "only 0.20 mol $O_2$ is available, so oxygen is the limiting reactant", "keywords": ["oxygen", "limiting"] },
+        { "point": "moles $H_2O = 2 \\times 0.20 = 0.40$ mol", "keywords": ["2 × 0.20", "0.40 mol"] },
+        { "point": "mass $H_2O = 0.40 \\times 18 = 7.2$ g", "keywords": ["0.40 × 18", "7.2 g"] }
+      ],
+      "modelAnswer": "(a) 0.50 mol $H_2$ needs 0.25 mol $O_2$, but only 0.20 mol $O_2$ is present, so oxygen is limiting.\n(b) Moles $H_2O = 2 \\times 0.20 = 0.40$ mol. $M_r(H_2O) = 18$. Mass $= 0.40 \\times 18 = 7.2$ g."
+    },
+    {
+      "lo": "4.2g",
+      "type": "structured",
+      "marks": 4,
+      "commandWords": ["Calculate"],
+      "stem": "In a titration, 25.0 cm³ of sodium hydroxide solution is exactly neutralised by 20.0 cm³ of 0.100 mol/dm³ sulfuric acid: $H_2SO_4 + 2NaOH \\rightarrow Na_2SO_4 + 2H_2O$.\nCalculate the concentration of the sodium hydroxide solution in mol/dm³.",
+      "markScheme": [
+        { "point": "moles $H_2SO_4 = 20.0/1000 \\times 0.100 = 2.00\\times10^{-3}$ mol", "keywords": ["20.0/1000", "0.00200", "2.00 × 10-3"] },
+        { "point": "mole ratio $H_2SO_4 : NaOH$ = 1 : 2", "keywords": ["1 : 2", "ratio"] },
+        { "point": "moles NaOH $= 2 \\times 2.00\\times10^{-3} = 4.00\\times10^{-3}$ mol", "keywords": ["4.00 × 10-3", "0.00400"] },
+        { "point": "concentration $= 4.00\\times10^{-3} / (25.0/1000) = 0.160$ mol/dm³", "keywords": ["0.0250", "0.160", "0.16"] }
+      ],
+      "modelAnswer": "Moles $H_2SO_4 = 0.0200 \\times 0.100 = 2.00\\times10^{-3}$ mol. Ratio $H_2SO_4 : NaOH$ = 1 : 2, so moles NaOH $= 4.00\\times10^{-3}$ mol. Concentration $= 4.00\\times10^{-3} / 0.0250 = 0.160$ mol/dm³."
+    },
+    {
+      "lo": "4.2h",
+      "type": "structured",
+      "marks": 3,
+      "commandWords": ["Calculate"],
+      "stem": "When 10.0 g of calcium carbonate is heated it decomposes: $CaCO_3 \\rightarrow CaO + CO_2$.\n4.48 g of calcium oxide is obtained. Calculate the percentage yield of calcium oxide.\n($A_r$: C = 12, O = 16, Ca = 40)",
+      "markScheme": [
+        { "point": "moles $CaCO_3 = 10.0/100 = 0.10$ mol, so theoretical moles CaO = 0.10 mol", "keywords": ["10.0/100", "0.10"] },
+        { "point": "theoretical mass CaO $= 0.10 \\times 56 = 5.6$ g", "keywords": ["0.10 × 56", "5.6 g"] },
+        { "point": "% yield $= 4.48/5.6 \\times 100 = 80.0\\%$", "keywords": ["4.48/5.6", "80", "80.0"] }
+      ],
+      "modelAnswer": "Moles $CaCO_3 = 10.0/100 = 0.10$ mol → theoretical CaO = 0.10 mol. $M_r(CaO) = 56$. Theoretical mass $= 0.10 \\times 56 = 5.6$ g. % yield $= 4.48/5.6 \\times 100 = 80.0\\%$."
+    }
+  ]
+}
