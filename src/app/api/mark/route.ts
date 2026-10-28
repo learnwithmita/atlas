@@ -4,6 +4,7 @@ import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { friendlyGeminiError, markAnswer } from "@/lib/gemini";
 import { canMarkNow, recordMark } from "@/lib/entitlements";
 import { cleanAnswer, isUuid } from "@/lib/validate";
+import { rateLimit } from "@/lib/ratelimit";
 
 export const runtime = "nodejs";
 
@@ -38,6 +39,14 @@ export async function POST(req: Request) {
     } = await supabase.auth.getUser();
     if (!user) {
       return NextResponse.json({ error: "Not signed in" }, { status: 401 });
+    }
+
+    // Burst limit (defence-in-depth over the daily cap): per-user, per-minute.
+    if (!(await rateLimit(`mark:${user.id}`, 20, 60))) {
+      return NextResponse.json(
+        { error: "You're marking very fast — give it a moment and try again." },
+        { status: 429 }
+      );
     }
 
     // Free tier: cap AI marking per day. Pro/staff: unlimited. (No-op while

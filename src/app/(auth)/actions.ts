@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { rateLimit, clientIp } from "@/lib/ratelimit";
 
 export type AuthState = { error?: string; message?: string };
 
@@ -27,6 +28,18 @@ export async function signIn(
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
   const next = String(formData.get("next") ?? "");
+
+  // Brute-force protection keyed by ACCOUNT (not IP) so a shared school network
+  // isn't collectively locked out.
+  if (
+    email &&
+    !(await rateLimit(`auth:signin:${email.toLowerCase()}`, 10, 600))
+  ) {
+    return {
+      error:
+        "Too many sign-in attempts for this email. Please wait a few minutes and try again.",
+    };
+  }
 
   const supabase = await createClient();
   const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -55,6 +68,14 @@ export async function signUp(
 ): Promise<AuthState> {
   if (!isSupabaseConfigured) {
     return { error: "Supabase isn't connected yet. Add your keys to .env.local and restart." };
+  }
+
+  // Generous per-network cap: stops bot floods without blocking a class signing
+  // up together (they share one IP).
+  if (!(await rateLimit(`auth:signup:${await clientIp()}`, 60, 3600))) {
+    return {
+      error: "Too many sign-ups from this network right now. Please try again shortly.",
+    };
   }
 
   const email = String(formData.get("email") ?? "").trim();
@@ -136,6 +157,16 @@ export async function requestPasswordReset(
   const email = String(formData.get("email") ?? "").trim();
   if (!email) return { error: "Enter the email you signed up with." };
 
+  // Cap reset emails per account. On limit, return the same generic message so
+  // we never reveal whether the account exists or is being throttled.
+  const genericReset = {
+    message:
+      "If an account exists for that email, a reset link is on its way. Check your inbox (and spam).",
+  };
+  if (!(await rateLimit(`auth:reset:${email.toLowerCase()}`, 5, 3600))) {
+    return genericReset;
+  }
+
   const supabase = await createClient();
   const origin = await siteOrigin();
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
@@ -145,10 +176,7 @@ export async function requestPasswordReset(
   if (error && !/rate limit/i.test(error.message)) {
     return { error: error.message };
   }
-  return {
-    message:
-      "If an account exists for that email, a reset link is on its way. Check your inbox (and spam).",
-  };
+  return genericReset;
 }
 
 export async function resetPassword(
