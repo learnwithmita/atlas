@@ -215,7 +215,7 @@ export async function getTopicNotes(topicId: string): Promise<TopicNotesView | n
     .eq("topic_id", topicId)
     .maybeSingle();
   if (notesQ.error) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     notesQ = (await supabase
       .from("topic_notes")
       .select("key_points, misconceptions")
@@ -591,7 +591,7 @@ export async function getQuestionBank(): Promise<BankTopic[]> {
 
   // Map lowercased topic name -> id, to rescue extracted rows whose topic_id
   // is null (extracted before the syllabus existed) via their detected name.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   const idByName = new Map<string, string>(
     (topics ?? []).map((t: any) => [String(t.name).toLowerCase(), t.id as string])
   );
@@ -988,7 +988,7 @@ export async function getFullCurriculum(): Promise<CurriculumSubject[]> {
     ]);
   const topics = topicsRes;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   const outBySub = new Map<string, CurriculumOutcome[]>();
   for (const o of outcomes ?? []) {
     const list = outBySub.get(o.subtopic_id) ?? [];
@@ -1105,7 +1105,7 @@ export async function getSyllabuses(): Promise<SyllabusRow[]> {
       supabase.from("subtopics").select("id, topic_id"),
       supabase.from("learning_outcomes").select("id, subtopic_id").limit(100000),
     ]);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     const subjectName = new Map<string, string>(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (subjectsRes.data ?? []).map((s: any) => [s.id, s.name])
@@ -1280,7 +1280,7 @@ async function fetchExtractedForTopic(supabase: any, topicId: string, topicName:
     "id, stem, marks, type, command_words, question_number, model_answer, mark_scheme, image_url, resource:resources(school, year, paper_type, title)";
   const withImg = "id, stem, marks, type, command_words, question_number, image_url";
   const basic = "id, stem, marks, type, command_words, question_number";
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   const run = async (sel: string) => {
     const [byId, byName] = await Promise.all([
       supabase.from("extracted_questions").select(sel).eq("topic_id", topicId).limit(300),
@@ -1510,7 +1510,7 @@ export async function getPrintableQuestions(
   const pFull =
     "stem, marks, question_number, model_answer, mark_scheme, resource:resources(school, year, paper_type, title)";
   const pBasic = "stem, marks, question_number";
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   const pRun = async (sel: string) => {
     const [byId, byName] = await Promise.all([
       supabase.from("extracted_questions").select(sel).eq("topic_id", topicId).limit(500),
@@ -2007,7 +2007,7 @@ export async function getBackupExamQuestions(
 
   // 2) Curated bank questions, to top up.
   if (subIds.length) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     const { data: bankRows } = await supabase
       .from("questions")
       .select("id, stem, marks, type, command_words, subtopic_id")
@@ -2297,7 +2297,7 @@ export async function getTopicGenerationContext(
       .from("subtopics")
       .select("id, learning_outcomes(statement)")
       .eq("topic_id", t.id);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     const outcomes: string[] = (subs ?? [])
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .flatMap((s: any) => (s.learning_outcomes ?? []).map((o: any) => o.statement))

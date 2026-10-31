@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceClient, isServiceConfigured } from "@/lib/supabase/admin";
 import { getEntitlement } from "@/lib/entitlements";
 import { summaryPdfPagesForTopic } from "@/lib/summaries";
+import { coarseDevice } from "@/lib/request";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -12,37 +13,6 @@ export const dynamic = "force-dynamic";
 // A4 in PDF points (72pt per inch).
 const A4_W = 595.28;
 const A4_H = 841.89;
-
-/** A coarse, non-identifying device label (e.g. "Chrome · iOS") — enough to
- * distinguish sessions without storing the full user-agent or any IP. */
-function coarseDevice(ua: string | null): string | null {
-  if (!ua) return null;
-  const os = /iphone|ipad|ipod/i.test(ua)
-    ? "iOS"
-    : /android/i.test(ua)
-      ? "Android"
-      : /windows/i.test(ua)
-        ? "Windows"
-        : /mac os x|macintosh/i.test(ua)
-          ? "macOS"
-          : /linux/i.test(ua)
-            ? "Linux"
-            : "other";
-  const browser = /edg\//i.test(ua)
-    ? "Edge"
-    : /opr\/|opera/i.test(ua)
-      ? "Opera"
-      : /samsungbrowser/i.test(ua)
-        ? "Samsung Internet"
-        : /firefox|fxios/i.test(ua)
-          ? "Firefox"
-          : /chrome|crios/i.test(ua)
-            ? "Chrome"
-            : /safari/i.test(ua)
-              ? "Safari"
-              : "other";
-  return `${browser} · ${os}`;
-}
 
 /**
  * Per-student download of a topic summary as a multi-page A4 PDF. Each page

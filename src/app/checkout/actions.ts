@@ -1,19 +1,11 @@
 "use server";
 
-import { headers } from "next/headers";
+import { siteOrigin } from "@/lib/request";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createServiceClient, isServiceConfigured } from "@/lib/supabase/admin";
 import { BILLING_ENABLED } from "@/lib/entitlements";
 import { isStripeConfigured, stripe, priceId, type PaidPlanId } from "@/lib/stripe";
-
-async function siteOrigin(): Promise<string> {
-  const h = await headers();
-  const host = h.get("x-forwarded-host") ?? h.get("host") ?? "localhost:3000";
-  const proto =
-    h.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
-  return `${proto}://${host}`;
-}
 
 /**
  * Start a real Stripe Checkout Session and return its URL for the browser to

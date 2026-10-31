@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceClient, isServiceConfigured } from "@/lib/supabase/admin";
 import { getEntitlement } from "@/lib/entitlements";
 import { summaryFileForTopic } from "@/lib/summaries";
+import { coarseDevice } from "@/lib/request";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -44,38 +45,6 @@ function esc(s: string): string {
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
-}
-
-/** A coarse, non-identifying device label (e.g. "Chrome · iOS") — enough to
- * distinguish sessions without storing the full user-agent or any IP. */
-function coarseDevice(ua: string | null): string | null {
-  if (!ua) return null;
-  const os = /iphone|ipad|ipod/i.test(ua)
-    ? "iOS"
-    : /android/i.test(ua)
-      ? "Android"
-      : /windows/i.test(ua)
-        ? "Windows"
-        : /mac os x|macintosh/i.test(ua)
-          ? "macOS"
-          : /linux/i.test(ua)
-            ? "Linux"
-            : "other";
-  // Order matters: Edge/Opera/Samsung UAs also contain "Chrome"; Chrome contains "Safari".
-  const browser = /edg\//i.test(ua)
-    ? "Edge"
-    : /opr\/|opera/i.test(ua)
-      ? "Opera"
-      : /samsungbrowser/i.test(ua)
-        ? "Samsung Internet"
-        : /firefox|fxios/i.test(ua)
-          ? "Firefox"
-          : /chrome|crios/i.test(ua)
-            ? "Chrome"
-            : /safari/i.test(ua)
-              ? "Safari"
-              : "other";
-  return `${browser} · ${os}`;
 }
 
 /**

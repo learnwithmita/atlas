@@ -46,7 +46,7 @@ export async function POST(req: Request) {
       { status: 503 }
     );
   }
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   const rows = [...(byId.data ?? []), ...(byName.data ?? [])].filter(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (q: any) => !q.image_url && referencesDiagram(q.stem)

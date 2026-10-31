@@ -406,7 +406,7 @@ Capture every topic and subtopic. If a subtopic has no explicitly numbered outco
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       subtopics: (t.subtopics ?? []).map((s: any) => ({
         name: String(s.name ?? "").trim(),
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+         
         outcomes: (s.outcomes ?? [])
           .map((o: any) => ({
             code: String(o.code ?? "").trim(),
@@ -480,7 +480,7 @@ Return:
     const p = JSON.parse(res.text ?? "{}");
     return {
       keyPoints: Array.isArray(p.keyPoints) ? p.keyPoints.map(String) : [],
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       misconceptions: Array.isArray(p.misconceptions)
         ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
           p.misconceptions.map((m: any) => ({
@@ -536,7 +536,7 @@ Rules:
   try {
     const parsed = JSON.parse(res.text ?? "[]");
     if (!Array.isArray(parsed)) return [];
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     return parsed
       .map((c: any) => ({ front: String(c.front ?? ""), back: String(c.back ?? "") }))
       .filter((c: GeneratedCard) => c.front && c.back);
@@ -631,7 +631,7 @@ Return only the questions.`;
   try {
     const parsed = JSON.parse(res.text ?? "[]");
     if (!Array.isArray(parsed)) return [];
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     return parsed
       .map((q: any) => ({
         stem: String(q.stem ?? ""),
@@ -799,7 +799,7 @@ Write maths/chemistry in LaTeX ($...$, $\\ce{...}$). Return only the questions.`
   try {
     const parsed = JSON.parse(res.text ?? "[]");
     if (!Array.isArray(parsed)) return [];
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     return parsed
       .map((q: any) => ({
         stem: String(q.stem ?? ""),
@@ -807,7 +807,7 @@ Write maths/chemistry in LaTeX ($...$, $\\ce{...}$). Return only the questions.`
         type: q.type ?? "structured",
         commandWords: Array.isArray(q.commandWords) ? q.commandWords : [],
         topic: String(q.topic ?? ""),
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+         
         markScheme: (Array.isArray(q.markScheme) ? q.markScheme : [])
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           .map((p: any) => ({
@@ -1003,7 +1003,7 @@ Rules: each sentence must state a key fact and hide ONE important keyword/phrase
   try {
     const parsed = JSON.parse(res.text ?? "[]");
     if (!Array.isArray(parsed)) return [];
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     return parsed
       .map((c: any) => ({ text: String(c.text ?? ""), answer: String(c.answer ?? "") }))
       .filter((c: GeneratedCloze) => c.text.includes("{{") && c.answer);

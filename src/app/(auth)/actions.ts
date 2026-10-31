@@ -2,20 +2,11 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { rateLimit, clientIp } from "@/lib/ratelimit";
+import { siteOrigin } from "@/lib/request";
 
 export type AuthState = { error?: string; message?: string };
-
-/** Best-effort origin (scheme + host) for building absolute redirect URLs. */
-async function siteOrigin(): Promise<string> {
-  const h = await headers();
-  const host = h.get("x-forwarded-host") ?? h.get("host") ?? "localhost:3000";
-  const proto =
-    h.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
-  return `${proto}://${host}`;
-}
 
 export async function signIn(
   _prev: AuthState,

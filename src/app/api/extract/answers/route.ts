@@ -67,7 +67,7 @@ export async function POST(req: Request) {
   for (let i = 0; i < rows.length; i++) {
     const a = answers[i];
     if (!a || !a.modelAnswer) continue;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     const { error } = await supabase
       .from("extracted_questions")
       .update({ model_answer: a.modelAnswer, mark_scheme: a.points })
