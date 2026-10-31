@@ -237,6 +237,16 @@ function QuestionCard({
             className="w-full rounded-[16px] border border-hairline bg-surface p-4 text-[15px] text-ink outline-none focus:border-accent transition-colors resize-none disabled:opacity-70"
           />
 
+          {!submitted && (
+            <p className="mt-1.5 text-xs text-ink-3">
+              Type formulas in plain text — no subscripts or symbols needed.
+              e.g. <span className="font-medium text-ink-2">H2SO4</span>,{" "}
+              <span className="font-medium text-ink-2">Al2O3</span>,{" "}
+              <span className="font-medium text-ink-2">mol/dm3</span>; use{" "}
+              <span className="font-medium text-ink-2">-&gt;</span> for →.
+            </p>
+          )}
+
           {!submitted ? (
             <Button
               className="mt-4"

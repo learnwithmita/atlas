@@ -9,6 +9,11 @@ const MARK_MODEL = process.env.GEMINI_MARKING_MODEL ?? "gemini-flash-latest";
 
 export const isGeminiConfigured = API_KEY.length > 0;
 
+// Students answer in a plain textarea on a normal keyboard, so both AI markers
+// must treat typed notation as equivalent to formatted notation and never
+// penalise typography. Shared by markAnswer and markOpenEnded.
+const NOTATION_NOTE = `IMPORTANT — the student typed on a normal keyboard, so accept plain-text notation as fully equivalent and do NOT deduct marks for missing subscripts, superscripts or special symbols. Treat these as identical: H2SO4 = H₂SO₄, Al2O3 = Al₂O₃, Ca(NO3)2 = Ca(NO₃)₂, CO2 = CO₂, H2O = H₂O; Al3+ = Al³⁺, SO4 2- = SO₄²⁻; "->" or "=" mean "→"; x10-3, e-3 and ×10⁻³ are the same; mol/dm3 = mol/dm³ = mol dm-3; cm3 = cm³. Mark on scientific correctness, not formatting.`;
+
 function client() {
   return new GoogleGenAI({ apiKey: API_KEY });
 }
@@ -1076,6 +1081,8 @@ export async function markAnswer(input: {
 
   const prompt = `Mark this student's answer strictly against the G3 mark scheme.
 
+${NOTATION_NOTE}
+
 QUESTION (${input.marks} marks): ${input.stem}
 
 MARKING POINTS (award one mark per point genuinely made):
@@ -1171,6 +1178,8 @@ export async function markOpenEnded(input: {
   }
 
   const prompt = `You are a Singapore O-Level (G3) examiner. First derive the mark scheme for the question, then mark the student's answer against it.
+
+${NOTATION_NOTE}
 
 QUESTION (${input.marks} marks): ${input.stem}
 

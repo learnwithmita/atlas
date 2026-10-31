@@ -166,9 +166,19 @@ export function GeneratedPracticeSession({
               onChange={(e) => set(q.id, { answer: e.target.value })}
               disabled={!!r}
               rows={4}
-              placeholder="Write your answer…"
+              placeholder="Write your answer in plain text…"
               className="w-full rounded-[14px] border border-hairline bg-surface-2 p-3 text-[15px] text-ink outline-none focus:border-accent resize-none disabled:opacity-70"
             />
+
+            {!r && (
+              <p className="mt-1.5 text-xs text-ink-3">
+                Type formulas in plain text — no subscripts or symbols needed.
+                e.g. <span className="font-medium text-ink-2">H2SO4</span>,{" "}
+                <span className="font-medium text-ink-2">Al2O3</span>,{" "}
+                <span className="font-medium text-ink-2">mol/dm3</span>; use{" "}
+                <span className="font-medium text-ink-2">-&gt;</span> for →.
+              </p>
+            )}
 
             {!r ? (
               <Button size="sm" className="mt-3" disabled={!st.answer.trim() || st.marking} onClick={() => mark(q)}>
